@@ -183,10 +183,6 @@ function displayChart(yearly) {
     const group = document.createElement("div");
     group.className = "bar-group";
 
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    tooltip.innerHTML = `<strong>Year ${year.period}</strong><br>Principal: ${formatCurrency(year.principal)}<br>Interest: ${formatCurrency(year.interest)}`;
-
     const stack = document.createElement("div");
     stack.className = "bar-stack";
     stack.style.height = `${totalHeight}%`;
@@ -199,7 +195,6 @@ function displayChart(yearly) {
     principalBar.className = "bar-principal";
     principalBar.style.height = `${principalHeight}%`;
 
-    // Interest on top, principal on bottom
     stack.appendChild(interestBar);
     stack.appendChild(principalBar);
 
@@ -207,10 +202,23 @@ function displayChart(yearly) {
     label.className = "bar-label";
     label.textContent = year.period;
 
-    group.appendChild(tooltip);
     group.appendChild(stack);
     group.appendChild(label);
     chartBars.appendChild(group);
+
+    // Add tooltip via mouse events instead of CSS
+    const tooltip = document.createElement("div");
+    tooltip.className = "bar-tooltip";
+    tooltip.innerHTML = `<strong>Year ${year.period}</strong><br>Principal: ${formatCurrency(year.principal)}<br>Interest: ${formatCurrency(year.interest)}`;
+    group.appendChild(tooltip);
+
+    group.addEventListener("mouseenter", () => {
+      tooltip.style.display = "block";
+    });
+
+    group.addEventListener("mouseleave", () => {
+      tooltip.style.display = "none";
+    });
   });
 }
 

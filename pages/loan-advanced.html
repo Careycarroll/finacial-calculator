@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced Loan Calculator | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="../index.html">← Back to Home</a>
+      </nav>
+
+      <header>
+        <h1>🏦 Advanced Loan Calculator</h1>
+        <p class="tagline">
+          Track your loan, add extra payments, and see how much time and money
+          you can save.
+        </p>
+      </header>
+
+      <main>
+        <!-- Loan Setup -->
+        <section class="calc-form">
+          <h2 class="form-section-title">Loan Setup</h2>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="adv-loan-amount">Loan Amount ($)</label>
+              <input
+                type="number"
+                id="adv-loan-amount"
+                placeholder="e.g. 250000"
+                min="0"
+                step="any"
+              />
+            </div>
+            <div class="form-group">
+              <label for="adv-interest-rate">Annual Interest Rate (%)</label>
+              <input
+                type="number"
+                id="adv-interest-rate"
+                placeholder="e.g. 6.5"
+                min="0"
+                step="any"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="adv-loan-term">Loan Term</label>
+              <input
+                type="number"
+                id="adv-loan-term"
+                placeholder="e.g. 30"
+                min="1"
+                step="1"
+              />
+            </div>
+            <div class="form-group">
+              <label for="adv-term-unit">Term Unit</label>
+              <select id="adv-term-unit">
+                <option value="years">Years</option>
+                <option value="months">Months</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Loan Start Date</label>
+              <div class="date-select-row">
+                <select id="adv-start-month">
+                  <option value="" disabled selected>Month</option>
+                  <option value="1">January</option>
+                  <option value="2">February</option>
+                  <option value="3">March</option>
+                  <option value="4">April</option>
+                  <option value="5">May</option>
+                  <option value="6">June</option>
+                  <option value="7">July</option>
+                  <option value="8">August</option>
+                  <option value="9">September</option>
+                  <option value="10">October</option>
+                  <option value="11">November</option>
+                  <option value="12">December</option>
+                </select>
+                <select id="adv-start-year">
+                  <option value="" disabled selected>Year</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="adv-frequency">Payment Frequency</label>
+              <select id="adv-frequency">
+                <option value="monthly">Monthly</option>
+                <option value="biweekly">Bi-Weekly (every 2 weeks)</option>
+                <option value="weekly">Weekly</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Existing Loan Toggle -->
+        <section class="calc-form">
+          <div class="toggle-header">
+            <h2 class="form-section-title">Existing Loan</h2>
+            <label class="toggle-switch">
+              <input type="checkbox" id="adv-existing-toggle" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <p class="form-hint">
+            Enable this if you're already making payments on this loan.
+          </p>
+
+          <div id="existing-loan-fields" class="conditional-fields hidden">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="adv-current-balance">Current Balance ($)</label>
+                <input
+                  type="number"
+                  id="adv-current-balance"
+                  placeholder="e.g. 215000"
+                  min="0"
+                  step="any"
+                />
+              </div>
+              <div class="form-group">
+                <label for="adv-payments-made">Payments Already Made</label>
+                <input
+                  type="number"
+                  id="adv-payments-made"
+                  placeholder="e.g. 36"
+                  min="0"
+                  step="1"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Extra Payments -->
+        <section class="calc-form">
+          <h2 class="form-section-title">Extra Payments</h2>
+
+          <!-- Recurring Extra Payment Ranges -->
+          <div class="extra-ranges">
+            <label>Recurring Extra Payments</label>
+            <span class="form-hint"
+              >Add date ranges with different extra payment amounts. These are
+              added to each regular payment toward principal.</span
+            >
+            <div class="extra-range-input-row">
+              <select id="adv-range-start-month" class="input-date">
+                <option value="" disabled selected>Start Mo</option>
+                <option value="1">Jan</option>
+                <option value="2">Feb</option>
+                <option value="3">Mar</option>
+                <option value="4">Apr</option>
+                <option value="5">May</option>
+                <option value="6">Jun</option>
+                <option value="7">Jul</option>
+                <option value="8">Aug</option>
+                <option value="9">Sep</option>
+                <option value="10">Oct</option>
+                <option value="11">Nov</option>
+                <option value="12">Dec</option>
+              </select>
+              <select id="adv-range-start-year" class="input-date">
+                <option value="" disabled selected>Start Yr</option>
+              </select>
+              <span class="range-separator">to</span>
+              <select id="adv-range-end-month" class="input-date">
+                <option value="" disabled selected>End Mo</option>
+                <option value="1">Jan</option>
+                <option value="2">Feb</option>
+                <option value="3">Mar</option>
+                <option value="4">Apr</option>
+                <option value="5">May</option>
+                <option value="6">Jun</option>
+                <option value="7">Jul</option>
+                <option value="8">Aug</option>
+                <option value="9">Sep</option>
+                <option value="10">Oct</option>
+                <option value="11">Nov</option>
+                <option value="12">Dec</option>
+              </select>
+              <select id="adv-range-end-year" class="input-date">
+                <option value="" disabled selected>End Yr</option>
+              </select>
+              <label class="ongoing-label">
+                <input type="checkbox" id="adv-range-ongoing" />
+                <span>Ongoing</span>
+              </label>
+              <input
+                type="number"
+                id="adv-range-amount"
+                placeholder="$/period"
+                min="0"
+                step="any"
+                class="input-amount"
+              />
+              <button id="add-range-btn" class="btn-add">+ Add</button>
+            </div>
+            <ul id="range-list" class="onetime-list"></ul>
+          </div>
+
+          <!-- One-Time Payments -->
+          <div class="one-time-payments">
+            <label>One-Time Payments</label>
+            <div class="one-time-input-row">
+              <select id="adv-onetime-month" class="input-date">
+                <option value="" disabled selected>Month</option>
+                <option value="1">Jan</option>
+                <option value="2">Feb</option>
+                <option value="3">Mar</option>
+                <option value="4">Apr</option>
+                <option value="5">May</option>
+                <option value="6">Jun</option>
+                <option value="7">Jul</option>
+                <option value="8">Aug</option>
+                <option value="9">Sep</option>
+                <option value="10">Oct</option>
+                <option value="11">Nov</option>
+                <option value="12">Dec</option>
+              </select>
+              <select id="adv-onetime-year" class="input-date">
+                <option value="" disabled selected>Year</option>
+              </select>
+              <input
+                type="number"
+                id="adv-onetime-amount"
+                placeholder="Amount ($)"
+                min="0"
+                step="any"
+                class="input-amount"
+              />
+              <button id="add-onetime-btn" class="btn-add">+ Add</button>
+            </div>
+            <ul id="onetime-list" class="onetime-list"></ul>
+          </div>
+        </section>
+
+        <!-- Calculate Button -->
+        <button id="adv-calculate-btn" class="btn-primary">
+          Calculate & Compare
+        </button>
+
+        <!-- Savings Summary -->
+        <section id="adv-results" class="results-panel hidden">
+          <h2>Summary & Savings</h2>
+          <div class="results-grid results-grid-3">
+            <div class="result-item">
+              <span class="result-label">Base Payment</span>
+              <span id="adv-base-payment" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Payment with Extras</span>
+              <span id="adv-adjusted-payment" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Payment Frequency</span>
+              <span id="adv-frequency-display" class="result-value">—</span>
+            </div>
+          </div>
+
+          <div class="comparison-grid">
+            <div class="comparison-column">
+              <h3>Original Schedule</h3>
+              <div class="comparison-item">
+                <span class="result-label">Total Interest</span>
+                <span id="adv-orig-interest" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">Total Cost</span>
+                <span id="adv-orig-cost" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">Payoff Date</span>
+                <span id="adv-orig-payoff" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">Total Payments</span>
+                <span id="adv-orig-payments" class="result-value">—</span>
+              </div>
+            </div>
+            <div class="comparison-column highlight">
+              <h3>With Extra Payments</h3>
+              <div class="comparison-item">
+                <span class="result-label">Total Interest</span>
+                <span id="adv-adj-interest" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">Total Cost</span>
+                <span id="adv-adj-cost" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">Payoff Date</span>
+                <span id="adv-adj-payoff" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">Total Payments</span>
+                <span id="adv-adj-payments" class="result-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="savings-banner">
+            <div class="savings-item">
+              <span class="savings-label">Interest Saved</span>
+              <span id="adv-interest-saved" class="savings-value">—</span>
+            </div>
+            <div class="savings-item">
+              <span class="savings-label">Time Saved</span>
+              <span id="adv-time-saved" class="savings-value">—</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chart -->
+        <section id="adv-chart-section" class="chart-panel hidden">
+          <h2>Principal vs. Interest by Year</h2>
+          <div class="chart-tabs">
+            <button id="chart-original" class="btn-toggle active">
+              Original
+            </button>
+            <button id="chart-adjusted" class="btn-toggle">With Extras</button>
+          </div>
+          <div class="chart-container">
+            <div class="chart-y-axis" id="adv-chart-y-axis"></div>
+            <div class="chart-bars" id="adv-chart-bars"></div>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"
+              ><span class="legend-color legend-principal"></span>
+              Principal</span
+            >
+            <span class="legend-item"
+              ><span class="legend-color legend-interest"></span> Interest</span
+            >
+          </div>
+        </section>
+
+        <!-- Amortization Table -->
+        <section id="adv-amortization-section" class="table-panel hidden">
+          <h2>Amortization Schedule</h2>
+          <div class="table-controls">
+            <div>
+              <button id="adv-view-monthly" class="btn-toggle active">
+                Monthly
+              </button>
+              <button id="adv-view-yearly" class="btn-toggle">Yearly</button>
+            </div>
+            <div>
+              <button id="adv-table-original" class="btn-toggle active">
+                Original
+              </button>
+              <button id="adv-table-adjusted" class="btn-toggle">
+                With Extras
+              </button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table id="adv-amortization-table">
+              <thead>
+                <tr>
+                  <th id="adv-period-header">Month</th>
+                  <th>Payment</th>
+                  <th>Extra</th>
+                  <th>Principal</th>
+                  <th>Interest</th>
+                  <th>Balance</th>
+                </tr>
+              </thead>
+              <tbody id="adv-amortization-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script src="../js/loan-advanced.js"></script>
+  </body>
+</html>
