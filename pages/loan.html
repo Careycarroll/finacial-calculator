@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loan Calculator | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="../index.html">← Back to Home</a>
+      </nav>
+
+      <header>
+        <h1>🏦 Loan Calculator</h1>
+        <p class="tagline">
+          Calculate payments, total interest, and view your amortization
+          schedule.
+        </p>
+      </header>
+
+      <main>
+        <!-- Input Form -->
+        <section class="calc-form">
+          <div class="form-group">
+            <label for="loan-amount">Loan Amount ($)</label>
+            <input
+              type="number"
+              id="loan-amount"
+              placeholder="e.g. 250000"
+              min="0"
+              step="any"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="interest-rate">Annual Interest Rate (%)</label>
+            <input
+              type="number"
+              id="interest-rate"
+              placeholder="e.g. 6.5"
+              min="0"
+              step="any"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="loan-term">Loan Term (Years)</label>
+            <input
+              type="number"
+              id="loan-term"
+              placeholder="e.g. 30"
+              min="1"
+              step="1"
+            />
+          </div>
+
+          <button id="calculate-btn" class="btn-primary">Calculate</button>
+        </section>
+
+        <!-- Results Summary -->
+        <section id="results" class="results-panel hidden">
+          <h2>Summary</h2>
+          <div class="results-grid">
+            <div class="result-item">
+              <span class="result-label">Monthly Payment</span>
+              <span id="monthly-payment" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Total Principal</span>
+              <span id="total-principal" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Total Interest</span>
+              <span id="total-interest" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Total Cost</span>
+              <span id="total-cost" class="result-value">—</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Stacked Bar Chart -->
+        <section id="chart-section" class="chart-panel hidden">
+          <h2>Principal vs. Interest by Year</h2>
+          <div class="chart-container">
+            <div class="chart-y-axis" id="chart-y-axis"></div>
+            <div class="chart-bars" id="chart-bars"></div>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"
+              ><span class="legend-color legend-principal"></span>
+              Principal</span
+            >
+            <span class="legend-item"
+              ><span class="legend-color legend-interest"></span> Interest</span
+            >
+          </div>
+        </section>
+
+        <!-- Amortization Table -->
+        <section id="amortization-section" class="table-panel hidden">
+          <h2>Amortization Schedule</h2>
+          <div class="table-controls">
+            <button id="view-monthly" class="btn-toggle active">Monthly</button>
+            <button id="view-yearly" class="btn-toggle">Yearly</button>
+          </div>
+          <div class="table-wrapper">
+            <table id="amortization-table">
+              <thead>
+                <tr>
+                  <th id="period-header">Month</th>
+                  <th>Payment</th>
+                  <th>Principal</th>
+                  <th>Interest</th>
+                  <th>Balance</th>
+                </tr>
+              </thead>
+              <tbody id="amortization-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script src="../js/loan.js"></script>
+  </body>
+</html>

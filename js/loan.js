@@ -1,0 +1,248 @@
+// ===== DOM ELEMENTS =====
+const calculateBtn = document.getElementById("calculate-btn");
+const resultsSection = document.getElementById("results");
+const chartSection = document.getElementById("chart-section");
+const amortizationSection = document.getElementById("amortization-section");
+const viewMonthlyBtn = document.getElementById("view-monthly");
+const viewYearlyBtn = document.getElementById("view-yearly");
+
+// Store the schedule globally so we can toggle between monthly/yearly
+let monthlySchedule = [];
+let yearlySchedule = [];
+
+// ===== EVENT LISTENERS =====
+calculateBtn.addEventListener("click", handleCalculate);
+viewMonthlyBtn.addEventListener("click", () => switchView("monthly"));
+viewYearlyBtn.addEventListener("click", () => switchView("yearly"));
+
+// Allow Enter key to trigger calculation
+document.querySelectorAll(".calc-form input").forEach((input) => {
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleCalculate();
+  });
+});
+
+// ===== MAIN CALCULATION =====
+function handleCalculate() {
+  // Grab inputs
+  const principal = parseFloat(document.getElementById("loan-amount").value);
+  const annualRate = parseFloat(document.getElementById("interest-rate").value);
+  const termYears = parseInt(document.getElementById("loan-term").value);
+
+  // Validate
+  if (!principal || !annualRate || !termYears) {
+    alert("Please fill in all fields with valid numbers.");
+    return;
+  }
+
+  if (principal <= 0 || annualRate <= 0 || termYears <= 0) {
+    alert("All values must be greater than zero.");
+    return;
+  }
+
+  // Calculate
+  const monthlyRate = annualRate / 100 / 12;
+  const totalMonths = termYears * 12;
+
+  // Monthly payment formula: M = P * [r(1+r)^n] / [(1+r)^n - 1]
+  const monthlyPayment =
+    (principal * (monthlyRate * Math.pow(1 + monthlyRate, totalMonths))) /
+    (Math.pow(1 + monthlyRate, totalMonths) - 1);
+
+  // Build amortization schedule
+  monthlySchedule = buildMonthlySchedule(
+    principal,
+    monthlyRate,
+    totalMonths,
+    monthlyPayment,
+  );
+  yearlySchedule = buildYearlySchedule(monthlySchedule);
+
+  const totalCost = monthlyPayment * totalMonths;
+  const totalInterest = totalCost - principal;
+
+  // Display results
+  displaySummary(monthlyPayment, principal, totalInterest, totalCost);
+  displayChart(yearlySchedule);
+  displayTable(monthlySchedule, "monthly");
+
+  // Show all sections
+  resultsSection.classList.remove("hidden");
+  chartSection.classList.remove("hidden");
+  amortizationSection.classList.remove("hidden");
+
+  // Scroll to results
+  resultsSection.scrollIntoView({ behavior: "smooth" });
+}
+
+// ===== BUILD SCHEDULES =====
+function buildMonthlySchedule(
+  principal,
+  monthlyRate,
+  totalMonths,
+  monthlyPayment,
+) {
+  const schedule = [];
+  let balance = principal;
+
+  for (let month = 1; month <= totalMonths; month++) {
+    const interestPayment = balance * monthlyRate;
+    const principalPayment = monthlyPayment - interestPayment;
+    balance -= principalPayment;
+
+    // Prevent floating point issues on the last payment
+    if (balance < 0) balance = 0;
+
+    schedule.push({
+      period: month,
+      payment: monthlyPayment,
+      principal: principalPayment,
+      interest: interestPayment,
+      balance: balance,
+    });
+  }
+
+  return schedule;
+}
+
+function buildYearlySchedule(monthly) {
+  const yearly = [];
+  let yearPrincipal = 0;
+  let yearInterest = 0;
+  let yearPayment = 0;
+
+  for (let i = 0; i < monthly.length; i++) {
+    yearPrincipal += monthly[i].principal;
+    yearInterest += monthly[i].interest;
+    yearPayment += monthly[i].payment;
+
+    // End of year or last month
+    if ((i + 1) % 12 === 0 || i === monthly.length - 1) {
+      yearly.push({
+        period: yearly.length + 1,
+        payment: yearPayment,
+        principal: yearPrincipal,
+        interest: yearInterest,
+        balance: monthly[i].balance,
+      });
+      yearPrincipal = 0;
+      yearInterest = 0;
+      yearPayment = 0;
+    }
+  }
+
+  return yearly;
+}
+
+// ===== DISPLAY FUNCTIONS =====
+function formatCurrency(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function displaySummary(monthlyPayment, principal, totalInterest, totalCost) {
+  document.getElementById("monthly-payment").textContent =
+    formatCurrency(monthlyPayment);
+  document.getElementById("total-principal").textContent =
+    formatCurrency(principal);
+  document.getElementById("total-interest").textContent =
+    formatCurrency(totalInterest);
+  document.getElementById("total-cost").textContent = formatCurrency(totalCost);
+}
+
+function displayChart(yearly) {
+  const chartBars = document.getElementById("chart-bars");
+  const chartYAxis = document.getElementById("chart-y-axis");
+
+  // Find the max total (principal + interest) for scaling
+  const maxTotal = Math.max(...yearly.map((y) => y.principal + y.interest));
+
+  // Build Y-axis labels
+  chartYAxis.innerHTML = "";
+  const steps = 5;
+  for (let i = steps; i >= 0; i--) {
+    const label = document.createElement("span");
+    const value = (maxTotal / steps) * i;
+    label.textContent =
+      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
+    chartYAxis.appendChild(label);
+  }
+
+  // Build bars
+  chartBars.innerHTML = "";
+  yearly.forEach((year) => {
+    const total = year.principal + year.interest;
+    const totalHeight = (total / maxTotal) * 100;
+    const principalHeight = (year.principal / total) * totalHeight;
+    const interestHeight = (year.interest / total) * totalHeight;
+
+    const group = document.createElement("div");
+    group.className = "bar-group";
+
+    const tooltip = document.createElement("div");
+    tooltip.className = "bar-tooltip";
+    tooltip.innerHTML = `<strong>Year ${year.period}</strong><br>Principal: ${formatCurrency(year.principal)}<br>Interest: ${formatCurrency(year.interest)}`;
+
+    const stack = document.createElement("div");
+    stack.className = "bar-stack";
+    stack.style.height = `${totalHeight}%`;
+
+    const interestBar = document.createElement("div");
+    interestBar.className = "bar-interest";
+    interestBar.style.height = `${interestHeight}%`;
+
+    const principalBar = document.createElement("div");
+    principalBar.className = "bar-principal";
+    principalBar.style.height = `${principalHeight}%`;
+
+    // Interest on top, principal on bottom
+    stack.appendChild(interestBar);
+    stack.appendChild(principalBar);
+
+    const label = document.createElement("div");
+    label.className = "bar-label";
+    label.textContent = year.period;
+
+    group.appendChild(tooltip);
+    group.appendChild(stack);
+    group.appendChild(label);
+    chartBars.appendChild(group);
+  });
+}
+
+function displayTable(schedule, view) {
+  const tbody = document.getElementById("amortization-body");
+  const periodHeader = document.getElementById("period-header");
+
+  periodHeader.textContent = view === "monthly" ? "Month" : "Year";
+  tbody.innerHTML = "";
+
+  schedule.forEach((row) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.period}</td>
+      <td>${formatCurrency(row.payment)}</td>
+      <td>${formatCurrency(row.principal)}</td>
+      <td>${formatCurrency(row.interest)}</td>
+      <td>${formatCurrency(row.balance)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== VIEW TOGGLE =====
+function switchView(view) {
+  if (view === "monthly") {
+    viewMonthlyBtn.classList.add("active");
+    viewYearlyBtn.classList.remove("active");
+    displayTable(monthlySchedule, "monthly");
+  } else {
+    viewYearlyBtn.classList.add("active");
+    viewMonthlyBtn.classList.remove("active");
+    displayTable(yearlySchedule, "yearly");
+  }
+}
