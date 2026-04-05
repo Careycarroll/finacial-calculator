@@ -3,10 +3,78 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Financial Calculator</title>
+    <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <h1>Financial Calculator</h1>
-    <p>Coming soon...</p>
+    <div class="container">
+      <header>
+        <h1>Financial Calculator</h1>
+        <p class="tagline">Tools for smarter financial decisions</p>
+      </header>
+
+      <main>
+        <!-- Individual Calculator Cards -->
+        <section class="card-grid">
+          <h2>Calculators</h2>
+          <div class="cards">
+            <a href="pages/loan.html" class="card">
+              <div class="card-icon">🏦</div>
+              <h3>Loan Calculator</h3>
+              <p>
+                Calculate monthly payments, total interest, and view
+                amortization schedules.
+              </p>
+            </a>
+
+            <a href="pages/npv.html" class="card">
+              <div class="card-icon">📊</div>
+              <h3>NPV Calculator</h3>
+              <p>
+                Determine the net present value of a series of future cash
+                flows.
+              </p>
+            </a>
+
+            <a href="pages/pv.html" class="card">
+              <div class="card-icon">💰</div>
+              <h3>PV Calculator</h3>
+              <p>
+                Find the present value of a future sum based on a discount rate.
+              </p>
+            </a>
+
+            <a href="pages/irr.html" class="card">
+              <div class="card-icon">📈</div>
+              <h3>IRR Calculator</h3>
+              <p>
+                Calculate the internal rate of return for an investment's cash
+                flows.
+              </p>
+            </a>
+          </div>
+        </section>
+
+        <!-- FIRE Dashboard Card -->
+        <section class="card-grid">
+          <h2>Retirement Planning</h2>
+          <div class="cards">
+            <a href="pages/fire-dashboard.html" class="card card-wide">
+              <div class="card-icon">🔥</div>
+              <h3>FIRE Dashboard</h3>
+              <p>
+                A comprehensive dashboard for Financial Independence & Retire
+                Early planning — includes FIRE, Coast FIRE, and traditional
+                retirement calculators.
+              </p>
+            </a>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
   </body>
 </html>
