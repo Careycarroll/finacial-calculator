@@ -906,3 +906,60 @@ footer {
   height: 16px;
   cursor: pointer;
 }
+/* ===== MODE TOGGLE ===== */
+.mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ===== ACCENT RESULT VALUE ===== */
+.result-value.accent {
+  color: var(--accent);
+}
+/* ===== COMPARISON WINNER HIGHLIGHT ===== */
+.comparison-column.winner {
+  border-color: var(--accent);
+  background-color: rgba(45, 212, 191, 0.05);
+}
+.comparison-column.winner h3 {
+  color: var(--accent);
+}
+.comparison-column.loser {
+  opacity: 0.6;
+}
+/* ===== TAX SECTION ===== */
+.tax-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.tax-section.form-section-title {
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+.tax-disclaimer {
+  background-color: var(--bg-primary);
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+}
+.tax-disclaimer p {
+  font-size: 0.8rem;
+  color: #f59e0b;
+  line-height: 1.5;
+  margin: 0;
+}
+.tax-indicator {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1.25rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+.tax-negative {
+  color: #f472b6 !important;
+}

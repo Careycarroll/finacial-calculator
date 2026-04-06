@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PV Calculator | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="../index.html">← Back to Home</a>
+      </nav>
+
+      <header>
+        <h1>💰 Present Value Calculator</h1>
+        <p class="tagline">
+          Find out what a future sum or series of payments is worth in today's
+          dollars.
+        </p>
+      </header>
+
+      <main>
+        <!-- Mode Selection -->
+        <section class="calc-form">
+          <h2 class="form-section-title">Calculation Type</h2>
+          <div class="mode-toggle">
+            <button id="mode-lump" class="btn-toggle active">
+              Single Future Sum
+            </button>
+            <button id="mode-annuity" class="btn-toggle">Annuity</button>
+            <button id="mode-compare" class="btn-toggle">
+              Lump Sum vs. Annuity
+            </button>
+          </div>
+        </section>
+
+        <!-- Inputs -->
+        <section class="calc-form">
+          <h2 class="form-section-title">Inputs</h2>
+
+          <!-- Lump Sum Input -->
+          <div id="lump-fields">
+            <div class="form-group">
+              <label for="pv-future-value">Future Value ($)</label>
+              <input
+                type="number"
+                id="pv-future-value"
+                placeholder="e.g. 100000"
+                min="0"
+                step="any"
+              />
+              <span class="form-hint"
+                >The amount you expect to receive in the future.</span
+              >
+            </div>
+          </div>
+
+          <!-- Annuity Input -->
+          <div id="annuity-fields" class="hidden">
+            <div class="form-group">
+              <label for="pv-payment">Payment per Period ($)</label>
+              <input
+                type="number"
+                id="pv-payment"
+                placeholder="e.g. 5000"
+                min="0"
+                step="any"
+              />
+              <span class="form-hint"
+                >The equal payment received each period.</span
+              >
+            </div>
+          </div>
+
+          <!-- Compare Input -->
+          <!-- Compare Input -->
+          <div id="compare-fields" class="hidden">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pv-compare-lump">Lump Sum Offered ($)</label>
+                <input
+                  type="number"
+                  id="pv-compare-lump"
+                  placeholder="e.g. 500000"
+                  min="0"
+                  step="any"
+                />
+                <span class="form-hint"
+                  >The one-time amount offered today.</span
+                >
+              </div>
+              <div class="form-group">
+                <label for="pv-compare-payment"
+                  >Annuity Payment per Period ($)</label
+                >
+                <input
+                  type="number"
+                  id="pv-compare-payment"
+                  placeholder="e.g. 3000"
+                  min="0"
+                  step="any"
+                />
+                <span class="form-hint">The recurring payment amount.</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="pv-compare-years">Annuity Duration (Years)</label>
+              <input
+                type="number"
+                id="pv-compare-years"
+                placeholder="e.g. 25"
+                min="1"
+                step="1"
+              />
+              <span class="form-hint"
+                >How many years the annuity payments last.</span
+              >
+            </div>
+
+            <!-- Tax Adjustment -->
+            <div class="tax-section">
+              <div class="toggle-header">
+                <h3 class="form-section-title">Tax Adjustment</h3>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="pv-tax-toggle" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <p class="form-hint">
+                Enable to see how taxes affect the comparison. Enter your
+                estimated effective tax rates.
+              </p>
+
+              <div id="pv-tax-fields" class="conditional-fields hidden">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="pv-lump-tax-rate">Lump Sum Tax Rate (%)</label>
+                    <input
+                      type="number"
+                      id="pv-lump-tax-rate"
+                      placeholder="e.g. 33"
+                      min="0"
+                      max="100"
+                      step="any"
+                    />
+                    <span class="form-hint"
+                      >Total tax on the lump sum (federal + state). Enter 0 if
+                      rolling to an IRA.</span
+                    >
+                  </div>
+                  <div class="form-group">
+                    <label for="pv-annuity-tax-rate"
+                      >Annuity Tax Rate (%)</label
+                    >
+                    <input
+                      type="number"
+                      id="pv-annuity-tax-rate"
+                      placeholder="e.g. 22"
+                      min="0"
+                      max="100"
+                      step="any"
+                    />
+                    <span class="form-hint"
+                      >Effective tax rate on each annuity payment.</span
+                    >
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="pv-investment-tax-rate"
+                    >Investment Gains Tax Rate (%)</label
+                  >
+                  <input
+                    type="number"
+                    id="pv-investment-tax-rate"
+                    placeholder="e.g. 15"
+                    min="0"
+                    max="100"
+                    step="any"
+                  />
+                  <span class="form-hint"
+                    >Tax on investment returns if you invest the lump sum (e.g.,
+                    15% for long-term capital gains, 0% for tax-deferred
+                    accounts).</span
+                  >
+                </div>
+                <div class="tax-disclaimer">
+                  <p>
+                    ⚠️ These are simplified estimates. Tax treatment varies
+                    significantly by payout type (pension, lottery, settlement),
+                    state, and individual circumstances. Consult a tax
+                    professional for your specific situation.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shared Inputs -->
+          <div id="shared-fields">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pv-rate">Discount Rate (%)</label>
+                <input
+                  type="number"
+                  id="pv-rate"
+                  placeholder="e.g. 7"
+                  min="0"
+                  step="any"
+                />
+                <span class="form-hint"
+                  >Annual rate used to discount future cash flows.</span
+                >
+              </div>
+              <div class="form-group">
+                <label for="pv-compounding">Compounding</label>
+                <select id="pv-compounding">
+                  <option value="1">Annually</option>
+                  <option value="2">Semi-Annually</option>
+                  <option value="4">Quarterly</option>
+                  <option value="12" selected>Monthly</option>
+                  <option value="365">Daily</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="years-row" class="form-row">
+              <div class="form-group">
+                <label for="pv-periods">Number of Years</label>
+                <input
+                  type="number"
+                  id="pv-periods"
+                  placeholder="e.g. 10"
+                  min="1"
+                  step="1"
+                />
+              </div>
+              <div class="form-group"></div>
+            </div>
+          </div>
+
+          <button id="pv-calculate-btn" class="btn-primary">
+            Calculate Present Value
+          </button>
+        </section>
+
+        <!-- Results -->
+        <section id="pv-results" class="results-panel hidden">
+          <h2>Results</h2>
+          <div id="pv-standard-results" class="results-grid">
+            <div class="result-item">
+              <span class="result-label">Present Value</span>
+              <span id="pv-result" class="result-value accent">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label" id="pv-fv-label">Future Value</span>
+              <span id="pv-fv-display" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Total Interest (Discount)</span>
+              <span id="pv-discount" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Effective Rate per Period</span>
+              <span id="pv-effective-rate" class="result-value">—</span>
+            </div>
+          </div>
+
+          <!-- Compare Results -->
+          <!-- Compare Results -->
+          <div id="pv-compare-results" class="hidden">
+            <!-- Tax indicator -->
+            <div id="pv-tax-indicator" class="tax-indicator hidden">
+              <span>📊 Showing after-tax values</span>
+            </div>
+
+            <div class="comparison-grid">
+              <div class="comparison-column" id="pv-lump-column">
+                <h3>💵 Lump Sum</h3>
+                <div class="comparison-item">
+                  <span class="result-label">Amount Offered</span>
+                  <span id="pv-compare-lump-amount" class="result-value"
+                    >—</span
+                  >
+                </div>
+                <div id="pv-lump-tax-row" class="comparison-item hidden">
+                  <span class="result-label">Taxes Owed</span>
+                  <span
+                    id="pv-compare-lump-tax"
+                    class="result-value tax-negative"
+                    >—</span
+                  >
+                </div>
+                <div id="pv-lump-after-tax-row" class="comparison-item hidden">
+                  <span class="result-label">After-Tax Amount</span>
+                  <span id="pv-compare-lump-after-tax" class="result-value"
+                    >—</span
+                  >
+                </div>
+                <div class="comparison-item">
+                  <span class="result-label">Present Value</span>
+                  <span id="pv-compare-lump-pv" class="result-value">—</span>
+                </div>
+              </div>
+              <div class="comparison-column" id="pv-annuity-column">
+                <h3>📅 Annuity</h3>
+                <div class="comparison-item">
+                  <span class="result-label">Total Payments</span>
+                  <span id="pv-compare-annuity-total" class="result-value"
+                    >—</span
+                  >
+                </div>
+                <div id="pv-annuity-tax-row" class="comparison-item hidden">
+                  <span class="result-label">Total Taxes</span>
+                  <span
+                    id="pv-compare-annuity-tax"
+                    class="result-value tax-negative"
+                    >—</span
+                  >
+                </div>
+                <div
+                  id="pv-annuity-after-tax-row"
+                  class="comparison-item hidden"
+                >
+                  <span class="result-label">After-Tax Total</span>
+                  <span id="pv-compare-annuity-after-tax" class="result-value"
+                    >—</span
+                  >
+                </div>
+                <div class="comparison-item">
+                  <span class="result-label">Present Value</span>
+                  <span id="pv-compare-annuity-pv" class="result-value">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="savings-banner" id="pv-verdict-banner">
+              <div class="savings-item">
+                <span class="savings-label">Better Option</span>
+                <span id="pv-verdict" class="savings-value">—</span>
+              </div>
+              <div class="savings-item">
+                <span class="savings-label">Advantage</span>
+                <span id="pv-advantage" class="savings-value">—</span>
+              </div>
+              <div class="savings-item">
+                <span class="savings-label">Breakeven Rate</span>
+                <span id="pv-breakeven" class="savings-value">—</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Breakdown Chart -->
+        <section id="pv-chart-section" class="chart-panel hidden">
+          <h2>Value Over Time</h2>
+          <div class="chart-container">
+            <div class="chart-y-axis" id="pv-chart-y-axis"></div>
+            <div class="chart-bars" id="pv-chart-bars"></div>
+          </div>
+          <
+          <div class="chart-legend" id="pv-chart-legend">
+            <span class="legend-item"
+              ><span class="legend-color legend-principal"></span> Present Value
+              Portion</span
+            >
+            <span class="legend-item"
+              ><span class="legend-color legend-interest"></span> Interest
+              (Discount)</span
+            >
+          </div>
+        </section>
+
+        <!-- Breakdown Table -->
+        <section id="pv-table-section" class="table-panel hidden">
+          <h2>Year-by-Year Breakdown</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Discount Factor</th>
+                  <th id="pv-table-value-header">Present Value</th>
+                  <th>Interest Portion</th>
+                </tr>
+              </thead>
+              <tbody id="pv-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script src="../js/pv.js"></script>
+  </body>
+</html>
