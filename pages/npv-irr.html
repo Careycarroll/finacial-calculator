@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NPV & IRR Calculator | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="../index.html">← Back to Home</a>
+      </nav>
+
+      <header>
+        <h1>📊 NPV & IRR Calculator</h1>
+        <p class="tagline">
+          Analyze investments with net present value, internal rate of return,
+          and sensitivity analysis.
+        </p>
+      </header>
+
+      <main>
+        <!-- Mode Selection -->
+        <section class="calc-form">
+          <h2 class="form-section-title">Analysis Mode</h2>
+          <div class="mode-toggle">
+            <button id="mode-single" class="btn-toggle active">
+              Single Investment
+            </button>
+            <button id="mode-compare" class="btn-toggle">
+              Compare Two Investments
+            </button>
+          </div>
+        </section>
+
+        <!-- Single Investment -->
+        <div id="single-mode">
+          <section class="calc-form">
+            <h2 class="form-section-title">Investment Setup</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="npv-initial">Initial Investment ($)</label>
+                <input
+                  type="number"
+                  id="npv-initial"
+                  placeholder="e.g. 200000"
+                  min="0"
+                  step="any"
+                />
+                <span class="form-hint"
+                  >The upfront cost (cash outflow at time 0).</span
+                >
+              </div>
+              <div class="form-group">
+                <label for="npv-rate">Discount Rate (%)</label>
+                <input
+                  type="number"
+                  id="npv-rate"
+                  placeholder="e.g. 8"
+                  min="0"
+                  step="any"
+                />
+                <span class="form-hint">Your required rate of return.</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="npv-compounding">Compounding</label>
+                <select id="npv-compounding">
+                  <option value="1" selected>Annually</option>
+                  <option value="2">Semi-Annually</option>
+                  <option value="4">Quarterly</option>
+                  <option value="12">Monthly</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="npv-period-type">Period Type</label>
+                <select id="npv-period-type">
+                  <option value="years" selected>Years</option>
+                  <option value="months">Months</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section class="calc-form">
+            <h2 class="form-section-title">Cash Flows</h2>
+
+            <!-- Quick Fill -->
+            <div class="quick-fill">
+              <label>Quick Fill</label>
+              <span class="form-hint"
+                >Bulk-add equal cash flows across a range of periods.</span
+              >
+              <div class="quick-fill-row">
+                <input
+                  type="number"
+                  id="qf-amount"
+                  placeholder="Amount ($)"
+                  step="any"
+                  class="input-amount"
+                />
+                <span class="range-separator">for periods</span>
+                <input
+                  type="number"
+                  id="qf-from"
+                  placeholder="From"
+                  min="1"
+                  step="1"
+                  class="input-small"
+                />
+                <span class="range-separator">to</span>
+                <input
+                  type="number"
+                  id="qf-to"
+                  placeholder="To"
+                  min="1"
+                  step="1"
+                  class="input-small"
+                />
+                <button id="qf-add-btn" class="btn-add">Fill</button>
+              </div>
+            </div>
+
+            <!-- Cash Flow List -->
+            <div class="cashflow-list" id="cashflow-list">
+              <!-- Dynamically populated -->
+            </div>
+            <button id="add-period-btn" class="btn-secondary">
+              + Add Period
+            </button>
+          </section>
+
+          <button id="npv-calculate-btn" class="btn-primary">
+            Calculate NPV & IRR
+          </button>
+        </div>
+
+        <!-- Compare Mode -->
+        <div id="compare-mode" class="hidden">
+          <!-- Investment A -->
+          <section class="calc-form">
+            <h2 class="form-section-title">Investment A</h2>
+            <div class="form-group">
+              <label for="npv-a-name">Name (optional)</label>
+              <input
+                type="text"
+                id="npv-a-name"
+                placeholder="e.g. Rental Property"
+              />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="npv-a-initial">Initial Investment ($)</label>
+                <input
+                  type="number"
+                  id="npv-a-initial"
+                  placeholder="e.g. 200000"
+                  min="0"
+                  step="any"
+                />
+              </div>
+              <div class="form-group">
+                <label for="npv-a-rate">Discount Rate (%)</label>
+                <input
+                  type="number"
+                  id="npv-a-rate"
+                  placeholder="e.g. 8"
+                  min="0"
+                  step="any"
+                />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="npv-a-compounding">Compounding</label>
+                <select id="npv-a-compounding">
+                  <option value="1" selected>Annually</option>
+                  <option value="2">Semi-Annually</option>
+                  <option value="4">Quarterly</option>
+                  <option value="12">Monthly</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="npv-a-period-type">Period Type</label>
+                <select id="npv-a-period-type">
+                  <option value="years" selected>Years</option>
+                  <option value="months">Months</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="quick-fill">
+              <label>Quick Fill</label>
+              <div class="quick-fill-row">
+                <input
+                  type="number"
+                  id="qf-a-amount"
+                  placeholder="Amount ($)"
+                  step="any"
+                  class="input-amount"
+                />
+                <span class="range-separator">periods</span>
+                <input
+                  type="number"
+                  id="qf-a-from"
+                  placeholder="From"
+                  min="1"
+                  step="1"
+                  class="input-small"
+                />
+                <span class="range-separator">to</span>
+                <input
+                  type="number"
+                  id="qf-a-to"
+                  placeholder="To"
+                  min="1"
+                  step="1"
+                  class="input-small"
+                />
+                <button id="qf-a-add-btn" class="btn-add">Fill</button>
+              </div>
+            </div>
+            <div class="cashflow-list" id="cashflow-list-a"></div>
+            <button id="add-period-a-btn" class="btn-secondary">
+              + Add Period
+            </button>
+          </section>
+
+          <!-- Investment B -->
+          <section class="calc-form">
+            <h2 class="form-section-title">Investment B</h2>
+            <div class="form-group">
+              <label for="npv-b-name">Name (optional)</label>
+              <input
+                type="text"
+                id="npv-b-name"
+                placeholder="e.g. Index Fund"
+              />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="npv-b-initial">Initial Investment ($)</label>
+                <input
+                  type="number"
+                  id="npv-b-initial"
+                  placeholder="e.g. 200000"
+                  min="0"
+                  step="any"
+                />
+              </div>
+              <div class="form-group">
+                <label for="npv-b-rate">Discount Rate (%)</label>
+                <input
+                  type="number"
+                  id="npv-b-rate"
+                  placeholder="e.g. 8"
+                  min="0"
+                  step="any"
+                />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="npv-b-compounding">Compounding</label>
+                <select id="npv-b-compounding">
+                  <option value="1" selected>Annually</option>
+                  <option value="2">Semi-Annually</option>
+                  <option value="4">Quarterly</option>
+                  <option value="12">Monthly</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="npv-b-period-type">Period Type</label>
+                <select id="npv-b-period-type">
+                  <option value="years" selected>Years</option>
+                  <option value="months">Months</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="quick-fill">
+              <label>Quick Fill</label>
+              <div class="quick-fill-row">
+                <input
+                  type="number"
+                  id="qf-b-amount"
+                  placeholder="Amount ($)"
+                  step="any"
+                  class="input-amount"
+                />
+                <span class="range-separator">periods</span>
+                <input
+                  type="number"
+                  id="qf-b-from"
+                  placeholder="From"
+                  min="1"
+                  step="1"
+                  class="input-small"
+                />
+                <span class="range-separator">to</span>
+                <input
+                  type="number"
+                  id="qf-b-to"
+                  placeholder="To"
+                  min="1"
+                  step="1"
+                  class="input-small"
+                />
+                <button id="qf-b-add-btn" class="btn-add">Fill</button>
+              </div>
+            </div>
+            <div class="cashflow-list" id="cashflow-list-b"></div>
+            <button id="add-period-b-btn" class="btn-secondary">
+              + Add Period
+            </button>
+          </section>
+
+          <button id="npv-compare-btn" class="btn-primary">
+            Compare Investments
+          </button>
+        </div>
+
+        <!-- Results: Single -->
+        <section id="npv-results" class="results-panel hidden">
+          <h2>Results</h2>
+          <div class="results-grid results-grid-3">
+            <div class="result-item">
+              <span class="result-label">Net Present Value</span>
+              <span id="npv-result" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Internal Rate of Return</span>
+              <span id="irr-result" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Verdict</span>
+              <span id="npv-verdict" class="result-value">—</span>
+            </div>
+          </div>
+          <div class="results-grid">
+            <div class="result-item">
+              <span class="result-label">Total Cash Inflows</span>
+              <span id="npv-inflows" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Total Cash Outflows</span>
+              <span id="npv-outflows" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Profitability Index</span>
+              <span id="npv-pi" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Payback Period</span>
+              <span id="npv-payback" class="result-value">—</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Results: Compare -->
+        <section id="npv-compare-results" class="results-panel hidden">
+          <h2>Comparison Results</h2>
+          <div class="comparison-grid">
+            <div class="comparison-column" id="npv-col-a">
+              <h3 id="npv-col-a-title">Investment A</h3>
+              <div class="comparison-item">
+                <span class="result-label">NPV</span>
+                <span id="npv-a-result" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">IRR</span>
+                <span id="irr-a-result" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">Profitability Index</span>
+                <span id="npv-a-pi" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">Payback Period</span>
+                <span id="npv-a-payback" class="result-value">—</span>
+              </div>
+            </div>
+            <div class="comparison-column" id="npv-col-b">
+              <h3 id="npv-col-b-title">Investment B</h3>
+              <div class="comparison-item">
+                <span class="result-label">NPV</span>
+                <span id="npv-b-result" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">IRR</span>
+                <span id="irr-b-result" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">Profitability Index</span>
+                <span id="npv-b-pi" class="result-value">—</span>
+              </div>
+              <div class="comparison-item">
+                <span class="result-label">Payback Period</span>
+                <span id="npv-b-payback" class="result-value">—</span>
+              </div>
+            </div>
+          </div>
+          <div class="savings-banner">
+            <div class="savings-item">
+              <span class="savings-label">Better Investment</span>
+              <span id="npv-compare-winner" class="savings-value">—</span>
+            </div>
+            <div class="savings-item">
+              <span class="savings-label">NPV Advantage</span>
+              <span id="npv-compare-advantage" class="savings-value">—</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sensitivity Table -->
+        <section id="npv-sensitivity-section" class="table-panel hidden">
+          <h2>Sensitivity Analysis</h2>
+          <p class="form-hint" style="margin-bottom: 1rem">
+            How NPV changes at different discount rates. The IRR is where NPV
+            crosses zero.
+          </p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr id="sensitivity-header"></tr>
+              </thead>
+              <tbody id="sensitivity-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Chart -->
+        <section id="npv-chart-section" class="chart-panel hidden">
+          <h2 id="npv-chart-title">Cash Flows by Period</h2>
+          <div class="chart-container">
+            <div class="chart-y-axis" id="npv-chart-y-axis"></div>
+            <div class="chart-bars" id="npv-chart-bars"></div>
+          </div>
+          <div class="chart-legend" id="npv-chart-legend">
+            <span class="legend-item"
+              ><span class="legend-color legend-principal"></span> Cash
+              Inflow</span
+            >
+            <span class="legend-item"
+              ><span class="legend-color legend-interest"></span> Cash
+              Outflow</span
+            >
+          </div>
+        </section>
+
+        <!-- Breakdown Table -->
+        <section id="npv-table-section" class="table-panel hidden">
+          <h2>Period-by-Period Breakdown</h2>
+          <div id="npv-table-toggles" class="table-controls hidden">
+            <div>
+              <button id="table-show-a" class="btn-toggle active">
+                Investment A
+              </button>
+              <button id="table-show-b" class="btn-toggle">Investment B</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Period</th>
+                  <th>Cash Flow</th>
+                  <th>Discount Factor</th>
+                  <th>Discounted Value</th>
+                  <th>Cumulative NPV</th>
+                </tr>
+              </thead>
+              <tbody id="npv-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script src="../js/npv-irr.js"></script>
+  </body>
+</html>

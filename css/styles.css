@@ -963,3 +963,141 @@ footer {
 .tax-negative {
   color: #f472b6 !important;
 }
+/* ===== QUICK FILL ===== */
+.quick-fill {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.quick-fill > label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+.quick-fill-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.input-small {
+  width: 70px;
+  padding: 0.6rem 0.5rem;
+  font-size: 0.9rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  outline: none;
+  text-align: center;
+}
+.input-small:focus {
+  border-color: var(--accent);
+}
+
+/* ===== CASH FLOW LIST ===== */
+.cashflow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.cashflow-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cashflow-row.period-label {
+  min-width: 70px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.cashflow-row input {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  outline: none;
+}
+.cashflow-row input:focus {
+  border-color: var(--accent);
+}
+.cashflow-row input.negative-flow {
+  border-color: #f472b6;
+  color: #f472b6;
+}
+.cashflow-remove {
+  background: none;
+  border: none;
+  color: #f472b6;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.2s ease;
+}
+.cashflow-remove:hover {
+  color: #fb7185;
+}
+
+/* ===== SECONDARY BUTTON ===== */
+.btn-secondary {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background-color: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-secondary:hover {
+  background-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+/* ===== TEXT INPUT STYLING ===== */
+.form-group input[type="text"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.form-group input[type="text"]:focus {
+  border-color: var(--accent);
+}
+.form-group input[type="text"]::placeholder {
+  color: #475569;
+}
+
+/* ===== SENSITIVITY HIGHLIGHT ===== */
+.sensitivity-positive {
+  color: var(--accent);
+}
+.sensitivity-negative {
+  color: #f472b6;
+}
+.sensitivity-zero {
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+/* ===== NPV VERDICT COLORS ===== */
+.verdict-accept {
+  color: var(--accent) !important;
+}
+.verdict-reject {
+  color: #f472b6 !important;
+}
