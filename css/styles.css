@@ -1101,3 +1101,115 @@ footer {
 .verdict-reject {
   color: #f472b6 !important;
 }
+/* ===== FIRE TABS ===== */
+.fire-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border);
+}
+.fire-tab {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -2px;
+}
+.fire-tab:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}
+.fire-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ===== PROGRESS BARS ===== */
+.progress-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.progress-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.progress-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.progress-text {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.progress-track {
+  width: 100%;
+  height: 24px;
+  background-color: var(--bg-primary);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.8s ease;
+  min-width: 0;
+}
+.coast-fill {
+  background: linear-gradient(90deg, #06b6d4, #2dd4bf);
+}
+.fire-fill {
+  background: linear-gradient(90deg, #f97316, #ef4444);
+}
+
+/* ===== FIRE CHART (Canvas-based) ===== */
+    position: relative;
+    width: 100%;
+    height: 350px;
+    background-color: var(--bg-primary);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+}.fire-chart-container canvas {
+    display: block;
+}
+
+/* ===== FIRE LEGEND COLORS ===== */
+.legend-fire-target {
+  background-color: #ef4444;
+}
+.legend-coast-line {
+  background-color: #f59e0b;
+}
+
+/* ===== RESULTS ACCENT ===== */
+.result-value.accent {
+  color: var(--accent);
+}
+.result-value.positive {
+  color: var(--accent);
+}
+.result-value.negative {
+  color: #f472b6;
+}
+.result-value.achieved {
+  color: var(--accent);
+}
+.result-value.not-achieved {
+  color: #f472b6;
+}

@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FIRE Dashboard | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="../index.html">← Back to Home</a>
+      </nav>
+
+      <header>
+        <h1>🔥 FIRE Dashboard</h1>
+        <p class="tagline">
+          Calculate your path to Financial Independence and find your Coast FIRE
+          number.
+        </p>
+      </header>
+
+      <main>
+        <!-- Shared Profile -->
+        <section class="calc-form">
+          <h2 class="form-section-title">Your Profile</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fire-current-age">Current Age</label>
+              <input
+                type="number"
+                id="fire-current-age"
+                placeholder="e.g. 32"
+                min="18"
+                max="80"
+                step="1"
+              />
+            </div>
+            <div class="form-group">
+              <label for="fire-retire-age">Target Retirement Age</label>
+              <input
+                type="number"
+                id="fire-retire-age"
+                placeholder="e.g. 55"
+                min="25"
+                max="90"
+                step="1"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fire-current-portfolio"
+                >Current Portfolio Value ($)</label
+              >
+              <input
+                type="number"
+                id="fire-current-portfolio"
+                placeholder="e.g. 150000"
+                min="0"
+                step="any"
+              />
+            </div>
+            <div class="form-group">
+              <label for="fire-monthly-contribution"
+                >Monthly Contribution ($)</label
+              >
+              <input
+                type="number"
+                id="fire-monthly-contribution"
+                placeholder="e.g. 2000"
+                min="0"
+                step="any"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fire-annual-return">Expected Annual Return (%)</label>
+              <input
+                type="number"
+                id="fire-annual-return"
+                placeholder="e.g. 7"
+                min="0"
+                max="20"
+                step="any"
+                value="7"
+              />
+            </div>
+            <div class="form-group">
+              <label for="fire-inflation">Expected Inflation Rate (%)</label>
+              <input
+                type="number"
+                id="fire-inflation"
+                placeholder="e.g. 3"
+                min="0"
+                max="10"
+                step="any"
+                value="3"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- Progress Bars -->
+        <section id="fire-progress-section" class="results-panel hidden">
+          <h2>Your Progress</h2>
+          <div class="progress-bars">
+            <div class="progress-item">
+              <div class="progress-header">
+                <span class="progress-label">Coast FIRE</span>
+                <span id="fire-coast-progress-text" class="progress-text"
+                  >—</span
+                >
+              </div>
+              <div class="progress-track">
+                <div
+                  id="fire-coast-progress-bar"
+                  class="progress-fill coast-fill"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+            <div class="progress-item">
+              <div class="progress-header">
+                <span class="progress-label">Full FIRE</span>
+                <span id="fire-full-progress-text" class="progress-text"
+                  >—</span
+                >
+              </div>
+              <div class="progress-track">
+                <div
+                  id="fire-full-progress-bar"
+                  class="progress-fill fire-fill"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab Navigation -->
+        <div class="fire-tabs">
+          <button id="tab-fire-number" class="fire-tab active">
+            🎯 FIRE Number
+          </button>
+          <button id="tab-coast-fire" class="fire-tab">🏖️ Coast FIRE</button>
+        </div>
+
+        <!-- ==================== TAB 1: FIRE NUMBER ==================== -->
+        <div id="fire-number-tab">
+          <section class="calc-form">
+            <h2 class="form-section-title">Retirement Expenses & Income</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="fire-annual-expenses"
+                  >Annual Expenses in Retirement ($)</label
+                >
+                <input
+                  type="number"
+                  id="fire-annual-expenses"
+                  placeholder="e.g. 60000"
+                  min="0"
+                  step="any"
+                />
+                <span class="form-hint"
+                  >What you expect to spend per year in retirement (today's
+                  dollars).</span
+                >
+              </div>
+              <div class="form-group">
+                <label for="fire-withdrawal-rate"
+                  >Safe Withdrawal Rate (%)</label
+                >
+                <input
+                  type="number"
+                  id="fire-withdrawal-rate"
+                  placeholder="e.g. 4"
+                  min="1"
+                  max="10"
+                  step="any"
+                  value="4"
+                />
+                <span class="form-hint"
+                  >The percentage you'll withdraw annually. 4% is the
+                  traditional rule.</span
+                >
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="fire-other-income"
+                  >Other Annual Retirement Income ($)</label
+                >
+                <input
+                  type="number"
+                  id="fire-other-income"
+                  placeholder="e.g. 20000"
+                  min="0"
+                  step="any"
+                />
+                <span class="form-hint"
+                  >Social Security, pension, rental income, etc.</span
+                >
+              </div>
+              <div class="form-group"></div>
+            </div>
+
+            <button id="fire-calculate-btn" class="btn-primary">
+              Calculate FIRE Number
+            </button>
+          </section>
+
+          <!-- FIRE Results -->
+          <section id="fire-number-results" class="results-panel hidden">
+            <h2>Your FIRE Number</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">FIRE Number (Today's $)</span>
+                <span id="fire-number-today" class="result-value accent"
+                  >—</span
+                >
+              </div>
+              <div class="result-item">
+                <span class="result-label">FIRE Number (Future $)</span>
+                <span id="fire-number-future" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Portfolio Must Cover</span>
+                <span id="fire-portfolio-covers" class="result-value">—</span>
+              </div>
+            </div>
+
+            <div class="results-grid">
+              <div class="result-item">
+                <span class="result-label">Years to FIRE (Current Rate)</span>
+                <span id="fire-years-current" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Retirement Age (Current Rate)</span>
+                <span id="fire-retire-age-current" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Monthly Savings Needed</span>
+                <span id="fire-monthly-needed" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Monthly Gap</span>
+                <span id="fire-monthly-gap" class="result-value">—</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Withdrawal Rate Sensitivity -->
+          <section id="fire-sensitivity-section" class="table-panel hidden">
+            <h2>Withdrawal Rate Sensitivity</h2>
+            <p class="form-hint" style="margin-bottom: 1rem">
+              How your FIRE number changes at different withdrawal rates.
+            </p>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Withdrawal Rate</th>
+                    <th>FIRE Number</th>
+                    <th>Monthly Withdrawal</th>
+                    <th>Years to FIRE</th>
+                    <th>Risk Level</th>
+                  </tr>
+                </thead>
+                <tbody id="fire-sensitivity-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- FIRE Projection Chart -->
+          <section id="fire-chart-section" class="chart-panel hidden">
+            <h2>Portfolio Projection</h2>
+            <div class="fire-chart-container">
+              <canvas id="fire-chart-canvas"></canvas>
+            </div>
+            <div class="chart-legend" id="fire-chart-legend">
+              <span class="legend-item"
+                ><span class="legend-color legend-principal"></span> Projected
+                Portfolio</span
+              >
+              <span class="legend-item"
+                ><span class="legend-color legend-fire-target"></span> FIRE
+                Target</span
+              >
+            </div>
+          </section>
+        </div>
+
+        <!-- ==================== TAB 2: COAST FIRE ==================== -->
+        <div id="coast-fire-tab" class="hidden">
+          <section class="calc-form">
+            <h2 class="form-section-title">Coast FIRE Settings</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="coast-fire-number">FIRE Number Target ($)</label>
+                <input
+                  type="number"
+                  id="coast-fire-number"
+                  placeholder="Auto-filled from Tab 1"
+                  min="0"
+                  step="any"
+                />
+                <span class="form-hint"
+                  >Auto-filled from your FIRE Number calculation. You can
+                  override it.</span
+                >
+              </div>
+              <div class="form-group"></div>
+            </div>
+
+            <button id="coast-calculate-btn" class="btn-primary">
+              Calculate Coast FIRE
+            </button>
+          </section>
+
+          <!-- Coast FIRE Results -->
+          <section id="coast-fire-results" class="results-panel hidden">
+            <h2>Coast FIRE Analysis</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Coast FIRE Number</span>
+                <span id="coast-fire-amount" class="result-value accent"
+                  >—</span
+                >
+              </div>
+              <div class="result-item">
+                <span class="result-label">Status</span>
+                <span id="coast-fire-status" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Gap to Coast FIRE</span>
+                <span id="coast-fire-gap" class="result-value">—</span>
+              </div>
+            </div>
+
+            <div class="results-grid">
+              <div class="result-item">
+                <span class="result-label"
+                  >Coast FIRE Age (Current Savings)</span
+                >
+                <span id="coast-fire-age" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label"
+                  >Retirement Age (No More Contributions)</span
+                >
+                <span id="coast-retire-age-no-contrib" class="result-value"
+                  >—</span
+                >
+              </div>
+              <div class="result-item">
+                <span class="result-label"
+                  >Retirement Age (Keep Contributing)</span
+                >
+                <span id="coast-retire-age-with-contrib" class="result-value"
+                  >—</span
+                >
+              </div>
+              <div class="result-item">
+                <span class="result-label"
+                  >Extra Monthly to Coast by Target</span
+                >
+                <span id="coast-extra-monthly" class="result-value">—</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Coast FIRE Chart -->
+          <section id="coast-chart-section" class="chart-panel hidden">
+            <h2>Coast FIRE Projection</h2>
+            <div class="fire-chart-container">
+              <canvas id="coast-chart-canvas"></canvas>
+            </div>
+            <div class="chart-legend" id="coast-chart-legend">
+              <span class="legend-item"
+                ><span class="legend-color legend-principal"></span> Portfolio
+                (With Contributions)</span
+              >
+              <span class="legend-item"
+                ><span class="legend-color legend-coast-line"></span> Coast FIRE
+                Threshold</span
+              >
+              <span class="legend-item"
+                ><span class="legend-color legend-fire-target"></span> FIRE
+                Target</span
+              >
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script src="../js/fire.js"></script>
+  </body>
+</html>
