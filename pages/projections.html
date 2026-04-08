@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Investment Projections | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="../index.html">← Back to Home</a>
+      </nav>
+
+      <header>
+        <h1>📈 Investment Projections</h1>
+        <p class="tagline">
+          See how your portfolio could grow across multiple scenarios with S&P
+          500 benchmarking.
+        </p>
+      </header>
+
+      <main>
+        <!-- Setup -->
+        <section class="calc-form">
+          <h2 class="form-section-title">Portfolio Setup</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="proj-portfolio">Current Portfolio Value ($)</label>
+              <input
+                type="number"
+                id="proj-portfolio"
+                placeholder="e.g. 100000"
+                min="0"
+                step="any"
+              />
+            </div>
+            <div class="form-group">
+              <label for="proj-monthly">Monthly Contribution ($)</label>
+              <input
+                type="number"
+                id="proj-monthly"
+                placeholder="e.g. 1500"
+                min="0"
+                step="any"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="proj-contrib-increase"
+                >Annual Contribution Increase (%)</label
+              >
+              <input
+                type="number"
+                id="proj-contrib-increase"
+                placeholder="e.g. 3"
+                min="0"
+                max="20"
+                step="any"
+                value="0"
+              />
+              <span class="form-hint"
+                >If your contributions grow each year (e.g., annual
+                raises).</span
+              >
+            </div>
+            <div class="form-group">
+              <label for="proj-horizon">Time Horizon (years)</label>
+              <input
+                type="number"
+                id="proj-horizon"
+                placeholder="e.g. 30"
+                min="1"
+                max="60"
+                step="1"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="proj-return">Expected Annual Return (%)</label>
+              <input
+                type="number"
+                id="proj-return"
+                placeholder="e.g. 7"
+                min="0"
+                max="30"
+                step="any"
+                value="7"
+              />
+            </div>
+            <div class="form-group">
+              <label for="proj-deviation">Deviation Range (± %)</label>
+              <input
+                type="number"
+                id="proj-deviation"
+                placeholder="e.g. 3"
+                min="0.5"
+                max="10"
+                step="any"
+                value="3"
+              />
+              <span class="form-hint"
+                >Creates scenarios above and below your expected return.</span
+              >
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="proj-inflation">Inflation Rate (%)</label>
+              <input
+                type="number"
+                id="proj-inflation"
+                placeholder="e.g. 3"
+                min="0"
+                max="10"
+                step="any"
+                value="3"
+              />
+            </div>
+            <div class="form-group">
+              <label for="proj-sp500">Show S&P 500 Benchmark</label>
+              <select id="proj-sp500">
+                <option value="yes" selected>Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Milestones -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="proj-milestone-1">Milestone 1 ($)</label>
+              <input
+                type="number"
+                id="proj-milestone-1"
+                placeholder="e.g. 500000"
+                min="0"
+                step="any"
+              />
+            </div>
+            <div class="form-group">
+              <label for="proj-milestone-2">Milestone 2 ($)</label>
+              <input
+                type="number"
+                id="proj-milestone-2"
+                placeholder="e.g. 1000000"
+                min="0"
+                step="any"
+              />
+            </div>
+            <div class="form-group">
+              <label for="proj-milestone-3">Milestone 3 ($)</label>
+              <input
+                type="number"
+                id="proj-milestone-3"
+                placeholder="e.g. 2000000"
+                min="0"
+                step="any"
+              />
+            </div>
+          </div>
+
+          <button id="proj-calculate-btn" class="btn-primary">
+            Calculate Projections
+          </button>
+        </section>
+
+        <!-- Results Summary -->
+        <section id="proj-results" class="table-panel hidden">
+          <h2>Scenario Summary</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Scenario</th>
+                  <th>Annual Return</th>
+                  <th>Final Value</th>
+                  <th>Total Contributed</th>
+                  <th>Investment Growth</th>
+                  <th>Growth Multiple</th>
+                </tr>
+              </thead>
+              <tbody id="proj-results-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Projection Chart -->
+        <section id="proj-chart-section" class="chart-panel hidden">
+          <h2>Portfolio Projection</h2>
+          <div class="proj-chart-controls">
+            <button id="proj-nominal-btn" class="btn-toggle active">
+              Nominal
+            </button>
+            <button id="proj-real-btn" class="btn-toggle">
+              Inflation-Adjusted
+            </button>
+          </div>
+          <div class="fire-chart-container">
+            <canvas id="proj-chart-canvas"></canvas>
+          </div>
+          <div class="chart-legend" id="proj-chart-legend"></div>
+        </section>
+
+        <!-- Milestones -->
+        <section id="proj-milestones-section" class="table-panel hidden">
+          <h2>Milestone Tracker</h2>
+          <p class="form-hint" style="margin-bottom: 1rem">
+            When each scenario reaches your target milestones.
+          </p>
+          <div class="table-wrapper">
+            <table>
+              <thead id="proj-milestones-header"></thead>
+              <tbody id="proj-milestones-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Contributions vs Growth -->
+        <section id="proj-breakdown-section" class="table-panel hidden">
+          <h2>Contributions vs Growth</h2>
+          <p class="form-hint" style="margin-bottom: 1rem">
+            How much of your final portfolio comes from what you put in vs what
+            the market gave you.
+          </p>
+          <div id="proj-breakdown-bars"></div>
+        </section>
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script src="../js/projections.js"></script>
+  </body>
+</html>
