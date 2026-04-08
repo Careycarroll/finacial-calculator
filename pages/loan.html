@@ -100,6 +100,42 @@
           </div>
         </section>
 
+        <section id="cumulative-chart-section" class="chart-panel hidden">
+          <h2>Cumulative Payments</h2>
+          <div class="line-chart-legend">
+            <span class="legend-item"
+              ><span class="legend-color legend-principal"></span>
+              Principal</span
+            >
+            <span class="legend-item"
+              ><span class="legend-color legend-interest"></span> Interest</span
+            >
+            <span class="legend-item"
+              ><span
+                class="legend-color"
+                style="background-color: #8b5cf6"
+              ></span>
+              Balance</span
+            >
+            <span class="legend-item"
+              ><span
+                class="legend-color"
+                style="background-color: #38bdf8"
+              ></span>
+              Total Paid</span
+            >
+          </div>
+          <div class="line-chart-container">
+            <svg
+              id="cumulative-chart-svg"
+              class="line-chart-svg"
+              viewBox="0 0 700 260"
+              preserveAspectRatio="none"
+            ></svg>
+            <div id="cumulative-chart-tooltip" class="line-tooltip"></div>
+          </div>
+        </section>
+
         <!-- Amortization Table -->
         <section id="amortization-section" class="table-panel hidden">
           <h2>Amortization Schedule</h2>
@@ -129,6 +165,6 @@
       </footer>
     </div>
 
-    <script src="../js/loan.js"></script>
+    <script src="../js/loan.js" defer></script>
   </body>
 </html>

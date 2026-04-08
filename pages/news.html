@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>News Feed | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="site-nav">
+          <a href="../index.html" class="home-button" aria-label="Home">
+            <span class="home-icon">🏠</span>
+          </a>
+          <div class="site-title">
+            <h1>Financial Calculator</h1>
+            <p class="tagline">Your personal financial news reader.</p>
+          </div>
+          <nav class="site-nav-links">
+            <a href="news.html" class="site-nav-link active">📰 News Feed</a>
+          </nav>
+        </div>
+      </header>
+
+      <main>
+        <!-- Controls Bar -->
+        <div class="news-controls">
+          <div class="news-controls-left">
+            <button id="news-refresh-btn" class="btn-primary">
+              🔄 Refresh Feeds
+            </button>
+            <span id="news-last-updated" class="news-last-updated"></span>
+          </div>
+          <div class="news-controls-right">
+            <button id="news-manage-btn" class="btn-secondary">
+              ⚙️ Manage Feeds
+            </button>
+            <button id="news-import-btn" class="btn-secondary">
+              📂 Import OPML
+            </button>
+            <input
+              type="file"
+              id="news-opml-input"
+              accept=".opml,.xml"
+              style="display: none"
+            />
+          </div>
+        </div>
+
+        <!-- Filter Toggle & Search -->
+        <div class="news-filter-toggle-bar">
+          <button
+            id="news-filter-toggle"
+            class="btn-secondary news-filter-toggle-btn"
+          >
+            🔽 Filters
+          </button>
+          <span id="news-active-filters" class="news-active-filters"></span>
+          <div class="news-search-wrapper">
+            <input
+              type="text"
+              id="news-search"
+              class="news-search-input"
+              placeholder="Search articles..."
+            />
+            <button id="news-search-clear" class="news-search-clear hidden">
+              ✕
+            </button>
+          </div>
+          <span id="news-article-count" class="news-article-count"></span>
+        </div>
+
+        <!-- Collapsible Filter Panel -->
+        <div id="news-filter-panel" class="news-filter-panel hidden">
+          <div class="news-filter-section">
+            <span class="news-filter-section-label">Category</span>
+            <div id="news-category-bar" class="news-category-buttons"></div>
+          </div>
+          <div class="news-filter-section">
+            <span class="news-filter-section-label">Date Range</span>
+            <div id="news-date-bar" class="news-date-buttons">
+              <button class="news-date-btn active" data-hours="24">
+                Last 24h
+              </button>
+              <button class="news-date-btn" data-hours="72">Last 3 Days</button>
+              <button class="news-date-btn" data-hours="168">
+                Last 7 Days
+              </button>
+              <button class="news-date-btn" data-hours="720">
+                Last 30 Days
+              </button>
+              <button class="news-date-btn" data-hours="0">All Time</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="news-loading" class="news-loading hidden">
+          <div class="news-spinner"></div>
+          <span>Fetching feeds...</span>
+          <div id="news-loading-progress" class="news-loading-progress"></div>
+          <button id="news-cancel-btn" class="btn-secondary news-cancel-btn">
+            ✕ Stop
+          </button>
+        </div>
+
+        <!-- Empty State -->
+        <div id="news-empty" class="news-empty">
+          <div class="news-empty-icon">📰</div>
+          <h2>No feeds configured</h2>
+          <p>Import your OPML file to get started, or add feeds manually.</p>
+          <div class="news-empty-actions">
+            <button id="news-empty-import-btn" class="btn-primary">
+              📂 Import OPML File
+            </button>
+            <button id="news-empty-demo-btn" class="btn-secondary">
+              🚀 Load Demo Feeds
+            </button>
+          </div>
+        </div>
+
+        <!-- Articles List -->
+        <div id="news-articles" class="news-articles hidden"></div>
+
+        <!-- Load More -->
+        <div id="news-load-more" class="news-load-more hidden">
+          <button id="news-load-more-btn" class="btn-secondary">
+            Load More Articles
+          </button>
+        </div>
+
+        <!-- Feed Manager Modal -->
+        <div id="news-manager-overlay" class="modal-overlay hidden">
+          <div class="modal-content news-manager-modal">
+            <div class="modal-header">
+              <h2>⚙️ Manage Feeds</h2>
+              <button id="news-manager-close" class="modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+              <!-- Add Feed -->
+              <div class="news-add-feed">
+                <h3>Add a Feed</h3>
+                <div class="form-row">
+                  <div class="form-group" style="flex: 1">
+                    <input
+                      type="text"
+                      id="news-add-name"
+                      placeholder="Feed name (e.g. Bloomberg)"
+                    />
+                  </div>
+                  <div class="form-group" style="flex: 2">
+                    <input
+                      type="url"
+                      id="news-add-url"
+                      placeholder="RSS feed URL"
+                    />
+                  </div>
+                  <div class="form-group" style="flex: 1">
+                    <select id="news-add-category">
+                      <option value="">Select category...</option>
+                    </select>
+                  </div>
+                  <button
+                    id="news-add-btn"
+                    class="btn-primary"
+                    style="height: 42px"
+                  >
+                    Add
+                  </button>
+                </div>
+                <div class="form-row" style="margin-top: 0.5rem">
+                  <div class="form-group" style="flex: 1">
+                    <input
+                      type="text"
+                      id="news-add-new-category"
+                      placeholder="Or type a new category..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Feed List -->
+              <div id="news-feed-list" class="news-feed-list"></div>
+
+              <!-- Danger Zone -->
+              <div class="news-danger-zone">
+                <button id="news-export-btn" class="btn-secondary">
+                  📤 Export OPML
+                </button>
+                <button id="news-clear-btn" class="btn-danger">
+                  🗑️ Remove All Feeds
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script src="../js/news.js" defer></script>
+  </body>
+</html>
