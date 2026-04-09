@@ -1,3 +1,6 @@
+body:not(.grid-stack-page) main {
+  display: block;
+}
 /* ===== FIRE TABS ===== */
 .fire-tabs {
   display: flex;
@@ -93,6 +96,9 @@
   background-color: #ef4444;
 }
 .legend-coast-line {
+  background-color: #f59e0b;
+}
+.legend-coast-threshold {
   background-color: #f59e0b;
 }
 

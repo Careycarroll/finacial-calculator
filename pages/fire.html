@@ -9,11 +9,18 @@
     <link rel="stylesheet" href="../css/fire.css" />
   </head>
   <body>
-    <div class="container">
-      <nav class="breadcrumb">
-        <a href="../index.html">← Back to Home</a>
-      </nav>
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+        </div>
+      </div>
+    </nav>
 
+    <div class="page-container">
       <header>
         <h1>🔥 FIRE Dashboard</h1>
         <p class="tagline">
@@ -24,7 +31,7 @@
 
       <main>
         <!-- Shared Profile -->
-        <section class="calc-form">
+        <div class="calc-form">
           <h2 class="form-section-title">Your Profile</h2>
           <div class="form-row">
             <div class="form-group">
@@ -102,10 +109,10 @@
               />
             </div>
           </div>
-        </section>
+        </div>
 
         <!-- Progress Bars -->
-        <section id="fire-progress-section" class="results-panel hidden">
+        <div id="fire-progress-section" class="results-panel hidden">
           <h2>Your Progress</h2>
           <div class="progress-bars">
             <div class="progress-item">
@@ -139,7 +146,7 @@
               </div>
             </div>
           </div>
-        </section>
+        </div>
 
         <!-- Tab Navigation -->
         <div class="fire-tabs">
@@ -151,7 +158,7 @@
 
         <!-- ==================== TAB 1: FIRE NUMBER ==================== -->
         <div id="fire-number-tab">
-          <section class="calc-form">
+          <div class="calc-form">
             <h2 class="form-section-title">Retirement Expenses & Income</h2>
             <div class="form-row">
               <div class="form-group">
@@ -205,16 +212,66 @@
                   >Social Security, pension, rental income, etc.</span
                 >
               </div>
-              <div class="form-group"></div>
+              <div class="form-group">
+                <label for="fire-income-type">Income Value Type</label>
+                <select id="fire-income-type">
+                  <option value="pv">Today's Dollars (Present Value)</option>
+                  <option value="fv">Future Dollars (Nominal)</option>
+                </select>
+                <span class="form-hint"
+                  >If your estimate is what you'll actually receive in the
+                  future, select Future Dollars.</span
+                >
+              </div>
             </div>
+            <div id="fire-fv-options" class="form-row hidden">
+              <div class="form-group">
+                <label for="fire-income-start-age"
+                  >Age You Start Receiving ($)</label
+                >
+                <input
+                  type="number"
+                  id="fire-income-start-age"
+                  placeholder="e.g. 60"
+                  min="25"
+                  max="90"
+                  step="1"
+                />
+                <span class="form-hint"
+                  >The age when this income begins (e.g. 60 for military
+                  pension, 62-67 for Social Security).</span
+                >
+              </div>
+              <div class="form-group">
+                <label>Converted to Today's Dollars</label>
+                <div
+                  id="fire-income-pv-display"
+                  class="result-value"
+                  style="
+                    font-size: 1.1rem;
+                    padding: 0.75rem 1rem;
+                    background-color: var(--bg-primary);
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                  "
+                >
+                  —
+                </div>
+                <span class="form-hint"
+                  >What your future income is worth in today's purchasing
+                  power.</span
+                >
+              </div>
+            </div>
+            <div id="fire-fv-options" class="form-row hidden">...</div>
 
             <button id="fire-calculate-btn" class="btn-primary">
               Calculate FIRE Number
             </button>
-          </section>
+          </div>
 
           <!-- FIRE Results -->
-          <section id="fire-number-results" class="results-panel hidden">
+          <div id="fire-number-results" class="results-panel hidden">
             <h2>Your FIRE Number</h2>
             <div class="results-grid results-grid-3">
               <div class="result-item">
@@ -251,10 +308,10 @@
                 <span id="fire-monthly-gap" class="result-value">—</span>
               </div>
             </div>
-          </section>
+          </div>
 
           <!-- Withdrawal Rate Sensitivity -->
-          <section id="fire-sensitivity-section" class="table-panel hidden">
+          <div id="fire-sensitivity-section" class="table-panel hidden">
             <h2>Withdrawal Rate Sensitivity</h2>
             <p class="form-hint" style="margin-bottom: 1rem">
               How your FIRE number changes at different withdrawal rates.
@@ -273,10 +330,10 @@
                 <tbody id="fire-sensitivity-body"></tbody>
               </table>
             </div>
-          </section>
+          </div>
 
           <!-- FIRE Projection Chart -->
-          <section id="fire-chart-section" class="chart-panel hidden">
+          <div id="fire-chart-section" class="chart-panel hidden">
             <h2>Portfolio Projection</h2>
             <div class="fire-chart-container">
               <canvas id="fire-chart-canvas"></canvas>
@@ -287,16 +344,20 @@
                 Portfolio</span
               >
               <span class="legend-item"
+                ><span class="legend-color legend-coast-threshold"></span> Coast
+                FIRE Threshold</span
+              >
+              <span class="legend-item"
                 ><span class="legend-color legend-fire-target"></span> FIRE
                 Target</span
               >
             </div>
-          </section>
+          </div>
         </div>
 
         <!-- ==================== TAB 2: COAST FIRE ==================== -->
         <div id="coast-fire-tab" class="hidden">
-          <section class="calc-form">
+          <div class="calc-form">
             <h2 class="form-section-title">Coast FIRE Settings</h2>
             <div class="form-row">
               <div class="form-group">
@@ -319,10 +380,10 @@
             <button id="coast-calculate-btn" class="btn-primary">
               Calculate Coast FIRE
             </button>
-          </section>
+          </div>
 
           <!-- Coast FIRE Results -->
-          <section id="coast-fire-results" class="results-panel hidden">
+          <div id="coast-fire-results" class="results-panel hidden">
             <h2>Coast FIRE Analysis</h2>
             <div class="results-grid results-grid-3">
               <div class="result-item">
@@ -371,10 +432,10 @@
                 <span id="coast-extra-monthly" class="result-value">—</span>
               </div>
             </div>
-          </section>
+          </div>
 
           <!-- Coast FIRE Chart -->
-          <section id="coast-chart-section" class="chart-panel hidden">
+          <div id="coast-chart-section" class="chart-panel hidden">
             <h2>Coast FIRE Projection</h2>
             <div class="fire-chart-container">
               <canvas id="coast-chart-canvas"></canvas>
@@ -393,7 +454,7 @@
                 Target</span
               >
             </div>
-          </section>
+          </div>
         </div>
       </main>
 

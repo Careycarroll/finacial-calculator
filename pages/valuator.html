@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Evaluator | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/common-calculator.css" />
+    <link rel="stylesheet" href="../css/valuator.css" />
+    <!-- Gridstack CSS -->
+    <link rel="stylesheet" href="../css/gridstack.min.css" />
+    <link rel="stylesheet" href="../css/gridstack.css" />
+  </head>
+  <body class="grid-stack-page">
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-container">
+      <header>
+        <h1>🔍 Stock Evaluator</h1>
+        <p class="tagline">
+          Multi-method fundamental analysis to determine if a stock is over or
+          undervalued.
+        </p>
+      </header>
+
+      <main>
+        <div class="grid-stack" data-gs-column="12">
+          <!-- Search & API Settings -->
+          <div
+            class="grid-stack-item"
+            id="tile-search"
+            data-gs-x="0"
+            data-gs-y="0"
+            data-gs-w="12"
+            data-gs-h="10"
+          >
+            <div class="grid-stack-item-content">
+              <div class="calc-form">
+                <div class="val-mode-tabs">
+                  <button id="val-mode-api-btn" class="val-mode-tab active" type="button">
+                    API Valuation
+                  </button>
+                  <button id="val-mode-manual-btn" class="val-mode-tab" type="button">
+                    Manual Input
+                  </button>
+                </div>
+
+                <div class="val-api-panel">
+                  <div class="val-search-row">
+                    <div class="val-search-input-wrap">
+                      <input
+                        type="text"
+                        id="val-ticker"
+                        placeholder="Enter ticker symbol (e.g. AAPL)"
+                      />
+                      <button
+                        id="val-evaluate-btn"
+                        class="btn-primary val-evaluate-btn"
+                      >
+                        Evaluate
+                      </button>
+                    </div>
+                    <div class="val-api-toggle">
+                      <label class="val-toggle-label">
+                        <input type="checkbox" id="val-use-api-toggle" />
+                        Use API for evaluation
+                      </label>
+                      <p class="form-hint" style="margin: 0">
+                        Uncheck to preserve API calls and show research links
+                        only.
+                      </p>
+                    </div>
+                    <button id="val-settings-btn" class="btn-secondary">
+                      ⚙️ API Keys
+                    </button>
+                  </div>
+
+                  <!-- API Usage Bar -->
+                <div id="val-usage-bar" class="val-usage-bar">
+                  <div class="val-usage-row" id="val-usage-indicators"></div>
+                </div>
+
+                <!-- API Key Settings (hidden by default) -->
+                <div id="val-settings-panel" class="val-settings-panel hidden">
+                  <h3>API Key Configuration</h3>
+                  <p class="form-hint">
+                    Enter your free API keys. Data providers are used in
+                    priority order.
+                  </p>
+                  <div class="val-key-grid">
+                    <div class="val-key-row">
+                      <label>1. Financial Modeling Prep</label>
+                      <input
+                        type="text"
+                        id="val-key-fmp"
+                        placeholder="Get free key at financialmodelingprep.com"
+                      />
+                      <a
+                        href="https://site.financialmodelingprep.com/developer/docs"
+                        target="_blank"
+                        class="val-key-link"
+                        >Get Key →</a
+                      >
+                    </div>
+                    <div class="val-key-row">
+                      <label>2. Finnhub</label>
+                      <input
+                        type="text"
+                        id="val-key-finnhub"
+                        placeholder="Get free key at finnhub.io"
+                      />
+                      <a
+                        href="https://finnhub.io/register"
+                        target="_blank"
+                        class="val-key-link"
+                        >Get Key →</a
+                      >
+                    </div>
+                    <div class="val-key-row">
+                      <label>3. Alpha Vantage</label>
+                      <input
+                        type="text"
+                        id="val-key-alphavantage"
+                        placeholder="Get free key at alphavantage.co"
+                      />
+                      <a
+                        href="https://www.alphavantage.co/support/#api-key"
+                        target="_blank"
+                        class="val-key-link"
+                        >Get Key →</a
+                      >
+                    </div>
+                    <div class="val-key-row">
+                      <label>4. Yahoo Finance</label>
+                      <input
+                        type="text"
+                        id="val-key-yahoo"
+                        placeholder="Get free key at rapidapi.com"
+                      />
+                      <a
+                        href="https://rapidapi.com/sparior/api/yahoo-finance15"
+                        target="_blank"
+                        class="val-key-link"
+                        >Get Key →</a
+                      >
+                    </div>
+                    <div class="val-key-row">
+                      <label>5. IEX Cloud</label>
+                      <input
+                        type="text"
+                        id="val-key-iex"
+                        placeholder="Get free key at iexcloud.io"
+                      />
+                      <a
+                        href="https://iexcloud.io/cloud-login#/register"
+                        target="_blank"
+                        class="val-key-link"
+                        >Get Key →</a
+                      >
+                    </div>
+                  </div>
+                  <button
+                    id="val-save-keys-btn"
+                    class="btn-primary"
+                    style="max-width: 200px; margin-top: 1rem"
+                  >
+                    Save Keys
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-stack-item hidden val-manual-panel-item" id="tile-manual-inputs" data-gs-x="0" data-gs-y="0" data-gs-w="12" data-gs-h="10">
+            <div class="grid-stack-item-content">
+              <div class="calc-form">
+                <div class="val-manual-panel">
+                  <h3>Manual valuation inputs</h3>
+                  <p class="form-hint">
+                    Enter the values needed for the calculation engine.
+                  </p>
+                  <div class="manual-input-grid">
+                    <div class="manual-input-group">
+                      <label for="val-manual-ticker">Ticker</label>
+                      <input type="text" id="val-manual-ticker" placeholder="AAPL" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-company">Company Name</label>
+                      <input type="text" id="val-manual-company" placeholder="Apple Inc." />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-price">Current Share Price</label>
+                      <input type="text" id="val-manual-price" placeholder="150" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-marketcap">Market Cap</label>
+                      <input type="text" id="val-manual-marketcap" placeholder="2500000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-shares">Shares Outstanding (optional)</label>
+                      <input type="text" id="val-manual-shares" placeholder="17000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-sector">Sector</label>
+                      <input type="text" id="val-manual-sector" placeholder="Technology" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-industry">Industry</label>
+                      <input type="text" id="val-manual-industry" placeholder="Consumer Electronics" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-exchange">Exchange</label>
+                      <input type="text" id="val-manual-exchange" placeholder="NASDAQ" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-revenue">Revenue</label>
+                      <input type="text" id="val-manual-revenue" placeholder="260000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-operating-income">Operating Income</label>
+                      <input type="text" id="val-manual-operating-income" placeholder="100000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-net-income">Net Income</label>
+                      <input type="text" id="val-manual-net-income" placeholder="90000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-ebitda">EBITDA</label>
+                      <input type="text" id="val-manual-ebitda" placeholder="110000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-eps">EPS</label>
+                      <input type="text" id="val-manual-eps" placeholder="5.95" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-total-equity">Total Equity</label>
+                      <input type="text" id="val-manual-total-equity" placeholder="650000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-total-debt">Total Debt</label>
+                      <input type="text" id="val-manual-total-debt" placeholder="120000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-cash">Cash &amp; Equivalents</label>
+                      <input type="text" id="val-manual-cash" placeholder="60000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-total-assets">Total Assets</label>
+                      <input type="text" id="val-manual-total-assets" placeholder="350000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-current-assets">Total Current Assets</label>
+                      <input type="text" id="val-manual-current-assets" placeholder="150000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-current-liabilities">Total Current Liabilities</label>
+                      <input type="text" id="val-manual-current-liabilities" placeholder="120000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-ppe">Property, Plant &amp; Equipment</label>
+                      <input type="text" id="val-manual-ppe" placeholder="120000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-goodwill">Goodwill</label>
+                      <input type="text" id="val-manual-goodwill" placeholder="0" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-intangibles">Intangible Assets</label>
+                      <input type="text" id="val-manual-intangibles" placeholder="0" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-fcf">Free Cash Flow</label>
+                      <input type="text" id="val-manual-fcf" placeholder="90000000000" />
+                    </div>
+                    <div class="manual-input-group">
+                      <label for="val-manual-dividends">Dividends Paid</label>
+                      <input type="text" id="val-manual-dividends" placeholder="15000000000" />
+                    </div>
+                  </div>
+                  <button
+                    id="val-manual-evaluate-btn"
+                    class="btn-primary"
+                    style="margin-top: 1rem"
+                  >
+                    Evaluate manually
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div
+            class="grid-stack-item hidden"
+            id="tile-loading"
+            data-gs-x="0"
+            data-gs-y="4"
+            data-gs-w="12"
+            data-gs-h="2"
+          >
+            <div class="grid-stack-item-content">
+              <div class="val-loading">
+                <div class="val-spinner"></div>
+                <span id="val-loading-text">Fetching financial data...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Verdict Banner -->
+          <div
+            class="grid-stack-item hidden"
+            id="tile-verdict"
+            data-gs-x="0"
+            data-gs-y="4"
+            data-gs-w="12"
+            data-gs-h="3"
+          >
+            <div class="grid-stack-item-content">
+              <div class="val-verdict-panel">
+                <div class="val-verdict-header">
+                  <div class="val-verdict-company">
+                    <h2 id="val-company-name">—</h2>
+                    <span id="val-company-meta" class="val-company-meta"
+                      >—</span
+                    >
+                  </div>
+                  <div class="val-verdict-price">
+                    <span class="val-price-label">Current Price</span>
+                    <span id="val-current-price" class="val-price-value"
+                      >—</span
+                    >
+                  </div>
+                </div>
+                <div class="val-verdict-body">
+                  <div class="val-verdict-rating-wrap">
+                    <div id="val-verdict-badge" class="val-verdict-badge">
+                      —
+                    </div>
+                    <div class="val-verdict-details">
+                      <div class="val-verdict-fair">
+                        <span class="val-detail-label"
+                          >Weighted Fair Value</span
+                        >
+                        <span id="val-fair-value" class="val-detail-value"
+                          >—</span
+                        >
+                      </div>
+                      <div class="val-verdict-range">
+                        <span class="val-detail-label">Fair Value Range</span>
+                        <span id="val-fair-range" class="val-detail-value"
+                          >—</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                  <div class="val-verdict-meter">
+                    <div class="val-meter-track">
+                      <div
+                        id="val-meter-fill"
+                        class="val-meter-fill"
+                        style="width: 50%"
+                      ></div>
+                      <div
+                        id="val-meter-marker"
+                        class="val-meter-marker"
+                        style="left: 50%"
+                      ></div>
+                    </div>
+                    <div class="val-meter-labels">
+                      <span>Overvalued</span>
+                      <span>Fair</span>
+                      <span>Undervalued</span>
+                    </div>
+                  </div>
+                  <div class="val-verdict-provider">
+                    <span id="val-data-provider">—</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Asset-Based Valuation -->
+          <div
+            class="grid-stack-item hidden"
+            id="tile-asset"
+            data-gs-x="0"
+            data-gs-y="7"
+            data-gs-w="4"
+            data-gs-h="5"
+          >
+            <div class="grid-stack-item-content">
+              <div class="results-panel">
+                <h2>Asset-Based Valuation</h2>
+                <div class="val-metric-list" id="val-asset-metrics"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Income-Based Valuation -->
+          <div
+            class="grid-stack-item hidden"
+            id="tile-income"
+            data-gs-x="4"
+            data-gs-y="7"
+            data-gs-w="4"
+            data-gs-h="5"
+          >
+            <div class="grid-stack-item-content">
+              <div class="results-panel">
+                <h2>Income-Based Valuation</h2>
+                <div class="val-metric-list" id="val-income-metrics"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Market Multiples -->
+          <div
+            class="grid-stack-item hidden"
+            id="tile-multiples"
+            data-gs-x="8"
+            data-gs-y="7"
+            data-gs-w="4"
+            data-gs-h="5"
+          >
+            <div class="grid-stack-item-content">
+              <div class="results-panel">
+                <h2>Market Multiples</h2>
+                <div class="val-metric-list" id="val-multiples-metrics"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enterprise Value -->
+          <div
+            class="grid-stack-item hidden"
+            id="tile-enterprise"
+            data-gs-x="0"
+            data-gs-y="12"
+            data-gs-w="4"
+            data-gs-h="5"
+          >
+            <div class="grid-stack-item-content">
+              <div class="results-panel">
+                <h2>Enterprise Value</h2>
+                <div class="val-metric-list" id="val-enterprise-metrics"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Equity Multiples -->
+          <div
+            class="grid-stack-item hidden"
+            id="tile-equity"
+            data-gs-x="4"
+            data-gs-y="12"
+            data-gs-w="4"
+            data-gs-h="5"
+          >
+            <div class="grid-stack-item-content">
+              <div class="results-panel">
+                <h2>Equity Multiples</h2>
+                <div class="val-metric-list" id="val-equity-metrics"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- WACC & Cost of Capital -->
+          <div
+            class="grid-stack-item hidden"
+            id="tile-wacc"
+            data-gs-x="8"
+            data-gs-y="12"
+            data-gs-w="4"
+            data-gs-h="5"
+          >
+            <div class="grid-stack-item-content">
+              <div class="results-panel">
+                <h2>Cost of Capital</h2>
+                <div class="val-metric-list" id="val-wacc-metrics"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Valuation Summary Chart -->
+          <div
+            class="grid-stack-item hidden"
+            id="tile-summary-chart"
+            data-gs-x="0"
+            data-gs-y="17"
+            data-gs-w="12"
+            data-gs-h="6"
+          >
+            <div class="grid-stack-item-content">
+              <div class="chart-panel">
+                <h2>Valuation Summary</h2>
+                <p class="form-hint" style="margin-bottom: 1rem">
+                  Each method's fair value estimate vs. the current market
+                  price.
+                </p>
+                <div class="val-summary-chart" id="val-summary-chart"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Research Links -->
+          <div
+            class="grid-stack-item hidden"
+            id="tile-links"
+            data-gs-x="0"
+            data-gs-y="23"
+            data-gs-w="12"
+            data-gs-h="6"
+          >
+            <div class="grid-stack-item-content">
+              <div class="results-panel">
+                <h2>Research Links</h2>
+                <p
+                  id="val-research-message"
+                  class="form-hint val-research-message"
+                  style="margin-bottom: 1rem"
+                >
+                  If API access is unavailable or rate limits are reached, use
+                  these research sources to continue your analysis.
+                </p>
+                <div class="val-links-grid" id="val-research-links"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DCF Sensitivity -->
+          <div
+            class="grid-stack-item hidden"
+            id="tile-dcf-sensitivity"
+            data-gs-x="0"
+            data-gs-y="30"
+            data-gs-w="12"
+            data-gs-h="6"
+          >
+            <div class="grid-stack-item-content">
+              <div class="table-panel">
+                <h2>DCF Sensitivity Analysis</h2>
+                <p class="form-hint" style="margin-bottom: 1rem">
+                  How the DCF fair value changes with different WACC and growth
+                  rate assumptions.
+                </p>
+                <div class="table-wrapper">
+                  <table id="val-dcf-sensitivity-table">
+                    <thead id="val-dcf-sensitivity-header"></thead>
+                    <tbody id="val-dcf-sensitivity-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <!-- Gridstack Library -->
+    <script src="../js/gridstack-all.min.js"></script>
+    <!-- Gridstack Initialization -->
+    <script src="../js/gridstack-init.js"></script>
+    <!-- Valuator (order matters: api-manager → valuator → ui) -->
+    <script src="../js/api-manager.js"></script>
+    <script src="../js/valuator.js"></script>
+    <script src="../js/valuator-ui.js"></script>
+    <script src="../js/prefetch.js"></script>
+  </body>
+</html>

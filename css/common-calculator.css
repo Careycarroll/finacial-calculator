@@ -19,6 +19,7 @@
   border-radius: 12px;
   padding: 2rem;
   margin-bottom: 2rem;
+  overflow: hidden;
 }
 .form-group {
   margin-bottom: 1.25rem;
@@ -48,7 +49,9 @@
   color: #475569;
 }
 .btn-primary {
+  display: block;
   width: 100%;
+  max-width: 100%;
   padding: 0.85rem;
   font-size: 1rem;
   font-weight: 600;
@@ -531,7 +534,31 @@
   color: var(--text-primary);
 }
 /* ===== RESPONSIVE (ADVANCED) ===== */
+@media (max-width: 768px) {
+  .calc-form {
+    padding: 1.5rem;
+  }
+
+  .extra-range-input-row {
+    flex-wrap: wrap;
+  }
+
+  .extra-range-input-row .input-date,
+  .extra-range-input-row .input-amount {
+    min-width: 60px;
+    flex: 1 1 calc(50% - 0.25rem);
+  }
+}
+
 @media (max-width: 600px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+
+  .calc-form {
+    padding: 1.25rem;
+  }
+
   .form-row {
     grid-template-columns: 1fr;
   }

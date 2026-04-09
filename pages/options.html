@@ -9,11 +9,18 @@
     <link rel="stylesheet" href="../css/options.css" />
   </head>
   <body>
-    <div class="container">
-      <nav class="breadcrumb">
-        <a href="../index.html">← Back to Home</a>
-      </nav>
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+        </div>
+      </div>
+    </nav>
 
+    <div class="page-container">
       <header>
         <h1>🎯 Options Strategy Lab</h1>
         <p class="tagline">
@@ -47,7 +54,7 @@
         <!-- ==================== TAB 1: PAYOFF DIAGRAMS ==================== -->
         <div id="payoff-tab">
           <!-- Strategy Selector -->
-          <section class="calc-form">
+          <div class="calc-form">
             <h2 class="form-section-title">Select a Strategy</h2>
 
             <div class="strategy-selector">
@@ -84,17 +91,17 @@
                 <div class="strategy-buttons" id="strategies-expert"></div>
               </div>
             </div>
-          </section>
+          </div>
 
           <!-- Strategy Info Card -->
-          <section id="strategy-info-section" class="hidden">
+          <div id="strategy-info-section" class="hidden">
             <div class="strategy-info" id="strategy-info-card"></div>
             <div class="reference-chart-container">
               <canvas id="reference-chart-canvas"></canvas>
             </div>
-          </section>
+          </div>
 
-          <section id="strategy-inputs-section" class="calc-form hidden">
+          <div id="strategy-inputs-section" class="calc-form hidden">
             <h2 class="form-section-title">Strategy Parameters</h2>
 
             <!-- Common inputs -->
@@ -173,10 +180,10 @@
             <button id="payoff-calculate-btn" class="btn-primary">
               Calculate Payoff
             </button>
-          </section>
+          </div>
 
           <!-- Payoff Chart -->
-          <section id="payoff-chart-section" class="chart-panel hidden">
+          <div id="payoff-chart-section" class="chart-panel hidden">
             <h2>Payoff Diagram</h2>
             <div class="payoff-time-controls">
               <div class="payoff-time-toggle">
@@ -212,53 +219,27 @@
                 </div>
               </div>
             </div>
-            <div class="payoff-time-controls">
-              <div
-                id="payoff-slider-container"
-                class="payoff-slider-container hidden"
-              >
-                <div class="payoff-slider-header">
-                  <label for="payoff-days-slider">Days Remaining:</label>
-                  <span id="payoff-days-display" class="payoff-days-display"
-                    >30</span
-                  >
-                </div>
-                <input
-                  type="range"
-                  id="payoff-days-slider"
-                  class="payoff-slider"
-                  min="0"
-                  max="30"
-                  value="30"
-                  step="1"
-                />
-                <div class="payoff-slider-labels">
-                  <span>Expiration (0)</span>
-                  <span id="payoff-slider-max-label">Today (30)</span>
-                </div>
-              </div>
-            </div>
 
-            <!-- ADD THESE TWO LINES -->
             <div class="payoff-chart-container">
               <canvas id="payoff-chart-canvas"></canvas>
             </div>
             <div id="payoff-chart-legend"></div>
-                <div id="payoff-chart-legend"></div>
-    <div id="payoff-time-explainer" class="payoff-time-explainer hidden"></div>
-</section>
-          </section>
+            <div
+              id="payoff-time-explainer"
+              class="payoff-time-explainer hidden"
+            ></div>
+          </div>
 
           <!-- Payoff Summary -->
-          <section id="payoff-summary-section" class="results-panel hidden">
+          <div id="payoff-summary-section" class="results-panel hidden">
             <h2>Trade Summary</h2>
             <div class="results-grid results-grid-3" id="payoff-summary"></div>
-          </section>
+          </div>
         </div>
 
         <!-- ==================== TAB 2: BLACK-SCHOLES ==================== -->
         <div id="blackscholes-tab" class="hidden">
-          <section class="calc-form">
+          <div class="calc-form">
             <h2 class="form-section-title">Black-Scholes Option Pricing</h2>
             <p class="form-hint" style="margin-bottom: 1rem">
               The Black-Scholes model calculates the theoretical fair value of
@@ -345,10 +326,10 @@
             <button id="bs-calculate-btn" class="btn-primary">
               Calculate Price
             </button>
-          </section>
+          </div>
 
           <!-- BS Results -->
-          <section id="bs-results-section" class="hidden">
+          <div id="bs-results-section" class="hidden">
             <div class="bs-results">
               <div class="bs-result-card">
                 <div class="bs-result-label">Call Option Price</div>
@@ -365,12 +346,12 @@
             <!-- Greeks from BS -->
             <h2>The Greeks</h2>
             <div class="greeks-grid" id="bs-greeks-grid"></div>
-          </section>
+          </div>
         </div>
 
         <!-- ==================== TAB 3: GREEKS ==================== -->
         <div id="greeks-tab" class="hidden">
-          <section class="calc-form">
+          <div class="calc-form">
             <h2 class="form-section-title">Greeks Explorer</h2>
             <p class="form-hint" style="margin-bottom: 1rem">
               The Greeks measure how an option's price changes in response to
@@ -446,15 +427,15 @@
             <button id="gk-calculate-btn" class="btn-primary">
               Calculate Greeks
             </button>
-          </section>
+          </div>
 
           <!-- Greeks Results -->
-          <section id="gk-results-section" class="hidden">
+          <div id="gk-results-section" class="hidden">
             <div class="greeks-grid" id="gk-greeks-grid"></div>
-          </section>
+          </div>
 
           <!-- Greeks Sensitivity Chart -->
-          <section id="gk-chart-section" class="chart-panel hidden">
+          <div id="gk-chart-section" class="chart-panel hidden">
             <h2>Greeks Sensitivity</h2>
             <div class="proj-chart-controls">
               <button id="gk-delta-btn" class="btn-toggle active">Delta</button>
@@ -465,12 +446,12 @@
             <div class="payoff-chart-container">
               <canvas id="gk-chart-canvas"></canvas>
             </div>
-          </section>
+          </div>
         </div>
 
         <!-- ==================== TAB 4: P&L CALCULATOR ==================== -->
         <div id="pnl-tab" class="hidden">
-          <section class="calc-form">
+          <div class="calc-form">
             <h2 class="form-section-title">Profit & Loss Calculator</h2>
             <p class="form-hint" style="margin-bottom: 1rem">
               Enter your actual trade details to calculate your current P&L.
@@ -552,21 +533,21 @@
             <button id="pnl-calculate-btn" class="btn-primary">
               Calculate P&L
             </button>
-          </section>
+          </div>
 
           <!-- P&L Results -->
-          <section id="pnl-results-section" class="results-panel hidden">
+          <div id="pnl-results-section" class="results-panel hidden">
             <h2>Position P&L</h2>
             <div class="results-grid results-grid-3" id="pnl-results"></div>
-          </section>
+          </div>
 
           <!-- P&L at Expiration Chart -->
-          <section id="pnl-chart-section" class="chart-panel hidden">
+          <div id="pnl-chart-section" class="chart-panel hidden">
             <h2>P&L at Expiration</h2>
             <div class="payoff-chart-container">
               <canvas id="pnl-chart-canvas"></canvas>
             </div>
-          </section>
+          </div>
         </div>
       </main>
 

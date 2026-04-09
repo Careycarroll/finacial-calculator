@@ -7,25 +7,40 @@
     <link rel="stylesheet" href="../css/base.css" />
     <link rel="stylesheet" href="../css/common-calculator.css" />
     <link rel="stylesheet" href="../css/news.css" />
+    <!-- Gridstack CSS -->
+    <link rel="stylesheet" href="../css/gridstack.min.css" />
+    <link rel="stylesheet" href="../css/gridstack.css" />
   </head>
-  <body>
-    <div class="container">
-      <header>
-        <div class="site-nav">
-          <a href="../index.html" class="home-button" aria-label="Home">
-            <span class="home-icon">🏠</span>
-          </a>
-          <div class="site-title">
-            <h1>Financial Calculator</h1>
-            <p class="tagline">Your personal financial news reader.</p>
-          </div>
-          <nav class="site-nav-links">
-            <a href="news.html" class="site-nav-link active">📰 News Feed</a>
-          </nav>
+  <body class="grid-stack-page">
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+          <button
+            id="reset-layout-btn"
+            class="top-nav-reset"
+            title="Reset page layout"
+          >
+            ↺ Reset
+          </button>
         </div>
+      </div>
+    </nav>
+
+    <div class="page-container">
+      <header>
+        <h1>📰 News Feed</h1>
+        <p class="tagline">Your personal financial news reader.</p>
+      </header>
       </header>
 
       <main>
+        <div class="grid-stack" data-gs-column="12">
+          <div class="grid-stack-item" data-gs-x="0" data-gs-y="0" data-gs-w="12" data-gs-h="20">
+            <div class="grid-stack-item-content">
         <!-- Controls Bar -->
         <div class="news-controls">
           <div class="news-controls-left">
@@ -196,6 +211,8 @@
               </div>
             </div>
           </div>
+            </div>
+          </div>
         </div>
       </main>
 
@@ -206,5 +223,9 @@
 
     <script src="../js/news.js" defer></script>
     <script src="../js/prefetch.js"></script>
+    <!-- Gridstack Library -->
+    <script src="../js/gridstack-all.min.js"></script>
+    <!-- Gridstack Initialization -->
+    <script src="../js/gridstack-init.js"></script>
   </body>
 </html>

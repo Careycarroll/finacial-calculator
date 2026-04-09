@@ -6,13 +6,30 @@
     <title>PV Calculator | Financial Calculator</title>
     <link rel="stylesheet" href="../css/base.css" />
     <link rel="stylesheet" href="../css/common-calculator.css" />
+    <!-- Gridstack CSS -->
+    <link rel="stylesheet" href="../css/gridstack.min.css" />
+    <link rel="stylesheet" href="../css/gridstack.css" />
   </head>
-  <body>
-    <div class="container">
-      <nav class="breadcrumb">
-        <a href="../index.html">← Back to Home</a>
-      </nav>
+  <body class="grid-stack-page">
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+          <button
+            id="reset-layout-btn"
+            class="top-nav-reset"
+            title="Reset page layout"
+          >
+            ↺ Reset
+          </button>
+        </div>
+      </div>
+    </nav>
 
+    <div class="page-container">
       <header>
         <h1>💰 Present Value Calculator</h1>
         <p class="tagline">
@@ -22,8 +39,15 @@
       </header>
 
       <main>
+        <div class="grid-stack" data-gs-column="12">
+          <div class="grid-stack-item" 
+          data-gs-x="0" 
+          data-gs-y="0" 
+          data-gs-w="12" 
+          data-gs-h="18">
+            <div class="grid-stack-item-content">
         <!-- Mode Selection -->
-        <section class="calc-form">
+        <div class="calc-form">
           <h2 class="form-section-title">Calculation Type</h2>
           <div class="mode-toggle">
             <button id="mode-lump" class="btn-toggle active">
@@ -34,10 +58,10 @@
               Lump Sum vs. Annuity
             </button>
           </div>
-        </section>
+        </div>
 
         <!-- Inputs -->
-        <section class="calc-form">
+        <div class="calc-form">
           <h2 class="form-section-title">Inputs</h2>
 
           <!-- Lump Sum Input -->
@@ -243,10 +267,10 @@
           <button id="pv-calculate-btn" class="btn-primary">
             Calculate Present Value
           </button>
-        </section>
+        </div>
 
         <!-- Results -->
-        <section id="pv-results" class="results-panel hidden">
+        <div id="pv-results" class="results-panel hidden">
           <h2>Results</h2>
           <div id="pv-standard-results" class="results-grid">
             <div class="result-item">
@@ -350,10 +374,10 @@
               </div>
             </div>
           </div>
-        </section>
+        </div>
 
         <!-- Breakdown Chart -->
-        <section id="pv-chart-section" class="chart-panel hidden">
+        <div id="pv-chart-section" class="chart-panel hidden">
           <h2>Value Over Time</h2>
           <div class="chart-container">
             <div class="chart-y-axis" id="pv-chart-y-axis"></div>
@@ -370,10 +394,10 @@
               (Discount)</span
             >
           </div>
-        </section>
+        </div>
 
         <!-- Breakdown Table -->
-        <section id="pv-table-section" class="table-panel hidden">
+        <div id="pv-table-section" class="table-panel hidden">
           <h2>Year-by-Year Breakdown</h2>
           <div class="table-wrapper">
             <table>
@@ -388,7 +412,9 @@
               <tbody id="pv-table-body"></tbody>
             </table>
           </div>
-        </section>
+            </div>
+          </div>
+        </div>
       </main>
 
       <footer>
@@ -398,5 +424,9 @@
 
     <script src="../js/pv.js" defer></script>
     <script src="../js/prefetch.js"></script>
+    <!-- Gridstack Library -->
+    <script src="../js/gridstack-all.min.js"></script>
+    <!-- Gridstack Initialization -->
+    <script src="../js/gridstack-init.js"></script>
   </body>
 </html>

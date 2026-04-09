@@ -132,9 +132,21 @@ function handleFireCalculate() {
   );
   const withdrawalRate =
     parseFloat(document.getElementById("fire-withdrawal-rate").value) / 100;
-  const otherIncome =
+  const otherIncomeRaw =
     parseFloat(document.getElementById("fire-other-income").value) || 0;
+  const incomeType = document.getElementById("fire-income-type").value;
+  let otherIncome = otherIncomeRaw;
 
+  if (incomeType === "fv") {
+    const startAge =
+      parseFloat(document.getElementById("fire-income-start-age").value) || 0;
+    const inflation =
+      (parseFloat(document.getElementById("fire-inflation").value) || 3) / 100;
+    const years = startAge - profile.currentAge;
+    if (years > 0) {
+      otherIncome = otherIncomeRaw / Math.pow(1 + inflation, years);
+    }
+  }
   // Validate
   if (!profile.currentAge || !profile.retireAge) {
     alert(
@@ -256,8 +268,12 @@ function handleFireCalculate() {
   document.getElementById("fire-chart-section").classList.remove("hidden");
   document.getElementById("fire-progress-section").classList.remove("hidden");
 
+  // Compute Coast FIRE number for chart overlay
+  const coastFireForChart =
+    fireNumberFuture / Math.pow(1 + profile.annualReturn, yearsToRetire);
+
   // Projection chart
-  displayFireChart(profile, fireNumberFuture, yearsToRetire);
+  displayFireChart(profile, fireNumberFuture, yearsToRetire, coastFireForChart);
 
   document
     .getElementById("fire-number-results")
@@ -543,7 +559,7 @@ function displayFireSensitivity(portfolioMustCover, profile, yearsToRetire) {
 }
 
 // ===== FIRE PROJECTION CHART (Canvas) =====
-function displayFireChart(profile, fireTarget, yearsToRetire) {
+function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
   const canvas = document.getElementById("fire-chart-canvas");
   const ctx = canvas.getContext("2d");
 
@@ -551,7 +567,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire) {
   const rect = container.getBoundingClientRect();
   if (rect.width === 0) {
     requestAnimationFrame(() =>
-      displayFireChart(profile, fireTarget, yearsToRetire),
+      displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber),
     );
     return;
   }
@@ -660,6 +676,67 @@ function displayFireChart(profile, fireTarget, yearsToRetire) {
       padding.left + 5,
       toY(fireTarget) - 8,
     );
+
+    // Coast FIRE threshold curve
+    if (coastFireNumber) {
+      // Draw the coast threshold as a declining curve
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 3]);
+      ctx.beginPath();
+      for (let year = 0; year <= totalYears; year++) {
+        const remainingYears = profile.retireAge - profile.currentAge - year;
+        if (remainingYears <= 0) break;
+        const threshold =
+          fireTarget / Math.pow(1 + profile.annualReturn, remainingYears);
+        const x = toX(year);
+        const y = toY(threshold);
+        if (year === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Label
+      ctx.fillStyle = "#f59e0b";
+      ctx.font = "11px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(
+        `Coast: ${formatCurrency(coastFireNumber)}`,
+        padding.left + 5,
+        toY(coastFireNumber) - 8,
+      );
+
+      // Find and mark the Coast FIRE crossing point
+      const coastCrossing = dataPoints.find((d) => {
+        const remainingYears = profile.retireAge - d.age;
+        if (remainingYears <= 0) return false;
+        const threshold =
+          fireTarget / Math.pow(1 + profile.annualReturn, remainingYears);
+        return d.value >= threshold;
+      });
+
+      if (coastCrossing) {
+        const remainingYears = profile.retireAge - coastCrossing.age;
+        const threshold =
+          fireTarget / Math.pow(1 + profile.annualReturn, remainingYears);
+        const cx = toX(coastCrossing.year);
+        const cy = toY(threshold);
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+        ctx.fillStyle = "#f59e0b";
+        ctx.fill();
+        ctx.strokeStyle = "#0f172a";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = "#f59e0b";
+        ctx.font = "bold 11px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(`Coast Age ${coastCrossing.age}`, cx, cy - 12);
+      }
+    }
 
     // Retirement age line
     const retireX = toX(yearsToRetire);
@@ -1261,3 +1338,120 @@ function displayCoastChart(
     drawChart(null);
   });
 }
+
+// ===================================================================
+// FUTURE VALUE INCOME TOGGLE
+// ===================================================================
+
+document
+  .getElementById("fire-income-type")
+  .addEventListener("change", function () {
+    const fvOptions = document.getElementById("fire-fv-options");
+    if (this.value === "fv") {
+      fvOptions.classList.remove("hidden");
+      updateIncomePVDisplay();
+    } else {
+      fvOptions.classList.add("hidden");
+    }
+  });
+
+document
+  .getElementById("fire-other-income")
+  .addEventListener("input", updateIncomePVDisplay);
+document
+  .getElementById("fire-income-start-age")
+  .addEventListener("input", updateIncomePVDisplay);
+document
+  .getElementById("fire-inflation")
+  .addEventListener("input", updateIncomePVDisplay);
+document
+  .getElementById("fire-current-age")
+  .addEventListener("input", updateIncomePVDisplay);
+
+function updateIncomePVDisplay() {
+  const type = document.getElementById("fire-income-type").value;
+  if (type !== "fv") return;
+
+  const fv =
+    parseFloat(document.getElementById("fire-other-income").value) || 0;
+  const startAge =
+    parseFloat(document.getElementById("fire-income-start-age").value) || 0;
+  const currentAge =
+    parseFloat(document.getElementById("fire-current-age").value) || 0;
+  const inflation =
+    (parseFloat(document.getElementById("fire-inflation").value) || 3) / 100;
+
+  const display = document.getElementById("fire-income-pv-display");
+
+  if (!fv || !startAge || !currentAge || startAge <= currentAge) {
+    display.textContent = "—";
+    return;
+  }
+
+  const years = startAge - currentAge;
+  const pv = fv / Math.pow(1 + inflation, years);
+  display.textContent =
+    "$" + pv.toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
+
+// ===================================================================
+// AUTO-SAVE & RESTORE INPUTS
+// ===================================================================
+
+const FIRE_STORAGE_KEY = "fire_inputs";
+
+const FIRE_FIELDS = [
+  "fire-current-age",
+  "fire-retire-age",
+  "fire-current-portfolio",
+  "fire-monthly-contribution",
+  "fire-annual-return",
+  "fire-inflation",
+  "fire-annual-expenses",
+  "fire-withdrawal-rate",
+  "fire-other-income",
+  "fire-income-type",
+  "fire-income-start-age",
+  "coast-fire-number",
+];
+
+function saveFireInputs() {
+  const data = {};
+  FIRE_FIELDS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el && el.value) {
+      data[id] = el.value;
+    }
+  });
+  localStorage.setItem(FIRE_STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadFireInputs() {
+  try {
+    const data = JSON.parse(localStorage.getItem(FIRE_STORAGE_KEY));
+    if (!data) return;
+    Object.entries(data).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = value;
+    });
+
+    // Show FV options if saved as future value
+    if (data["fire-income-type"] === "fv") {
+      document.getElementById("fire-fv-options").classList.remove("hidden");
+      updateIncomePVDisplay();
+    }
+  } catch {
+    // ignore
+  }
+}
+
+// Load saved inputs on page load
+loadFireInputs();
+
+// Save on every input change
+FIRE_FIELDS.forEach((id) => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener("input", saveFireInputs);
+  }
+});

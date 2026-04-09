@@ -7,13 +7,30 @@
     <link rel="stylesheet" href="../css/base.css" />
     <link rel="stylesheet" href="../css/common-calculator.css" />
     <link rel="stylesheet" href="../css/loan-advanced.css" />
+    <!-- Gridstack CSS -->
+    <link rel="stylesheet" href="../css/gridstack.min.css" />
+    <link rel="stylesheet" href="../css/gridstack.css" />
   </head>
-  <body>
-    <div class="container">
-      <nav class="breadcrumb">
-        <a href="../index.html">← Back to Home</a>
-      </nav>
+  <body class="grid-stack-page">
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+          <button
+            id="reset-layout-btn"
+            class="top-nav-reset"
+            title="Reset page layout"
+          >
+            ↺ Reset
+          </button>
+        </div>
+      </div>
+    </nav>
 
+    <div class="page-container">
       <header>
         <h1>🏦 Advanced Loan Calculator</h1>
         <p class="tagline">
@@ -23,8 +40,11 @@
       </header>
 
       <main>
+        <div class="grid-stack" data-gs-column="12">
+          <div class="grid-stack-item" data-gs-x="0" data-gs-y="0" data-gs-w="12" data-gs-h="20">
+            <div class="grid-stack-item-content">
         <!-- Loan Setup -->
-        <section class="calc-form">
+        <div class="calc-form">
           <h2 class="form-section-title">Loan Setup</h2>
 
           <div class="form-row">
@@ -103,10 +123,10 @@
               </select>
             </div>
           </div>
-        </section>
+        </div>
 
         <!-- Existing Loan Toggle -->
-        <section class="calc-form">
+        <div class="calc-form">
           <div class="toggle-header">
             <h2 class="form-section-title">Existing Loan</h2>
             <label class="toggle-switch">
@@ -142,10 +162,10 @@
               </div>
             </div>
           </div>
-        </section>
+        </div>
 
         <!-- Extra Payments -->
-        <section class="calc-form">
+        <div class="calc-form">
           <h2 class="form-section-title">Extra Payments</h2>
 
           <!-- Recurring Extra Payment Ranges -->
@@ -244,7 +264,7 @@
             </div>
             <ul id="onetime-list" class="onetime-list"></ul>
           </div>
-        </section>
+        </div>
 
         <!-- Calculate Button -->
         <button id="adv-calculate-btn" class="btn-primary">
@@ -252,7 +272,7 @@
         </button>
 
         <!-- Savings Summary -->
-        <section id="adv-results" class="results-panel hidden">
+        <div id="adv-results" class="results-panel hidden">
           <h2>Summary & Savings</h2>
           <div class="results-grid results-grid-3">
             <div class="result-item">
@@ -320,10 +340,10 @@
               <span id="adv-time-saved" class="savings-value">—</span>
             </div>
           </div>
-        </section>
+        </div>
 
         <!-- Chart -->
-        <section id="adv-chart-section" class="chart-panel hidden">
+        <div id="adv-chart-section" class="chart-panel hidden">
           <h2>Principal vs. Interest by Year</h2>
           <div class="chart-tabs">
             <button id="chart-original" class="btn-toggle active">
@@ -351,9 +371,9 @@
               Balance</span
             >
           </div>
-        </section>
+        </div>
 
-        <section id="adv-cumulative-chart-section" class="chart-panel hidden">
+        <div id="adv-cumulative-chart-section" class="chart-panel hidden">
           <h2>Cumulative Payments</h2>
           <div class="line-chart-legend">
             <span class="legend-item"
@@ -380,10 +400,10 @@
             ></svg>
             <div id="adv-cumulative-chart-tooltip" class="line-tooltip"></div>
           </div>
-        </section>
+        </div>
 
         <!-- Amortization Table -->
-        <section id="adv-amortization-section" class="table-panel hidden">
+        <div id="adv-amortization-section" class="table-panel hidden">
           <h2>Amortization Schedule</h2>
           <div class="table-controls">
             <div>
@@ -416,7 +436,9 @@
               <tbody id="adv-amortization-body"></tbody>
             </table>
           </div>
-        </section>
+            </div>
+          </div>
+        </div>
       </main>
 
       <footer>
@@ -426,5 +448,9 @@
 
     <script src="../js/loan-advanced.js" defer></script>
     <script src="../js/prefetch.js"></script>
+    <!-- Gridstack Library -->
+    <script src="../js/gridstack-all.min.js"></script>
+    <!-- Gridstack Initialization -->
+    <script src="../js/gridstack-init.js"></script>
   </body>
 </html>
