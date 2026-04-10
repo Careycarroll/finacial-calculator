@@ -4,6 +4,173 @@
 
 let currentAnalysis = null;
 let currentChartType = "revenue-income";
+let chartVisible = false;
+let chartHoverIndex = null;
+
+// ===================================================================
+// TICKER AUTOCOMPLETE
+// ===================================================================
+
+let tickerData = null;
+let tickerList = [];
+let dropdownIndex = -1;
+
+async function loadTickerData() {
+  try {
+    const response = await fetch("../js/company_tickers.json");
+    if (!response.ok) return;
+    const data = await response.json();
+    tickerList = Object.values(data).map((entry) => ({
+      ticker: entry.ticker.toUpperCase(),
+      name: entry.title,
+      cik: entry.cik_str,
+    }));
+    // Sort by ticker alphabetically
+    tickerList.sort((a, b) => a.ticker.localeCompare(b.ticker));
+    console.log(`Loaded ${tickerList.length} tickers for search`);
+  } catch (e) {
+    console.warn("Could not load ticker data for autocomplete:", e.message);
+  }
+}
+
+function searchTickers(query) {
+  if (!query || query.length < 1 || tickerList.length === 0) return [];
+
+  const q = query.toUpperCase().trim();
+
+  // Exact ticker match first
+  const exact = tickerList.filter((t) => t.ticker === q);
+
+  // Ticker starts with query
+  const tickerStarts = tickerList.filter(
+    (t) => t.ticker !== q && t.ticker.startsWith(q),
+  );
+
+  // Company name contains query
+  const nameMatch = tickerList.filter(
+    (t) => !t.ticker.startsWith(q) && t.name.toUpperCase().includes(q),
+  );
+
+  return [...exact, ...tickerStarts, ...nameMatch].slice(0, 12);
+}
+
+function initTickerSearch() {
+  const input = document.getElementById("analyzer-ticker");
+  const dropdown = document.getElementById("ticker-dropdown");
+  if (!input || !dropdown) return;
+
+  let debounceTimer;
+
+  input.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const query = input.value.trim();
+      if (query.length < 1) {
+        dropdown.classList.add("hidden");
+        dropdownIndex = -1;
+        return;
+      }
+
+      const results = searchTickers(query);
+      if (results.length === 0) {
+        dropdown.innerHTML =
+          '<div class="ticker-no-results">No matches found</div>';
+        dropdown.classList.remove("hidden");
+        dropdownIndex = -1;
+        return;
+      }
+
+      dropdown.innerHTML = results
+        .map(
+          (r, i) => `
+          <div class="ticker-item" data-ticker="${r.ticker}" data-index="${i}">
+            <span class="ticker-item-symbol">${highlightMatch(r.ticker, query)}</span>
+            <span class="ticker-item-name">${highlightMatch(r.name, query)}</span>
+          </div>`,
+        )
+        .join("");
+
+      dropdown.classList.remove("hidden");
+      dropdownIndex = -1;
+
+      // Click handlers
+      dropdown.querySelectorAll(".ticker-item").forEach((item) => {
+        item.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          input.value = item.dataset.ticker;
+          dropdown.classList.add("hidden");
+          dropdownIndex = -1;
+        });
+      });
+    }, 100);
+  });
+
+  // Keyboard navigation
+  input.addEventListener("keydown", (e) => {
+    const items = dropdown.querySelectorAll(".ticker-item");
+    if (items.length === 0 || dropdown.classList.contains("hidden")) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      dropdownIndex = Math.min(dropdownIndex + 1, items.length - 1);
+      updateDropdownHighlight(items);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      dropdownIndex = Math.max(dropdownIndex - 1, 0);
+      updateDropdownHighlight(items);
+    } else if (e.key === "Enter" && dropdownIndex >= 0) {
+      e.preventDefault();
+      input.value = items[dropdownIndex].dataset.ticker;
+      dropdown.classList.add("hidden");
+      dropdownIndex = -1;
+    } else if (e.key === "Escape") {
+      dropdown.classList.add("hidden");
+      dropdownIndex = -1;
+    }
+  });
+
+  // Close on blur
+  input.addEventListener("blur", () => {
+    setTimeout(() => {
+      dropdown.classList.add("hidden");
+      dropdownIndex = -1;
+    }, 150);
+  });
+
+  // Close on focus if empty
+  input.addEventListener("focus", () => {
+    const query = input.value.trim();
+    if (query.length >= 1) {
+      const results = searchTickers(query);
+      if (results.length > 0) {
+        dropdown.classList.remove("hidden");
+      }
+    }
+  });
+}
+
+function updateDropdownHighlight(items) {
+  items.forEach((item, i) => {
+    item.classList.toggle("active", i === dropdownIndex);
+    if (i === dropdownIndex) {
+      item.scrollIntoView({ block: "nearest" });
+    }
+  });
+}
+
+function highlightMatch(text, query) {
+  const q = query.toUpperCase();
+  const idx = text.toUpperCase().indexOf(q);
+  if (idx === -1) return text;
+  const before = text.substring(0, idx);
+  const match = text.substring(idx, idx + query.length);
+  const after = text.substring(idx + query.length);
+  return `${before}<strong style="color:var(--text-primary)">${match}</strong>${after}`;
+}
+
+// Load ticker data on page load
+loadTickerData();
+initTickerSearch();
 
 // ===================================================================
 // INITIALIZATION
@@ -757,25 +924,81 @@ function renderRatios(analysis, category) {
 }
 
 // ===================================================================
-// TREND CHARTS
+// RED FLAGS
 // ===================================================================
 
+function renderFlags(analysis) {
+  const container = document.getElementById("analyzer-flags");
+  if (!container) return;
+
+  const flags = analysis.flags || [];
+
+  if (flags.length === 0) {
+    container.innerHTML = `
+      <div style="color: var(--accent); font-size: 0.95rem;">
+        ✅ No red flags detected
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = flags
+    .map((flag) => {
+      const severity =
+        flag.severity === "high"
+          ? "🔴"
+          : flag.severity === "medium"
+            ? "🟡"
+            : "🟢";
+      return `
+        <div style="display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.75rem; padding: 0.75rem; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border);">
+          <span style="font-size: 1.1rem; flex-shrink: 0;">${severity}</span>
+          <div>
+            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem;">${flag.label}</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">${flag.detail}</div>
+          </div>
+        </div>`;
+    })
+    .join("");
+}
+
 // ===================================================================
-// TREND CHARTS
+// CHART — Intersection Observer (fix blank on first load)
+// ===================================================================
+
+const chartObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting && !chartVisible) {
+        chartVisible = true;
+        if (currentAnalysis) {
+          renderChart(currentAnalysis, currentChartType);
+        }
+      }
+    });
+  },
+  { threshold: 0.1 },
+);
+
+const chartSection = document.querySelector(".analyzer-chart-container");
+if (chartSection) chartObserver.observe(chartSection);
+
+// ===================================================================
+// CHART — Render & Draw
 // ===================================================================
 
 function renderChart(analysis, chartType) {
   const canvas = document.getElementById("analyzer-chart-canvas");
-  const ctx = canvas.getContext("2d");
-
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = 400;
 
-  const padding = { top: 40, right: 30, bottom: 75, left: 90 };
-  const chartWidth = canvas.width - padding.left - padding.right;
-  const chartHeight = canvas.height - padding.top - padding.bottom;
+  if (rect.width === 0 || rect.height === 0) {
+    // Not visible yet — will be triggered by observer
+    chartVisible = false;
+    return;
+  }
+
+  const chart = createChartContext(canvas, rect.width, 400);
+  const ctx = chart.ctx;
 
   const inc = [...analysis.statements.incomeStatements].reverse();
   const bs = [...analysis.statements.balanceSheets].reverse();
@@ -907,31 +1130,81 @@ function renderChart(analysis, chartType) {
       break;
   }
 
-  drawChart(
-    ctx,
-    canvas,
-    padding,
-    chartWidth,
-    chartHeight,
-    labels,
-    datasets,
-    title,
-    yAxisFormat,
-  );
+  drawChart(ctx, chart, labels, datasets, title, yAxisFormat, chartHoverIndex);
+
+  // Bind mouse events
+  canvas.onmousemove = (e) => {
+    const r = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - r.left;
+    const padding = { top: 40, right: 30, bottom: 75, left: 90 };
+    const chartWidth = chart.width - padding.left - padding.right;
+    const step = chartWidth / labels.length;
+
+    const index = Math.floor((mouseX - padding.left) / step);
+
+    if (index >= 0 && index < labels.length && mouseX >= padding.left) {
+      if (chartHoverIndex !== index) {
+        chartHoverIndex = index;
+        canvas.style.cursor = "crosshair";
+        const newChart = createChartContext(canvas, chart.width, chart.height);
+        drawChart(
+          newChart.ctx,
+          newChart,
+          labels,
+          datasets,
+          title,
+          yAxisFormat,
+          chartHoverIndex,
+        );
+      }
+    } else if (chartHoverIndex !== null) {
+      chartHoverIndex = null;
+      canvas.style.cursor = "default";
+      const newChart = createChartContext(canvas, chart.width, chart.height);
+      drawChart(
+        newChart.ctx,
+        newChart,
+        labels,
+        datasets,
+        title,
+        yAxisFormat,
+        null,
+      );
+    }
+  };
+
+  canvas.onmouseleave = () => {
+    if (chartHoverIndex !== null) {
+      chartHoverIndex = null;
+      canvas.style.cursor = "default";
+      const newChart = createChartContext(canvas, chart.width, chart.height);
+      drawChart(
+        newChart.ctx,
+        newChart,
+        labels,
+        datasets,
+        title,
+        yAxisFormat,
+        null,
+      );
+    }
+  };
 }
 
 function drawChart(
   ctx,
-  canvas,
-  padding,
-  chartWidth,
-  chartHeight,
+  chart,
   labels,
   datasets,
   title,
   yAxisFormat,
+  hoverIndex,
 ) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const padding = { top: 40, right: 30, bottom: 75, left: 90 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+
+  chart.clear();
 
   // Get all values for scale
   const allValues = datasets.flatMap((d) => d.data.filter((v) => v !== null));
@@ -941,8 +1214,8 @@ function drawChart(
     ctx.textAlign = "center";
     ctx.fillText(
       "No data available for this chart",
-      canvas.width / 2,
-      canvas.height / 2,
+      chart.width / 2,
+      chart.height / 2,
     );
     return;
   }
@@ -952,7 +1225,6 @@ function drawChart(
   let rawMin = Math.min(...allValues, 0);
 
   if (yAxisFormat === "percent") {
-    // Add padding for percentages
     rawMax = Math.min(rawMax * 1.15, 1);
     rawMin = Math.max(rawMin * 0.85, 0);
     if (rawMin > 0 && rawMin < 0.05) rawMin = 0;
@@ -962,7 +1234,6 @@ function drawChart(
     rawMin = rawMin < 0 ? rawMin - range * 0.1 : 0;
   }
 
-  // Calculate nice tick intervals
   const { maxVal, minVal, tickInterval, tickCount } = niceScale(
     rawMin,
     rawMax,
@@ -971,8 +1242,9 @@ function drawChart(
 
   const valueRange = maxVal - minVal || 1;
 
+  const step = chartWidth / labels.length;
+
   function toX(i) {
-    const step = chartWidth / labels.length;
     return padding.left + step * i + step / 2;
   }
 
@@ -997,26 +1269,24 @@ function drawChart(
     if (val > maxVal + tickInterval * 0.01) break;
     const y = toY(val);
 
-    // Grid line
     ctx.strokeStyle = "rgba(148, 163, 184, 0.12)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(padding.left, y);
-    ctx.lineTo(canvas.width - padding.right, y);
+    ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
 
-    // Label
     ctx.fillStyle = "#94a3b8";
     ctx.fillText(formatYAxisLabel(val, yAxisFormat), padding.left - 10, y + 4);
   }
 
-  // Zero line (if applicable)
+  // Zero line
   if (minVal < 0 && maxVal > 0) {
     ctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(padding.left, toY(0));
-    ctx.lineTo(canvas.width - padding.right, toY(0));
+    ctx.lineTo(chart.width - padding.right, toY(0));
     ctx.stroke();
   }
 
@@ -1025,8 +1295,26 @@ function drawChart(
   ctx.font = "11px sans-serif";
   ctx.textAlign = "center";
   labels.forEach((label, i) => {
-    ctx.fillText(label, toX(i), canvas.height - padding.bottom + 20);
+    if (hoverIndex === i) {
+      ctx.fillStyle = "#e2e8f0";
+      ctx.font = "bold 11px sans-serif";
+    } else {
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "11px sans-serif";
+    }
+    ctx.fillText(label, toX(i), chart.height - padding.bottom + 20);
   });
+
+  // Hover highlight column
+  if (hoverIndex !== null && hoverIndex >= 0 && hoverIndex < labels.length) {
+    ctx.fillStyle = "rgba(148, 163, 184, 0.06)";
+    ctx.fillRect(
+      padding.left + step * hoverIndex,
+      padding.top,
+      step,
+      chartHeight,
+    );
+  }
 
   // Draw datasets
   const barDatasets = datasets.filter((d) => d.type === "bar");
@@ -1034,7 +1322,6 @@ function drawChart(
 
   // Bars
   if (barDatasets.length > 0) {
-    const step = chartWidth / labels.length;
     const groupWidth = step * 0.7;
     const barWidth = groupWidth / barDatasets.length;
     const groupStart = -groupWidth / 2;
@@ -1048,7 +1335,7 @@ function drawChart(
         const barHeight = Math.abs(y - zeroY);
 
         ctx.fillStyle = dataset.color;
-        ctx.globalAlpha = 0.85;
+        ctx.globalAlpha = hoverIndex !== null && hoverIndex !== i ? 0.4 : 0.85;
         ctx.beginPath();
 
         const radius = 3;
@@ -1066,6 +1353,7 @@ function drawChart(
   // Lines
   lineDatasets.forEach((dataset) => {
     ctx.strokeStyle = dataset.color;
+    ctx.globalAlpha = hoverIndex !== null ? 0.5 : 1;
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     let started = false;
@@ -1081,39 +1369,93 @@ function drawChart(
       }
     });
     ctx.stroke();
+    ctx.globalAlpha = 1;
 
     // Dots
     dataset.data.forEach((val, i) => {
       if (val === null) return;
+      const isHovered = hoverIndex === i;
       ctx.beginPath();
-      ctx.arc(toX(i), toY(val), 4, 0, Math.PI * 2);
+      ctx.arc(toX(i), toY(val), isHovered ? 6 : 4, 0, Math.PI * 2);
       ctx.fillStyle = dataset.color;
       ctx.fill();
       ctx.strokeStyle = "#0f172a";
       ctx.lineWidth = 2;
       ctx.stroke();
     });
-
-    // Value labels on line points — only show first and last to reduce clutter
-    ctx.font = "10px sans-serif";
-    ctx.textAlign = "center";
-    const validIndices = dataset.data
-      .map((v, i) => (v !== null ? i : null))
-      .filter((i) => i !== null);
-    const firstIdx = validIndices[0];
-    const lastIdx = validIndices[validIndices.length - 1];
-
-    dataset.data.forEach((val, i) => {
-      if (val === null) return;
-      if (i !== firstIdx && i !== lastIdx) return;
-      ctx.fillStyle = dataset.color;
-      const label = formatYAxisLabel(val, yAxisFormat);
-      ctx.fillText(label, toX(i), toY(val) - 12);
-    });
   });
+
+  // Hover tooltip
+  if (hoverIndex !== null && hoverIndex >= 0 && hoverIndex < labels.length) {
+    const tooltipLines = [labels[hoverIndex]];
+    datasets.forEach((d) => {
+      const val = d.data[hoverIndex];
+      if (val === null) return;
+      tooltipLines.push(`${d.label}: ${formatYAxisLabel(val, yAxisFormat)}`);
+    });
+
+    ctx.font = "12px sans-serif";
+    const tooltipWidth =
+      Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 28;
+    const tooltipHeight = tooltipLines.length * 22 + 16;
+
+    let tx = toX(hoverIndex) + 15;
+    let ty = padding.top + 15;
+
+    // Flip to left side if too close to right edge
+    if (tx + tooltipWidth > chart.width - padding.right) {
+      tx = toX(hoverIndex) - tooltipWidth - 15;
+    }
+
+    // Tooltip background
+    const radius = 8;
+    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tx + radius, ty);
+    ctx.lineTo(tx + tooltipWidth - radius, ty);
+    ctx.quadraticCurveTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + radius);
+    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - radius);
+    ctx.quadraticCurveTo(
+      tx + tooltipWidth,
+      ty + tooltipHeight,
+      tx + tooltipWidth - radius,
+      ty + tooltipHeight,
+    );
+    ctx.lineTo(tx + radius, ty + tooltipHeight);
+    ctx.quadraticCurveTo(
+      tx,
+      ty + tooltipHeight,
+      tx,
+      ty + tooltipHeight - radius,
+    );
+    ctx.lineTo(tx, ty + radius);
+    ctx.quadraticCurveTo(tx, ty, tx + radius, ty);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Tooltip text
+    tooltipLines.forEach((line, i) => {
+      if (i === 0) {
+        // Header (year)
+        ctx.fillStyle = "#e2e8f0";
+        ctx.font = "bold 12px sans-serif";
+      } else {
+        // Find matching dataset for color
+        const matchingDataset = datasets.find((d) => line.startsWith(d.label));
+        ctx.fillStyle = matchingDataset ? matchingDataset.color : "#94a3b8";
+        ctx.font = "12px sans-serif";
+      }
+      ctx.textAlign = "left";
+      ctx.fillText(line, tx + 14, ty + 20 + i * 22);
+    });
+  }
 
   // Legend — draw at bottom center
   ctx.font = "11px sans-serif";
+  ctx.globalAlpha = 1;
   const legendItems = datasets.map((d) => ({
     label: d.label,
     color: d.color,
@@ -1123,17 +1465,15 @@ function drawChart(
     (sum, item) => sum + item.width + 16,
     -16,
   );
-  let legendX = (canvas.width - totalLegendWidth) / 2;
-  const legendY = canvas.height - 12;
+  let legendX = (chart.width - totalLegendWidth) / 2;
+  const legendY = chart.height - 12;
 
   legendItems.forEach((item) => {
-    // Color swatch
     ctx.fillStyle = item.color;
     ctx.beginPath();
     ctx.arc(legendX + 6, legendY - 3, 5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Label
     ctx.fillStyle = "#94a3b8";
     ctx.textAlign = "left";
     ctx.fillText(item.label, legendX + 16, legendY + 1);
@@ -1142,12 +1482,11 @@ function drawChart(
 }
 
 // ===================================================================
-// NICE SCALE — Calculate clean tick intervals
+// NICE SCALE
 // ===================================================================
 
 function niceScale(rawMin, rawMax, format) {
   if (format === "percent") {
-    // For percentages, use fixed intervals
     const range = rawMax - rawMin;
     let tickInterval;
     if (range <= 0.1) tickInterval = 0.02;
@@ -1162,7 +1501,6 @@ function niceScale(rawMin, rawMax, format) {
     return { minVal, maxVal, tickInterval, tickCount };
   }
 
-  // For currency/numbers, calculate nice round numbers
   const range = rawMax - rawMin;
   if (range === 0) {
     return {
@@ -1220,64 +1558,32 @@ function formatYAxisLabel(value, format) {
   }
 }
 
+// ===================================================================
+// ROUNDED RECT HELPER
+// ===================================================================
+
 function roundedRect(ctx, x, y, width, height, radius, topRound) {
   if (topRound) {
     ctx.moveTo(x + radius, y);
     ctx.lineTo(x + width - radius, y);
-    ctx.arcTo(x + width, y, x + width, y + radius, radius);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
     ctx.lineTo(x + width, y + height);
     ctx.lineTo(x, y + height);
     ctx.lineTo(x, y + radius);
-    ctx.arcTo(x, y, x + radius, y, radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
   } else {
     ctx.moveTo(x, y);
     ctx.lineTo(x + width, y);
     ctx.lineTo(x + width, y + height - radius);
-    ctx.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
     ctx.lineTo(x + radius, y + height);
-    ctx.arcTo(x, y + height, x, y + height - radius, radius);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
     ctx.lineTo(x, y);
   }
-  ctx.closePath();
 }
 
 // ===================================================================
-// RED FLAGS & HIGHLIGHTS
-// ===================================================================
-
-function renderFlags(analysis) {
-  const el = document.getElementById("analyzer-flags");
-  const flags = analysis.redFlags;
-
-  if (flags.length === 0) {
-    el.innerHTML = `<p style="color: var(--text-secondary); font-size: 0.9rem;">No significant flags detected. Limited data may affect analysis.</p>`;
-    return;
-  }
-
-  let html = "";
-  flags.forEach((flag) => {
-    const icon =
-      flag.type === "positive" ? "✅" : flag.type === "warning" ? "⚠️" : "🚩";
-
-    html += `
-      <div class="flag-item flag-${flag.type}">
-        <span class="flag-icon">${icon}</span>
-        <div class="flag-content">
-          <div class="flag-header">
-            <span class="flag-message">${flag.message}</span>
-            <span class="flag-category">${flag.category}</span>
-          </div>
-          <div class="flag-detail">${flag.detail}</div>
-        </div>
-      </div>
-    `;
-  });
-
-  el.innerHTML = html;
-}
-
-// ===================================================================
-// WINDOW RESIZE HANDLER
+// RESIZE HANDLER
 // ===================================================================
 
 let resizeTimeout;

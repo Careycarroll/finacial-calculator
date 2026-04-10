@@ -34,14 +34,17 @@
         <div class="calc-form">
           <div class="analyzer-search-row">
             <div class="form-group analyzer-search-input">
-              <label for="analyzer-ticker">Ticker Symbol</label>
-              <input
-                type="text"
-                id="analyzer-ticker"
-                placeholder="e.g. AAPL"
-                maxlength="10"
-                autocomplete="off"
-              />
+              <label for="analyzer-ticker">Ticker or Company Name</label>
+              <div class="ticker-search-wrapper">
+                <input
+                  type="text"
+                  id="analyzer-ticker"
+                  placeholder="e.g. AAPL or Apple"
+                  maxlength="50"
+                  autocomplete="off"
+                />
+                <div id="ticker-dropdown" class="ticker-dropdown hidden"></div>
+              </div>
             </div>
             <div class="form-group">
               <label for="analyzer-years">Years</label>

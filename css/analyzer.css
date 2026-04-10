@@ -561,3 +561,62 @@ body main {
     height: 280px;
   }
 }
+/* ===== TICKER AUTOCOMPLETE ===== */
+.ticker-search-wrapper {
+  position: relative;
+}
+.ticker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--accent);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  z-index: 50;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.ticker-dropdown.hidden {
+  display: none;
+}
+.ticker-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid var(--border);
+}
+.ticker-item:last-child {
+  border-bottom: none;
+}
+.ticker-item:hover,
+.ticker-item.active {
+  background-color: var(--bg-card-hover);
+}
+.ticker-item-symbol {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 0.9rem;
+  min-width: 70px;
+}
+.ticker-item-name {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-left: 1rem;
+}
+.ticker-no-results {
+  padding: 0.75rem 1rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-align: center;
+}
