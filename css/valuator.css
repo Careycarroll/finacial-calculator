@@ -1,3 +1,8 @@
+/* ===================================================================
+   VALUATION — Stock Valuation & DCF Analysis
+   Page: pages/valuation.html
+   =================================================================== */
+
 /* ===== SEARCH ROW ===== */
 .val-search-row {
   display: flex;
@@ -5,14 +10,12 @@
   align-items: flex-start;
   flex-wrap: wrap;
 }
-
 .val-search-input-wrap {
   display: flex;
   flex: 1;
   gap: 0.5rem;
   min-width: 280px;
 }
-
 .val-search-input-wrap input {
   flex: 1;
   padding: 0.75rem 1rem;
@@ -27,18 +30,15 @@
   transition: border-color 0.2s ease;
   letter-spacing: 0.05em;
 }
-
 .val-search-input-wrap input:focus {
   border-color: var(--accent);
 }
-
 .val-search-input-wrap input::placeholder {
   text-transform: none;
   font-weight: 400;
   letter-spacing: normal;
   color: #475569;
 }
-
 .val-api-toggle {
   display: flex;
   flex-direction: column;
@@ -46,7 +46,6 @@
   min-width: 220px;
   max-width: 260px;
 }
-
 .val-toggle-label {
   display: inline-flex;
   align-items: center;
@@ -54,24 +53,20 @@
   font-size: 0.9rem;
   color: var(--text-primary);
 }
-
 .val-toggle-label input {
   width: 1.05rem;
   height: 1.05rem;
 }
-
-.val-api-toggle .form-hint {
+.val-api-toggle.form-hint {
   margin-top: 0.25rem;
   color: var(--text-secondary);
   font-size: 0.8rem;
 }
-
 .val-mode-tabs {
   display: flex;
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
-
 .val-mode-tab {
   flex: 1;
   padding: 0.85rem 1rem;
@@ -82,32 +77,27 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
-
 .val-mode-tab.active,
 .val-mode-tab:hover {
   background-color: var(--bg-card-hover);
   border-color: var(--accent);
 }
-
 .manual-input-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
   margin-top: 1rem;
 }
-
 .manual-input-group {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
 }
-
 .manual-input-group label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
 }
-
 .manual-input-group input {
   padding: 0.75rem 1rem;
   background-color: var(--bg-primary);
@@ -115,7 +105,6 @@
   border-radius: 8px;
   color: var(--text-primary);
 }
-
 .val-evaluate-btn {
   width: auto !important;
   max-width: none !important;
@@ -129,13 +118,11 @@
   padding-top: 0.75rem;
   border-top: 1px solid var(--border);
 }
-
 .val-usage-row {
   display: flex;
   gap: 1.5rem;
   flex-wrap: wrap;
 }
-
 .val-usage-item {
   display: flex;
   align-items: center;
@@ -143,26 +130,21 @@
   font-size: 0.75rem;
   color: var(--text-secondary);
 }
-
 .val-usage-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-
 .val-usage-dot.active {
   background-color: var(--accent);
 }
-
 .val-usage-dot.exhausted {
   background-color: #f472b6;
 }
-
 .val-usage-dot.no-key {
   background-color: var(--border);
 }
-
 .val-usage-count {
   color: var(--text-secondary);
   font-size: 0.7rem;
@@ -174,35 +156,30 @@
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
 }
-
 .val-settings-panel h3 {
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
-
 .val-key-grid {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   margin-top: 1rem;
 }
-
 .val-key-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
 }
-
 .val-key-row label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
   min-width: 200px;
 }
-
 .val-key-row input {
   flex: 1;
   min-width: 200px;
@@ -215,23 +192,19 @@
   color: var(--text-primary);
   outline: none;
 }
-
 .val-key-row input:focus {
   border-color: var(--accent);
 }
-
 .val-key-link {
   font-size: 0.8rem;
   color: var(--accent);
   text-decoration: none;
   white-space: nowrap;
 }
-
 .val-key-link:hover {
   color: var(--accent-hover);
   text-decoration: underline;
 }
-
 .val-key-note {
   font-size: 0.8rem;
   color: var(--text-secondary);
@@ -248,7 +221,6 @@
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
-
 .val-spinner {
   width: 24px;
   height: 24px;
@@ -271,7 +243,6 @@
   border-radius: 12px;
   padding: 1.5rem 2rem;
 }
-
 .val-verdict-header {
   display: flex;
   justify-content: space-between;
@@ -280,23 +251,19 @@
   flex-wrap: wrap;
   gap: 1rem;
 }
-
 .val-verdict-company h2 {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
-
 .val-company-meta {
   font-size: 0.85rem;
   color: var(--text-secondary);
 }
-
 .val-verdict-price {
   text-align: right;
 }
-
 .val-price-label {
   display: block;
   font-size: 0.75rem;
@@ -304,26 +271,22 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-
 .val-price-value {
   font-size: 2rem;
   font-weight: 700;
   color: var(--text-primary);
 }
-
 .val-verdict-body {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
-
 .val-verdict-rating-wrap {
   display: flex;
   align-items: center;
   gap: 2rem;
   flex-wrap: wrap;
 }
-
 .val-verdict-badge {
   padding: 0.6rem 1.5rem;
   font-size: 0.9rem;
@@ -333,31 +296,26 @@
   letter-spacing: 0.05em;
   white-space: nowrap;
 }
-
 .val-verdict-badge.undervalued {
   background-color: rgba(45, 212, 191, 0.15);
   border: 1px solid var(--accent);
   color: var(--accent);
 }
-
 .val-verdict-badge.overvalued {
   background-color: rgba(244, 114, 182, 0.15);
   border: 1px solid #f472b6;
   color: #f472b6;
 }
-
 .val-verdict-badge.fair {
   background-color: rgba(56, 189, 248, 0.15);
   border: 1px solid #38bdf8;
   color: #38bdf8;
 }
-
 .val-verdict-details {
   display: flex;
   gap: 2rem;
   flex-wrap: wrap;
 }
-
 .val-detail-label {
   display: block;
   font-size: 0.75rem;
@@ -366,18 +324,16 @@
   letter-spacing: 0.03em;
   margin-bottom: 0.15rem;
 }
-
 .val-detail-value {
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
-/* Verdict Meter */
+/* ===== VERDICT METER ===== */
 .val-verdict-meter {
   width: 100%;
 }
-
 .val-meter-track {
   position: relative;
   height: 12px;
@@ -385,11 +341,9 @@
   background: linear-gradient(90deg, #f472b6, #fbbf24, #38bdf8, #2dd4bf);
   overflow: visible;
 }
-
 .val-meter-fill {
   display: none;
 }
-
 .val-meter-marker {
   position: absolute;
   top: -4px;
@@ -400,7 +354,6 @@
   transform: translateX(-50%);
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
-
 .val-meter-labels {
   display: flex;
   justify-content: space-between;
@@ -408,7 +361,6 @@
   font-size: 0.7rem;
   color: var(--text-secondary);
 }
-
 .val-verdict-provider {
   font-size: 0.75rem;
   color: var(--text-secondary);
@@ -421,7 +373,6 @@
   flex-direction: column;
   gap: 0.6rem;
 }
-
 .val-metric-row {
   display: flex;
   justify-content: space-between;
@@ -429,31 +380,25 @@
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--border);
 }
-
 .val-metric-row:last-child {
   border-bottom: none;
 }
-
 .val-metric-label {
   font-size: 0.82rem;
   color: var(--text-secondary);
 }
-
 .val-metric-value {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-primary);
   text-align: right;
 }
-
 .val-metric-value.positive {
   color: var(--accent);
 }
-
 .val-metric-value.negative {
   color: #f472b6;
 }
-
 .val-metric-value.neutral {
   color: #38bdf8;
 }
@@ -464,13 +409,11 @@
   flex-direction: column;
   gap: 0.75rem;
 }
-
 .val-summary-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
-
 .val-summary-method {
   font-size: 0.8rem;
   color: var(--text-secondary);
@@ -478,7 +421,6 @@
   text-align: right;
   flex-shrink: 0;
 }
-
 .val-summary-bar-wrap {
   flex: 1;
   position: relative;
@@ -488,26 +430,21 @@
   border: 1px solid var(--border);
   overflow: visible;
 }
-
 .val-summary-bar {
   height: 100%;
   border-radius: 5px;
   min-width: 4px;
   transition: width 0.5s ease;
 }
-
 .val-summary-bar.under {
   background: linear-gradient(90deg, #2dd4bf, #14b8a6);
 }
-
 .val-summary-bar.over {
   background: linear-gradient(90deg, #f472b6, #ec4899);
 }
-
 .val-summary-bar.fair {
   background: linear-gradient(90deg, #38bdf8, #0ea5e9);
 }
-
 .val-summary-price-line {
   position: absolute;
   top: -4px;
@@ -516,7 +453,6 @@
   background-color: var(--text-primary);
   z-index: 2;
 }
-
 .val-summary-price-label {
   position: absolute;
   top: -20px;
@@ -526,7 +462,6 @@
   transform: translateX(-50%);
   white-space: nowrap;
 }
-
 .val-summary-value {
   font-size: 0.8rem;
   font-weight: 600;
@@ -551,47 +486,6 @@
   color: var(--accent);
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .val-search-row {
-    flex-direction: column;
-  }
-
-  .val-search-input-wrap {
-    width: 100%;
-  }
-
-  .val-verdict-header {
-    flex-direction: column;
-  }
-
-  .val-verdict-price {
-    text-align: left;
-  }
-
-  .val-verdict-rating-wrap {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .val-summary-method {
-    min-width: 100px;
-    font-size: 0.7rem;
-  }
-
-  .val-key-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .val-key-row label {
-    min-width: auto;
-  }
-
-  .val-key-row input {
-    width: 100%;
-  }
-}
 /* ===== RESEARCH LINKS ===== */
 .val-links-grid {
   display: grid;
@@ -631,4 +525,38 @@
 .val-link-desc {
   font-size: 0.75rem;
   color: var(--text-secondary);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .val-search-row {
+    flex-direction: column;
+  }
+  .val-search-input-wrap {
+    width: 100%;
+  }
+  .val-verdict-header {
+    flex-direction: column;
+  }
+  .val-verdict-price {
+    text-align: left;
+  }
+  .val-verdict-rating-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .val-summary-method {
+    min-width: 100px;
+    font-size: 0.7rem;
+  }
+  .val-key-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .val-key-row label {
+    min-width: auto;
+  }
+  .val-key-row input {
+    width: 100%;
+  }
 }

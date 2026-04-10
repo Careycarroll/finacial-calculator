@@ -1,7 +1,7 @@
-/* ===== OPTIONS PAGE LAYOUT OVERRIDE ===== */
-body:not(.grid-stack-page) main {
-  display: block;
-}
+/* ===================================================================
+   OPTIONS LAB — Options Pricing, Strategies, Greeks
+   Page: pages/options.html
+   =================================================================== */
 
 /* ===== OPTIONS LAB TABS ===== */
 .options-tabs {
@@ -14,6 +14,7 @@ body:not(.grid-stack-page) main {
   padding: 0.3rem;
   flex-wrap: wrap;
 }
+
 .options-tab {
   padding: 0.65rem 1.25rem;
   font-size: 0.85rem;
@@ -26,10 +27,12 @@ body:not(.grid-stack-page) main {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .options-tab:hover {
   color: var(--text-primary);
   background-color: rgba(255, 255, 255, 0.05);
 }
+
 .options-tab.active {
   color: var(--accent);
   background-color: var(--bg-primary);
@@ -43,11 +46,13 @@ body:not(.grid-stack-page) main {
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
+
 .strategy-tier {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
+
 .strategy-tier-label {
   font-size: 0.8rem;
   font-weight: 700;
@@ -55,23 +60,29 @@ body:not(.grid-stack-page) main {
   letter-spacing: 0.05em;
   padding: 0.25rem 0;
 }
+
 .strategy-tier-label.tier-beginner {
   color: #4ade80;
 }
+
 .strategy-tier-label.tier-intermediate {
   color: #f59e0b;
 }
+
 .strategy-tier-label.tier-advanced {
   color: #f97316;
 }
+
 .strategy-tier-label.tier-expert {
   color: #f472b6;
 }
+
 .strategy-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
 }
+
 .strategy-btn {
   padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
@@ -83,11 +94,13 @@ body:not(.grid-stack-page) main {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .strategy-btn:hover {
   border-color: var(--accent);
   color: var(--text-primary);
   background-color: var(--bg-secondary);
 }
+
 .strategy-btn.active {
   border-color: var(--accent);
   color: var(--accent);
@@ -102,6 +115,7 @@ body:not(.grid-stack-page) main {
   padding: 1.25rem;
   margin-bottom: 1.5rem;
 }
+
 .strategy-info-header {
   display: flex;
   justify-content: space-between;
@@ -110,16 +124,19 @@ body:not(.grid-stack-page) main {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
 .strategy-info-title {
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--text-primary);
 }
+
 .strategy-info-tags {
   display: flex;
   gap: 0.4rem;
   flex-wrap: wrap;
 }
+
 .strategy-tag {
   padding: 0.2rem 0.6rem;
   font-size: 0.7rem;
@@ -128,62 +145,76 @@ body:not(.grid-stack-page) main {
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
+
 .tag-bullish {
   background-color: rgba(74, 222, 128, 0.15);
   color: #4ade80;
 }
+
 .tag-bearish {
   background-color: rgba(244, 114, 182, 0.15);
   color: #f472b6;
 }
+
 .tag-neutral {
   background-color: rgba(148, 163, 184, 0.15);
   color: #94a3b8;
 }
+
 .tag-volatile {
   background-color: rgba(245, 158, 11, 0.15);
   color: #f59e0b;
 }
+
 .tag-income {
   background-color: rgba(96, 165, 250, 0.15);
   color: #60a5fa;
 }
+
 .tag-hedge {
   background-color: rgba(168, 85, 247, 0.15);
   color: #a855f7;
 }
+
 .tag-beginner {
   background-color: rgba(74, 222, 128, 0.15);
   color: #4ade80;
 }
+
 .tag-intermediate {
   background-color: rgba(245, 158, 11, 0.15);
   color: #f59e0b;
 }
+
 .tag-advanced {
   background-color: rgba(249, 115, 22, 0.15);
   color: #f97316;
 }
+
 .tag-expert {
   background-color: rgba(244, 114, 182, 0.15);
   color: #f472b6;
 }
+
 .strategy-info-description {
   font-size: 0.9rem;
   color: var(--text-secondary);
   line-height: 1.6;
   margin-bottom: 1rem;
 }
+
 .strategy-info-details {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.75rem;
 }
+
 .strategy-detail {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
 }
+
 .strategy-detail-label {
   font-size: 0.75rem;
   font-weight: 600;
@@ -191,17 +222,21 @@ body:not(.grid-stack-page) main {
   letter-spacing: 0.03em;
   color: var(--text-secondary);
 }
+
 .strategy-detail-value {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-primary);
 }
+
 .detail-profit {
   color: #4ade80;
 }
+
 .detail-loss {
   color: #f472b6;
 }
+
 .detail-neutral {
   color: var(--accent);
 }
@@ -213,6 +248,7 @@ body:not(.grid-stack-page) main {
   gap: 0.75rem;
   margin-bottom: 1.5rem;
 }
+
 .leg-row {
   display: flex;
   align-items: center;
@@ -223,33 +259,69 @@ body:not(.grid-stack-page) main {
   border-radius: 8px;
   flex-wrap: wrap;
 }
+
 .leg-label {
   font-size: 0.8rem;
   font-weight: 700;
   min-width: 60px;
   color: var(--text-secondary);
 }
+
 .leg-label.leg-buy {
   color: #4ade80;
 }
+
 .leg-label.leg-sell {
   color: #f472b6;
 }
+
 .leg-label.leg-stock {
   color: #60a5fa;
 }
-.leg-row.form-group {
+
+.leg-row .form-group {
   flex: 1;
   min-width: 100px;
   margin-bottom: 0;
 }
-.leg-row.form-group label {
+
+.leg-row .form-group label {
   font-size: 0.7rem;
   margin-bottom: 0.2rem;
 }
-.leg-row.form-group input {
+
+.leg-row .form-group input {
   padding: 0.4rem 0.6rem;
   font-size: 0.85rem;
+}
+
+/* ===== PREMIUM SUGGESTION ===== */
+.leg-premium-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 100px;
+}
+
+.leg-premium-suggestion {
+  font-size: 0.75rem;
+  color: var(--accent);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.leg-premium-suggestion:hover {
+  color: #5eead4;
+  text-decoration: underline;
+}
+
+.pricing-inputs {
+  padding: 0.75rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
 }
 
 /* ===== PAYOFF CHART ===== */
@@ -263,198 +335,42 @@ body:not(.grid-stack-page) main {
   overflow: hidden;
   margin-bottom: 1rem;
 }
+
 .payoff-chart-container canvas {
   display: block;
 }
 
-/* ===== GREEKS DISPLAY ===== */
-.greeks-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.greek-card {
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.greek-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.greek-symbol {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-.greek-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-.greek-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-.greek-description {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-/* ===== BLACK-SCHOLES RESULTS ===== */
-.bs-results {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.bs-result-card {
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.25rem;
-  text-align: center;
-}
-.bs-result-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-}
-.bs-result-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-.bs-result-sublabel {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  margin-top: 0.25rem;
-}
-
-/* ===== RISK WARNING ===== */
-.risk-warning {
-  background-color: rgba(244, 114, 182, 0.06);
-  border: 1px solid rgba(244, 114, 182, 0.15);
-  border-radius: 8px;
-  padding: 0.6rem 1rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.risk-warning strong {
-  color: #f472b6;
-  white-space: nowrap;
-  display: inline;
-  margin-bottom: 0;
-}
-
-/* ===== RESPONSIVE: OPTIONS ===== */
-@media (max-width: 768px) {
-  .options-tabs {
-    gap: 0;
-  }
-  .options-tab {
-    padding: 0.6rem 0.75rem;
-    font-size: 0.8rem;
-  }
-  .leg-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .leg-label {
-    min-width: auto;
-  }
-  .strategy-info-details {
-    grid-template-columns: 1fr 1fr;
-  }
-  .greeks-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .bs-results {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ===== REFERENCE PAYOFF DIAGRAM ===== */
-.reference-chart-container {
-  width: 100%;
-  max-width: 500px;
-  height: 300px;
-  margin: 1rem auto;
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.reference-chart-container canvas {
-  display: block;
-}
-
-/* ===== PREMIUM SUGGESTION ===== */
-.leg-premium-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-  min-width: 100px;
-}
-.leg-premium-suggestion {
-  font-size: 0.75rem;
-  color: var(--accent);
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-.leg-premium-suggestion:hover {
-  color: #5eead4;
-  text-decoration: underline;
-}
-.pricing-inputs {
-  padding: 0.75rem;
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
-}
 /* ===== PAYOFF TIME CONTROLS ===== */
 .payoff-time-controls {
   margin-bottom: 1rem;
 }
+
 .payoff-time-toggle {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
+
 .payoff-slider-container {
   background-color: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1rem;
 }
+
 .payoff-slider-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
 }
+
 .payoff-slider-header label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
 }
+
 .payoff-days-display {
   font-size: 1.1rem;
   font-weight: 700;
@@ -462,6 +378,7 @@ body:not(.grid-stack-page) main {
   min-width: 80px;
   text-align: right;
 }
+
 .payoff-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -472,6 +389,7 @@ body:not(.grid-stack-page) main {
   outline: none;
   cursor: pointer;
 }
+
 .payoff-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -484,9 +402,11 @@ body:not(.grid-stack-page) main {
   box-shadow: 0 0 6px rgba(45, 212, 191, 0.4);
   transition: box-shadow 0.2s ease;
 }
+
 .payoff-slider::-webkit-slider-thumb:hover {
   box-shadow: 0 0 12px rgba(45, 212, 191, 0.6);
 }
+
 .payoff-slider::-moz-range-thumb {
   width: 20px;
   height: 20px;
@@ -495,6 +415,7 @@ body:not(.grid-stack-page) main {
   cursor: pointer;
   border: 2px solid var(--bg-secondary);
 }
+
 .payoff-slider-labels {
   display: flex;
   justify-content: space-between;
@@ -511,11 +432,13 @@ body:not(.grid-stack-page) main {
   margin-top: 0.5rem;
   font-size: 0.8rem;
 }
+
 .payoff-time-legend-item {
   display: flex;
   align-items: center;
   gap: 0.4rem;
 }
+
 .payoff-time-legend-line {
   width: 20px;
   height: 3px;
@@ -534,20 +457,24 @@ body:not(.grid-stack-page) main {
   line-height: 1.6;
   color: var(--text-secondary);
 }
+
 .payoff-time-explainer strong {
   color: var(--text-primary);
 }
-.payoff-time-explainer.explainer-title {
+
+.payoff-time-explainer .explainer-title {
   font-weight: 700;
   color: var(--accent);
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
 }
-.payoff-time-explainer.explainer-highlight {
+
+.payoff-time-explainer .explainer-highlight {
   color: var(--accent);
   font-weight: 600;
 }
-.payoff-time-explainer.explainer-comparison {
+
+.payoff-time-explainer .explainer-comparison {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
@@ -555,24 +482,181 @@ body:not(.grid-stack-page) main {
   padding-top: 0.75rem;
   border-top: 1px solid var(--border);
 }
-.payoff-time-explainer.explainer-comparison-item {
+
+.payoff-time-explainer .explainer-comparison-item {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
 }
-.payoff-time-explainer.explainer-comparison-label {
+
+.payoff-time-explainer .explainer-comparison-label {
   font-size: 0.75rem;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.payoff-time-explainer.explainer-comparison-value {
+
+.payoff-time-explainer .explainer-comparison-value {
   font-weight: 700;
   font-size: 0.95rem;
 }
 
+/* ===== GREEKS DISPLAY ===== */
+.greeks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.greek-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.greek-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.greek-symbol {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.greek-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.greek-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.greek-description {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ===== BLACK-SCHOLES RESULTS ===== */
+.bs-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.bs-result-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.bs-result-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.bs-result-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.bs-result-sublabel {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* ===== REFERENCE PAYOFF DIAGRAM ===== */
+.reference-chart-container {
+  width: 100%;
+  max-width: 500px;
+  height: 300px;
+  margin: 1rem auto;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.reference-chart-container canvas {
+  display: block;
+}
+
+/* ===== RISK WARNING ===== */
+.risk-warning {
+  background-color: rgba(244, 114, 182, 0.06);
+  border: 1px solid rgba(244, 114, 182, 0.15);
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.risk-warning strong {
+  color: #f472b6;
+  white-space: nowrap;
+  display: inline;
+  margin-bottom: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .options-tabs {
+    gap: 0;
+  }
+
+  .options-tab {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .leg-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .leg-label {
+    min-width: auto;
+  }
+
+  .strategy-info-details {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .greeks-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bs-results {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 600px) {
-  .payoff-time-explainer.explainer-comparison {
+  .payoff-time-explainer .explainer-comparison {
     grid-template-columns: 1fr;
   }
 }
