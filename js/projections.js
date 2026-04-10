@@ -298,7 +298,6 @@ function displayResults(projections) {
 // ===== DISPLAY: CHART =====
 function displayChart(projections, inputs, view) {
   const canvas = document.getElementById("proj-chart-canvas");
-  const ctx = canvas.getContext("2d");
 
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
@@ -306,12 +305,12 @@ function displayChart(projections, inputs, view) {
     requestAnimationFrame(() => displayChart(projections, inputs, view));
     return;
   }
-  canvas.width = rect.width;
-  canvas.height = 350;
+  const chart = createChartContext(canvas, rect.width, 350);
+  const ctx = chart.ctx;
 
   const padding = { top: 30, right: 30, bottom: 50, left: 80 };
-  const chartWidth = canvas.width - padding.left - padding.right;
-  const chartHeight = canvas.height - padding.top - padding.bottom;
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
 
   const horizon = inputs.horizon;
   const inflation = inputs.inflation / 100;
@@ -358,7 +357,7 @@ function displayChart(projections, inputs, view) {
   }
 
   function drawChart(highlightYear) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, chart.width, chart.height);
 
     // Grid
     ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
@@ -370,7 +369,7 @@ function displayChart(projections, inputs, view) {
       const y = toY(value);
       ctx.beginPath();
       ctx.moveTo(padding.left, y);
-      ctx.lineTo(canvas.width - padding.right, y);
+      ctx.lineTo(chart.width - padding.right, y);
       ctx.stroke();
 
       ctx.fillStyle = "#94a3b8";
@@ -385,7 +384,7 @@ function displayChart(projections, inputs, view) {
     for (let year = 0; year <= horizon; year += xStep) {
       const x = toX(year);
       ctx.fillStyle = "#94a3b8";
-      ctx.fillText(`Yr ${year}`, x, canvas.height - padding.bottom + 20);
+      ctx.fillText(`Yr ${year}`, x, chart.height - padding.bottom + 20);
 
       ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
       ctx.beginPath();
@@ -398,8 +397,8 @@ function displayChart(projections, inputs, view) {
     ctx.font = "12px sans-serif";
     ctx.fillText(
       view === "real" ? "Years (Inflation-Adjusted)" : "Years",
-      canvas.width / 2,
-      canvas.height - 5,
+      chart.width / 2,
+      chart.height - 5,
     );
 
     // Draw each projection line
@@ -480,7 +479,7 @@ function displayChart(projections, inputs, view) {
       let tx = hx + 15;
       let ty = padding.top + 10;
 
-      if (tx + tooltipWidth > canvas.width - padding.right) {
+      if (tx + tooltipWidth > chart.width - padding.right) {
         tx = hx - tooltipWidth - 15;
       }
 
@@ -537,7 +536,6 @@ function displayChart(projections, inputs, view) {
   // Remove old listeners by replacing canvas
   const newCanvas = canvas.cloneNode(true);
   canvas.parentNode.replaceChild(newCanvas, canvas);
-  const newCtx = newCanvas.getContext("2d");
 
   // Redraw on new canvas
   function drawOnNew(highlightYear) {
@@ -562,8 +560,7 @@ function displayChart(projections, inputs, view) {
   // Simpler approach: bind mouse events
   newCanvas.addEventListener("mousemove", (e) => {
     const r = newCanvas.getBoundingClientRect();
-    const scaleX = newCanvas.width / r.width;
-    const mouseX = (e.clientX - r.left) * scaleX;
+    const mouseX = e.clientX - r.left;
     const year = fromX(mouseX);
 
     if (year >= 0 && year <= horizon) {
@@ -610,13 +607,18 @@ function displayChartDirect(
   view,
   highlightYear,
 ) {
-  const ctx = canvas.getContext("2d");
+  const chart = createChartContext(
+    canvas,
+    canvas.clientWidth,
+    canvas.clientHeight,
+  );
+  const ctx = chart.ctx;
   const horizon = inputs.horizon;
   const inflation = inputs.inflation / 100;
 
   const padding = { top: 30, right: 30, bottom: 50, left: 80 };
-  const chartWidth = canvas.width - padding.left - padding.right;
-  const chartHeight = canvas.height - padding.top - padding.bottom;
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
 
   const maxValue = Math.max(
     ...adjustedProjections.flatMap((p) => p.adjustedData.map((d) => d.balance)),
@@ -630,7 +632,7 @@ function displayChartDirect(
     return padding.top + chartHeight - (value / (maxValue * 1.1)) * chartHeight;
   }
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, chart.width, chart.height);
 
   // Grid
   ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
@@ -642,7 +644,7 @@ function displayChartDirect(
     const y = toY(value);
     ctx.beginPath();
     ctx.moveTo(padding.left, y);
-    ctx.lineTo(canvas.width - padding.right, y);
+    ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
 
     ctx.fillStyle = "#94a3b8";
@@ -657,7 +659,7 @@ function displayChartDirect(
   for (let year = 0; year <= horizon; year += xStep) {
     const x = toX(year);
     ctx.fillStyle = "#94a3b8";
-    ctx.fillText(`Yr ${year}`, x, canvas.height - padding.bottom + 20);
+    ctx.fillText(`Yr ${year}`, x, chart.height - padding.bottom + 20);
 
     ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
     ctx.beginPath();
@@ -670,8 +672,8 @@ function displayChartDirect(
   ctx.font = "12px sans-serif";
   ctx.fillText(
     view === "real" ? "Years (Inflation-Adjusted)" : "Years",
-    canvas.width / 2,
-    canvas.height - 5,
+    chart.width / 2,
+    chart.height - 5,
   );
 
   // Lines
@@ -747,7 +749,7 @@ function displayChartDirect(
     let tx = hx + 15;
     let ty = padding.top + 10;
 
-    if (tx + tooltipWidth > canvas.width - padding.right) {
+    if (tx + tooltipWidth > chart.width - padding.right) {
       tx = hx - tooltipWidth - 15;
     }
 

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>10-K Analyzer | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/common-calculator.css" />
+    <link rel="stylesheet" href="../css/analyzer.css" />
+  </head>
+  <body class="analyzer-page">
+    <!-- Top Nav -->
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-container">
+      <header>
+        <h1>📑 10-K Analyzer</h1>
+        <p class="tagline">
+          Pull structured SEC filings and get a consolidated financial summary
+          with automated analysis.
+        </p>
+      </header>
+
+      <main>
+        <!-- Search -->
+        <div class="calc-form">
+          <div class="analyzer-search-row">
+            <div class="form-group analyzer-search-input">
+              <label for="analyzer-ticker">Ticker Symbol</label>
+              <input
+                type="text"
+                id="analyzer-ticker"
+                placeholder="e.g. AAPL"
+                maxlength="10"
+                autocomplete="off"
+              />
+            </div>
+            <div class="form-group">
+              <label for="analyzer-years">Years</label>
+              <select id="analyzer-years">
+                <option value="5" selected>5 Years</option>
+                <option value="10">10 Years</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="analyzer-form-type">Filing Type</label>
+              <select id="analyzer-form-type">
+                <option value="10-K" selected>Annual (10-K)</option>
+                <option value="10-Q">Quarterly (10-Q)</option>
+              </select>
+            </div>
+            <div class="form-group analyzer-search-btn-wrap">
+              <label> </label>
+              <button id="analyzer-btn" class="btn-primary">Analyze</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="analyzer-loading" class="analyzer-loading hidden">
+          <div class="analyzer-spinner"></div>
+          <p id="analyzer-loading-text">Fetching SEC data...</p>
+        </div>
+
+        <!-- Error -->
+        <div id="analyzer-error" class="analyzer-error hidden">
+          <p id="analyzer-error-text"></p>
+        </div>
+
+        <!-- ==================== RESULTS ==================== -->
+        <div id="analyzer-results" class="hidden">
+          <!-- Company Overview -->
+          <div id="analyzer-overview" class="analyzer-overview-card"></div>
+
+          <!-- Health Scorecard -->
+          <div id="analyzer-scorecard" class="analyzer-scorecard"></div>
+
+          <!-- Financial Statement Tabs -->
+          <div class="analyzer-statements">
+            <div class="analyzer-tabs">
+              <button
+                id="tab-income"
+                class="analyzer-tab active"
+                data-tab="income"
+              >
+                Income Statement
+              </button>
+              <button id="tab-balance" class="analyzer-tab" data-tab="balance">
+                Balance Sheet
+              </button>
+              <button
+                id="tab-cashflow"
+                class="analyzer-tab"
+                data-tab="cashflow"
+              >
+                Cash Flow
+              </button>
+            </div>
+
+            <div id="income-tab" class="analyzer-tab-content">
+              <div class="table-wrapper">
+                <table id="income-table" class="analyzer-table">
+                  <thead id="income-thead"></thead>
+                  <tbody id="income-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="balance-tab" class="analyzer-tab-content hidden">
+              <div class="table-wrapper">
+                <table id="balance-table" class="analyzer-table">
+                  <thead id="balance-thead"></thead>
+                  <tbody id="balance-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="cashflow-tab" class="analyzer-tab-content hidden">
+              <div class="table-wrapper">
+                <table id="cashflow-table" class="analyzer-table">
+                  <thead id="cashflow-thead"></thead>
+                  <tbody id="cashflow-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Key Ratios -->
+          <div class="analyzer-section">
+            <h2>Key Ratios</h2>
+            <div class="analyzer-ratio-tabs">
+              <button
+                class="analyzer-ratio-tab active"
+                data-ratio="profitability"
+              >
+                Profitability
+              </button>
+              <button class="analyzer-ratio-tab" data-ratio="liquidity">
+                Liquidity
+              </button>
+              <button class="analyzer-ratio-tab" data-ratio="leverage">
+                Leverage
+              </button>
+              <button class="analyzer-ratio-tab" data-ratio="efficiency">
+                Efficiency
+              </button>
+              <button class="analyzer-ratio-tab" data-ratio="pershare">
+                Per Share
+              </button>
+              <button class="analyzer-ratio-tab" data-ratio="cashquality">
+                Cash Quality
+              </button>
+            </div>
+            <div
+              id="analyzer-ratios-content"
+              class="analyzer-ratios-grid"
+            ></div>
+          </div>
+
+          <!-- Trend Charts -->
+          <div class="analyzer-section">
+            <h2>Trend Analysis</h2>
+            <div class="analyzer-chart-tabs">
+              <button
+                class="analyzer-chart-tab active"
+                data-chart="revenue-income"
+              >
+                Revenue & Income
+              </button>
+              <button class="analyzer-chart-tab" data-chart="margins">
+                Margins
+              </button>
+              <button class="analyzer-chart-tab" data-chart="debt-cash">
+                Debt vs Cash
+              </button>
+              <button class="analyzer-chart-tab" data-chart="cashflow">
+                Cash Flow
+              </button>
+              <button class="analyzer-chart-tab" data-chart="eps">EPS</button>
+            </div>
+            <div class="analyzer-chart-container">
+              <canvas id="analyzer-chart-canvas"></canvas>
+            </div>
+          </div>
+
+          <!-- Red Flags & Highlights -->
+          <div class="analyzer-section">
+            <h2>Red Flags & Highlights</h2>
+            <div id="analyzer-flags" class="analyzer-flags"></div>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script src="../js/sec-api.js"></script>
+    <script src="../js/analyzer.js"></script>
+    <script src="../js/analyzer-ui.js"></script>
+    <script src="../js/prefetch.js"></script>
+    <script src="../js/chart-utils.js"></script>
+  </body>
+</html>
