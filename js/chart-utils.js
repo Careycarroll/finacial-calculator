@@ -31,3 +31,20 @@ function getChartDimensions(canvas) {
     height: parseInt(canvas.style.height) || canvas.height,
   };
 }
+
+// ===================================================================
+// AUTO-SCROLL TABLES — adds scroll to tables with many rows
+// ===================================================================
+
+function autoScrollTables(maxRows = 25) {
+  document.querySelectorAll(".table-wrapper").forEach((wrapper) => {
+    const rows = wrapper.querySelectorAll("tbody tr");
+    if (rows.length > maxRows) {
+      wrapper.style.maxHeight = "500px";
+      wrapper.style.overflowY = "auto";
+    } else {
+      wrapper.style.maxHeight = "";
+      wrapper.style.overflowY = "";
+    }
+  });
+}

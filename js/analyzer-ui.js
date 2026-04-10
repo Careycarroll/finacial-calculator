@@ -168,6 +168,27 @@ function highlightMatch(text, query) {
   return `${before}<strong style="color:var(--text-primary)">${match}</strong>${after}`;
 }
 
+// ===================================================================
+// TOOLTIP WRAPPER
+// ===================================================================
+
+function tt(label, termKey) {
+  const term = getTermDefinition(termKey);
+  if (!term) return label;
+  return `<span class="term-tooltip" data-tooltip="${term.definition}">${label}</span>`;
+}
+
+function formatLargeNumber(value) {
+  if (value === null || value === undefined) return "—";
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+  if (abs >= 1e12) return `${sign}$${(abs / 1e12).toFixed(2)}T`;
+  if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(2)}M`;
+  if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}K`;
+  return `${sign}$${abs.toFixed(0)}`;
+}
+
 // Load ticker data on page load
 loadTickerData();
 initTickerSearch();
@@ -299,6 +320,7 @@ async function renderAll(analysis) {
   renderRatios(analysis, "profitability");
   renderChart(analysis, "revenue-income");
   renderFlags(analysis);
+  autoScrollTables();
 }
 
 // ===================================================================
@@ -367,15 +389,27 @@ function renderScorecard(analysis) {
     return "Poor";
   }
 
+  const categoryTermKeys = {
+    "Revenue Growth": "revenueGrowthScore",
+    Profitability: "profitabilityScore",
+    "Debt Health": "debtHealthScore",
+    "Cash Generation": "cashGenerationScore",
+    "Earnings Quality": "earningsQualityScore",
+    Liquidity: "liquidityScore",
+  };
+
   const overallColor = scoreColor(healthScore.overall);
 
   let barsHTML = "";
   Object.values(healthScore.categories).forEach((cat) => {
     const color = scoreColor(cat.score);
     const width = cat.score !== null ? cat.score * 10 : 0;
+    const termKey = categoryTermKeys[cat.label];
+    const displayLabel = termKey ? tt(cat.label, termKey) : cat.label;
+
     barsHTML += `
       <div class="scorecard-item">
-        <span class="scorecard-label">${cat.label}</span>
+        <span class="scorecard-label">${displayLabel}</span>
         <div class="scorecard-bar-track">
           <div class="scorecard-bar-fill" style="width: ${width}%; background-color: ${color};"></div>
         </div>
@@ -412,276 +446,266 @@ function buildTableHeader(periods) {
   return html;
 }
 
-function buildTableRow(label, periods, field, options) {
-  options = options || {};
-  const cssClass = options.class || "";
-  const indent = options.indent ? " row-indent" : "";
-  const formatter = options.format || formatCurrencyShort;
+function buildTableRow(label, periods, field, options = {}) {
+  const { format = "currency", termKey = null } = options;
+  const displayLabel = termKey ? tt(label, termKey) : label;
 
-  let html = `<tr class="${cssClass}"><td class="${indent}">${label}</td>`;
+  let cells = `<td>${displayLabel}</td>`;
 
-  const values = periods.map((p) => p[field]);
+  periods.forEach((period, i) => {
+    const val = period[field];
+    const prev = periods[i + 1] ? periods[i + 1][field] : null;
 
-  periods.forEach((p, i) => {
-    const val = p[field];
-    let cellClass = "";
-    if (options.colorize && val !== null) {
-      cellClass = val >= 0 ? "val-positive" : "val-negative";
-    }
-
+    let formatted = "";
     let growth = "";
-    if (i < periods.length - 1 && !options.noGrowth) {
-      const prev = periods[i + 1]?.[field];
-      const change = pctChange(val, prev);
-      if (change !== null) {
-        const growthClass = change >= 0 ? "positive" : "negative";
-        growth = ` <span class="growth-badge ${growthClass}">${change >= 0 ? "+" : ""}${(change * 100).toFixed(1)}%</span>`;
+
+    if (val !== null && val !== undefined) {
+      if (format === "currency") {
+        formatted = formatLargeNumber(val);
+      } else if (format === "shares") {
+        formatted = formatLargeNumber(val);
+      } else if (format === "dollar") {
+        formatted = `$${val.toFixed(2)}`;
+      } else if (format === "percent") {
+        formatted = `${(val * 100).toFixed(1)}%`;
+      } else {
+        formatted = val.toLocaleString();
       }
+
+      if (
+        prev !== null &&
+        prev !== undefined &&
+        prev !== 0 &&
+        format !== "percent"
+      ) {
+        const pctChange = ((val - prev) / Math.abs(prev)) * 100;
+        const color = pctChange >= 0 ? "#2dd4bf" : "#f472b6";
+        const sign = pctChange >= 0 ? "+" : "";
+        growth = ` <span style="font-size:0.75rem;color:${color}">${sign}${pctChange.toFixed(1)}%</span>`;
+      }
+    } else {
+      formatted = "—";
     }
 
-    html += `<td class="${cellClass}">${formatter(val)}${growth}</td>`;
+    cells += `<td>${formatted}${growth}</td>`;
   });
 
   // CAGR column
-  const validValues = values.filter((v) => v !== null && v > 0);
-  let cagrVal = null;
-  if (validValues.length >= 2) {
-    // periods are newest first, so first = end, last = start
-    const endVal = values.find((v) => v !== null && v > 0);
-    const startVal = [...values].reverse().find((v) => v !== null && v > 0);
-    const yrs = validValues.length - 1;
-    if (endVal && startVal && yrs > 0) {
-      cagrVal = cagr(endVal, startVal, yrs);
-    }
+  const first = periods[periods.length - 1]?.[field];
+  const last = periods[0]?.[field];
+  const years = periods.length - 1;
+  let cagr = "—";
+  if (first && last && years > 0 && first > 0 && last > 0) {
+    const rate = (Math.pow(last / first, 1 / years) - 1) * 100;
+    cagr = `${rate.toFixed(1)}%`;
   }
-  const cagrClass =
-    cagrVal !== null ? (cagrVal >= 0 ? "val-positive" : "val-negative") : "";
-  html += `<td class="${cagrClass}">${cagrVal !== null ? formatPct(cagrVal) : "—"}</td>`;
+  cells += `<td>${cagr}</td>`;
 
-  html += "</tr>";
-  return html;
+  return `<tr>${cells}</tr>`;
 }
 
-function buildMarginRow(label, periods, field) {
-  let html = `<tr class="row-indent"><td class="row-indent val-muted">${label}</td>`;
-  periods.forEach((p) => {
-    const margin = p[field];
-    html += `<td class="val-muted">${formatPct(margin)}</td>`;
+function buildMarginRow(label, periods, field, termKey) {
+  const displayLabel = termKey ? tt(label, termKey) : label;
+  let cells = `<td>${displayLabel}</td>`;
+
+  periods.forEach((period) => {
+    const pathParts = field.split(".");
+    let val = period;
+    for (const part of pathParts) {
+      val = val?.[part];
+    }
+    if (val !== null && val !== undefined) {
+      cells += `<td>${(val * 100).toFixed(1)}%</td>`;
+    } else {
+      cells += `<td>—</td>`;
+    }
   });
-  html += "<td></td></tr>";
-  return html;
+
+  cells += `<td></td>`;
+  return `<tr>${cells}</tr>`;
 }
 
 function renderIncomeStatement(analysis) {
   const periods = analysis.statements.incomeStatements;
-  const ratios = analysis.ratios;
+  const thead = document.getElementById("income-thead");
+  const tbody = document.getElementById("income-tbody");
+  if (!thead || !tbody) return;
 
-  document.getElementById("income-thead").innerHTML = buildTableHeader(periods);
+  const header = buildTableHeader(periods);
 
-  // Merge margins into periods for easy access
-  const merged = periods.map((p, i) => ({
-    ...p,
-    grossMargin: ratios[i]?.margins.grossMargin,
-    ebitdaMargin: ratios[i]?.margins.ebitdaMargin,
-    ebitMargin: ratios[i]?.margins.ebitMargin,
-    preTaxMargin: ratios[i]?.margins.preTaxMargin,
-    netMargin: ratios[i]?.margins.netMargin,
-    effectiveTaxRate: ratios[i]?.margins.effectiveTaxRate,
-  }));
+  const rows = [
+    buildTableRow("Revenue", periods, "revenue", { termKey: "revenue" }),
+    buildTableRow("Cost of Revenue", periods, "costOfRevenue", {
+      termKey: "costOfRevenue",
+    }),
+    buildTableRow("Gross Profit", periods, "grossProfit", {
+      termKey: "grossProfit",
+    }),
+    buildMarginRow(
+      "Gross Margin",
+      analysis.ratios,
+      "margins.grossMargin",
+      "grossMargin",
+    ),
+    buildTableRow("R&D Expense", periods, "researchAndDevelopment", {
+      termKey: "researchAndDevelopment",
+    }),
+    buildTableRow("SG&A Expense", periods, "sellingGeneralAndAdmin", {
+      termKey: "sellingGeneralAndAdmin",
+    }),
+    buildTableRow("EBITDA", periods, "ebitda", { termKey: "ebitda" }),
+    buildMarginRow(
+      "EBITDA Margin",
+      analysis.ratios,
+      "margins.ebitdaMargin",
+      "ebitdaMargin",
+    ),
 
-  let html = "";
-  html += buildTableRow("Revenue", merged, "revenue", { class: "row-header" });
-  html += buildTableRow("Cost of Revenue", merged, "costOfRevenue", {
-    indent: true,
-  });
-  html += buildTableRow("Gross Profit", merged, "grossProfit", {
-    class: "row-subtotal",
-  });
-  html += buildMarginRow("Gross Margin", merged, "grossMargin");
-  html += buildTableRow("R&D Expense", merged, "researchAndDevelopment", {
-    indent: true,
-  });
-  html += buildTableRow("SG&A Expense", merged, "sellingGeneralAndAdmin", {
-    indent: true,
-  });
-  html += buildTableRow("EBITDA", merged, "ebitda", {
-    class: "row-subtotal",
-  });
-  html += buildMarginRow("EBITDA Margin", merged, "ebitdaMargin");
-  html += buildTableRow("Depreciation & Amortization", merged, "depreciation", {
-    indent: true,
-  });
-  html += buildTableRow("EBIT / Operating Income", merged, "ebit", {
-    class: "row-subtotal",
-  });
-  html += buildMarginRow("Operating Margin", merged, "ebitMargin");
-  html += buildTableRow("Interest Expense", merged, "interestExpense", {
-    indent: true,
-  });
-  html += buildTableRow("EBT (Pre-Tax Income)", merged, "ebt", {
-    class: "row-subtotal",
-  });
-  html += buildMarginRow("Pre-Tax Margin", merged, "preTaxMargin");
-  html += buildTableRow("Tax Expense", merged, "taxExpense", { indent: true });
-  html += buildMarginRow("Effective Tax Rate", merged, "effectiveTaxRate");
-  html += buildTableRow("Net Income", merged, "netIncome", {
-    class: "row-subtotal",
-  });
-  html += buildMarginRow("Net Margin", merged, "netMargin");
+    buildTableRow("Depreciation & Amortization", periods, "depreciation", {
+      termKey: "depreciation",
+    }),
+    buildTableRow("EBIT / Operating Income", periods, "operatingIncome", {
+      termKey: "operatingIncome",
+    }),
+    buildMarginRow(
+      "Operating Margin",
+      analysis.ratios,
+      "margins.operatingMargin",
+      "operatingMargin",
+    ),
 
-  // Per share
-  html += `<tr class="row-section-header"><td colspan="${periods.length + 2}">Per Share Data</td></tr>`;
-  html += buildTableRow("EPS (Basic)", merged, "epsBasic", {
-    format: (v) => (v !== null ? `$${v.toFixed(2)}` : "—"),
-    noGrowth: true,
-  });
-  html += buildTableRow("EPS (Diluted)", merged, "epsDiluted", {
-    format: (v) => (v !== null ? `$${v.toFixed(2)}` : "—"),
-  });
-  html += buildTableRow("Shares Outstanding (Basic)", merged, "sharesBasic", {
-    format: (v) =>
-      v !== null
-        ? v >= 1e9
-          ? `${(v / 1e9).toFixed(2)}B`
-          : `${(v / 1e6).toFixed(0)}M`
-        : "—",
-  });
+    buildTableRow("Interest Expense", periods, "interestExpense", {
+      termKey: "interestExpense",
+    }),
+    buildTableRow("Pre-Tax Income", periods, "ebt", { termKey: "ebt" }),
+    buildTableRow("Tax Expense", periods, "taxExpense", {
+      termKey: "taxExpense",
+    }),
+    buildTableRow("Net Income", periods, "netIncome", { termKey: "netIncome" }),
+    buildMarginRow(
+      "Net Margin",
+      analysis.ratios,
+      "margins.netMargin",
+      "netMargin",
+    ),
 
-  document.getElementById("income-tbody").innerHTML = html;
+    buildTableRow("EPS (Basic)", periods, "epsBasic", {
+      format: "dollar",
+      termKey: "epsBasic",
+    }),
+    buildTableRow("EPS (Diluted)", periods, "epsDiluted", {
+      format: "dollar",
+      termKey: "epsDiluted",
+    }),
+  ];
+
+  thead.innerHTML = header;
+  tbody.innerHTML = rows.join("");
 }
 
 function renderBalanceSheet(analysis) {
   const periods = analysis.statements.balanceSheets;
+  const thead = document.getElementById("balance-thead");
+  const tbody = document.getElementById("balance-tbody");
+  if (!thead || !tbody) return;
 
-  document.getElementById("balance-thead").innerHTML =
-    buildTableHeader(periods);
+  const header = buildTableHeader(periods);
 
-  let html = "";
+  const rows = [
+    buildTableRow("Total Assets", periods, "totalAssets", {
+      termKey: "totalAssets",
+    }),
+    buildTableRow("Current Assets", periods, "currentAssets", {
+      termKey: "currentAssets",
+    }),
+    buildTableRow("Cash & Equivalents", periods, "cash", { termKey: "cash" }),
+    buildTableRow("Short-Term Investments", periods, "shortTermInvestments", {
+      termKey: "shortTermInvestments",
+    }),
+    buildTableRow("Accounts Receivable", periods, "accountsReceivable", {
+      termKey: "accountsReceivable",
+    }),
+    buildTableRow("Inventory", periods, "inventory", { termKey: "inventory" }),
+    buildTableRow("PP&E", periods, "propertyPlantEquipment", {
+      termKey: "propertyPlantEquipment",
+    }),
+    buildTableRow("Goodwill", periods, "goodwill", { termKey: "goodwill" }),
+    buildTableRow("Intangible Assets", periods, "intangibleAssets", {
+      termKey: "intangibleAssets",
+    }),
+    buildTableRow("Total Liabilities", periods, "totalLiabilities", {
+      termKey: "totalLiabilities",
+    }),
+    buildTableRow("Current Liabilities", periods, "currentLiabilities", {
+      termKey: "currentLiabilities",
+    }),
+    buildTableRow("Accounts Payable", periods, "accountsPayable", {
+      termKey: "accountsPayable",
+    }),
+    buildTableRow("Short-Term Debt", periods, "shortTermDebt", {
+      termKey: "shortTermDebt",
+    }),
+    buildTableRow("Long-Term Debt", periods, "longTermDebt", {
+      termKey: "longTermDebt",
+    }),
+    buildTableRow("Total Debt", periods, "totalDebt", { termKey: "totalDebt" }),
+    buildTableRow("Net Debt", periods, "netDebt", { termKey: "netDebt" }),
+    buildTableRow("Total Equity", periods, "totalEquity", {
+      termKey: "totalEquity",
+    }),
+    buildTableRow("Retained Earnings", periods, "retainedEarnings", {
+      termKey: "retainedEarnings",
+    }),
+    buildTableRow("Treasury Stock", periods, "treasuryStock", {
+      termKey: "treasuryStock",
+    }),
+    buildTableRow("Shares Outstanding", periods, "sharesOutstanding", {
+      format: "shares",
+      termKey: "sharesOutstanding",
+    }),
+  ];
 
-  // Assets
-  html += `<tr class="row-section-header"><td colspan="${periods.length + 2}">Assets</td></tr>`;
-  html += buildTableRow("Cash & Equivalents", periods, "cash", {
-    indent: true,
-  });
-  html += buildTableRow(
-    "Short-Term Investments",
-    periods,
-    "shortTermInvestments",
-    {
-      indent: true,
-    },
-  );
-  html += buildTableRow("Accounts Receivable", periods, "accountsReceivable", {
-    indent: true,
-  });
-  html += buildTableRow("Inventory", periods, "inventory", { indent: true });
-  html += buildTableRow("Current Assets", periods, "currentAssets", {
-    class: "row-subtotal",
-  });
-  html += buildTableRow("PP&E", periods, "propertyPlantEquipment", {
-    indent: true,
-  });
-  html += buildTableRow("Goodwill", periods, "goodwill", { indent: true });
-  html += buildTableRow("Intangible Assets", periods, "intangibleAssets", {
-    indent: true,
-  });
-  html += buildTableRow("Total Assets", periods, "totalAssets", {
-    class: "row-subtotal",
-  });
-
-  // Liabilities
-  html += `<tr class="row-section-header"><td colspan="${periods.length + 2}">Liabilities</td></tr>`;
-  html += buildTableRow("Accounts Payable", periods, "accountsPayable", {
-    indent: true,
-  });
-  html += buildTableRow("Short-Term Debt", periods, "shortTermDebt", {
-    indent: true,
-  });
-  html += buildTableRow("Current Liabilities", periods, "currentLiabilities", {
-    class: "row-subtotal",
-  });
-  html += buildTableRow("Long-Term Debt", periods, "longTermDebt", {
-    indent: true,
-  });
-  html += buildTableRow("Total Liabilities", periods, "totalLiabilities", {
-    class: "row-subtotal",
-  });
-
-  // Equity
-  html += `<tr class="row-section-header"><td colspan="${periods.length + 2}">Equity</td></tr>`;
-  html += buildTableRow("Retained Earnings", periods, "retainedEarnings", {
-    indent: true,
-    colorize: true,
-  });
-  html += buildTableRow("Treasury Stock", periods, "treasuryStock", {
-    indent: true,
-  });
-  html += buildTableRow("Total Equity", periods, "totalEquity", {
-    class: "row-subtotal",
-    colorize: true,
-  });
-
-  // Calculated
-  html += `<tr class="row-section-header"><td colspan="${periods.length + 2}">Calculated</td></tr>`;
-  html += buildTableRow("Total Debt", periods, "totalDebt");
-  html += buildTableRow("Net Debt", periods, "netDebt", { colorize: true });
-
-  document.getElementById("balance-tbody").innerHTML = html;
+  thead.innerHTML = header;
+  tbody.innerHTML = rows.join("");
 }
 
 function renderCashFlow(analysis) {
   const periods = analysis.statements.cashFlows;
+  const thead = document.getElementById("cashflow-thead");
+  const tbody = document.getElementById("cashflow-tbody");
+  if (!thead || !tbody) return;
 
-  document.getElementById("cashflow-thead").innerHTML =
-    buildTableHeader(periods);
+  const header = buildTableHeader(periods);
 
-  let html = "";
-  html += buildTableRow("Operating Cash Flow", periods, "operatingCashFlow", {
-    class: "row-header",
-    colorize: true,
-  });
-  html += buildTableRow(
-    "Capital Expenditures",
-    periods,
-    "capitalExpenditures",
-    {
-      indent: true,
-    },
-  );
-  html += buildTableRow("Free Cash Flow", periods, "freeCashFlow", {
-    class: "row-subtotal",
-    colorize: true,
-  });
-  html += buildTableRow(
-    "Depreciation & Amortization",
-    periods,
-    "depreciation",
-    {
-      indent: true,
-    },
-  );
-  html += buildTableRow("Investing Cash Flow", periods, "investingCashFlow", {
-    colorize: true,
-  });
-  html += buildTableRow("Financing Cash Flow", periods, "financingCashFlow", {
-    colorize: true,
-  });
+  const rows = [
+    buildTableRow("Operating Cash Flow", periods, "operatingCashFlow", {
+      termKey: "operatingCashFlow",
+    }),
+    buildTableRow("Investing Cash Flow", periods, "investingCashFlow", {
+      termKey: "investingCashFlow",
+    }),
+    buildTableRow("Financing Cash Flow", periods, "financingCashFlow", {
+      termKey: "financingCashFlow",
+    }),
+    buildTableRow("Capital Expenditures", periods, "capitalExpenditures", {
+      termKey: "capitalExpenditures",
+    }),
+    buildTableRow("Free Cash Flow", periods, "freeCashFlow", {
+      termKey: "freeCashFlow",
+    }),
+    buildTableRow("Depreciation & Amortization", periods, "depreciation", {
+      termKey: "depreciation",
+    }),
+    buildTableRow("Dividends Paid", periods, "dividendsPaid", {
+      termKey: "dividendsPaid",
+    }),
+    buildTableRow("Share Buybacks", periods, "shareBuybacks", {
+      termKey: "shareBuybacks",
+    }),
+  ];
 
-  html += `<tr class="row-section-header"><td colspan="${periods.length + 2}">Capital Allocation</td></tr>`;
-  html += buildTableRow("Dividends Paid", periods, "dividendsPaid", {
-    indent: true,
-  });
-  html += buildTableRow("Share Buybacks", periods, "shareBuybacks", {
-    indent: true,
-  });
-  html += buildTableRow("Debt Issued", periods, "debtIssued", {
-    indent: true,
-  });
-  html += buildTableRow("Debt Repaid", periods, "debtRepaid", {
-    indent: true,
-  });
-
-  document.getElementById("cashflow-tbody").innerHTML = html;
+  thead.innerHTML = header;
+  tbody.innerHTML = rows.join("");
 }
 
 // ===================================================================
@@ -694,37 +718,53 @@ function renderRatios(analysis, category) {
 
   const configs = {
     profitability: [
-      { label: "Gross Margin", path: "margins.grossMargin", format: formatPct },
+      {
+        label: "Gross Margin",
+        path: "margins.grossMargin",
+        format: formatPct,
+        termKey: "grossMargin",
+      },
       {
         label: "EBITDA Margin",
         path: "margins.ebitdaMargin",
         format: formatPct,
+        termKey: "ebitdaMargin",
       },
       {
         label: "Operating Margin",
         path: "margins.operatingMargin",
         format: formatPct,
+        termKey: "operatingMargin",
       },
-      { label: "Net Margin", path: "margins.netMargin", format: formatPct },
+      {
+        label: "Net Margin",
+        path: "margins.netMargin",
+        format: formatPct,
+        termKey: "netMargin",
+      },
       {
         label: "Effective Tax Rate",
         path: "margins.effectiveTaxRate",
         format: formatPct,
+        termKey: "effectiveTaxRate",
       },
       {
         label: "Return on Equity",
         path: "profitability.roe",
         format: formatPct,
+        termKey: "returnOnEquity",
       },
       {
         label: "Return on Assets",
         path: "profitability.roa",
         format: formatPct,
+        termKey: "returnOnAssets",
       },
       {
         label: "Return on Invested Capital",
         path: "profitability.roic",
         format: formatPct,
+        termKey: "roic",
       },
     ],
     liquidity: [
@@ -732,44 +772,57 @@ function renderRatios(analysis, category) {
         label: "Current Ratio",
         path: "liquidity.currentRatio",
         format: formatRatio,
+        termKey: "currentRatio",
       },
       {
         label: "Quick Ratio",
         path: "liquidity.quickRatio",
         format: formatRatio,
+        termKey: "quickRatio",
       },
-      { label: "Cash Ratio", path: "liquidity.cashRatio", format: formatRatio },
+      {
+        label: "Cash Ratio",
+        path: "liquidity.cashRatio",
+        format: formatRatio,
+        termKey: "cashRatio",
+      },
     ],
     leverage: [
       {
         label: "Debt to Equity",
         path: "leverage.debtToEquity",
         format: formatRatio,
+        termKey: "debtToEquity",
       },
       {
         label: "Debt to Assets",
         path: "leverage.debtToAssets",
         format: formatRatio,
+        termKey: "debtToAssets",
       },
       {
         label: "Interest Coverage",
         path: "leverage.interestCoverage",
         format: formatRatio,
+        termKey: "interestCoverage",
       },
       {
         label: "Debt / EBITDA",
         path: "leverage.debtToEbitda",
         format: formatRatio,
+        termKey: "debtToEbitda",
       },
       {
         label: "Net Debt / EBITDA",
         path: "leverage.netDebtToEbitda",
         format: formatRatio,
+        termKey: "netDebtToEbitda",
       },
       {
         label: "Equity Multiplier",
         path: "leverage.equityMultiplier",
         format: formatRatio,
+        termKey: "equityMultiplier",
       },
     ],
     efficiency: [
@@ -777,31 +830,37 @@ function renderRatios(analysis, category) {
         label: "Asset Turnover",
         path: "efficiency.assetTurnover",
         format: formatRatio,
+        termKey: "assetTurnover",
       },
       {
         label: "Inventory Turnover",
         path: "efficiency.inventoryTurnover",
         format: formatRatio,
+        termKey: "inventoryTurnover",
       },
       {
         label: "Receivables Turnover",
         path: "efficiency.receivablesTurnover",
         format: formatRatio,
+        termKey: "receivablesTurnover",
       },
       {
         label: "Days Inventory",
         path: "efficiency.daysInventory",
         format: (v) => (v !== null ? `${v.toFixed(0)} days` : "—"),
+        termKey: "daysInventory",
       },
       {
         label: "Days Sales Outstanding",
         path: "efficiency.daysSalesOutstanding",
         format: (v) => (v !== null ? `${v.toFixed(0)} days` : "—"),
+        termKey: "daysSalesOutstanding",
       },
       {
         label: "Cash Conversion Cycle",
         path: "efficiency.cashConversionCycle",
         format: (v) => (v !== null ? `${v.toFixed(0)} days` : "—"),
+        termKey: "cashConversionCycle",
       },
     ],
     pershare: [
@@ -809,36 +868,43 @@ function renderRatios(analysis, category) {
         label: "EPS (Basic)",
         path: "perShare.epsBasic",
         format: (v) => (v !== null ? `$${v.toFixed(2)}` : "—"),
+        termKey: "epsBasic",
       },
       {
         label: "EPS (Diluted)",
         path: "perShare.epsDiluted",
         format: (v) => (v !== null ? `$${v.toFixed(2)}` : "—"),
+        termKey: "epsDiluted",
       },
       {
         label: "Book Value / Share",
         path: "perShare.bookValuePerShare",
         format: (v) => (v !== null ? `$${v.toFixed(2)}` : "—"),
+        termKey: "bookValuePerShare",
       },
       {
         label: "FCF / Share",
         path: "perShare.fcfPerShare",
         format: (v) => (v !== null ? `$${v.toFixed(2)}` : "—"),
+        termKey: "fcfPerShare",
       },
       {
         label: "Revenue / Share",
         path: "perShare.revenuePerShare",
         format: (v) => (v !== null ? `$${v.toFixed(2)}` : "—"),
+        termKey: "revenuePerShare",
       },
       {
         label: "Dividends / Share",
         path: "perShare.dividendsPerShare",
         format: (v) => (v !== null ? `$${v.toFixed(2)}` : "—"),
+        termKey: "dividendsPerShare",
       },
       {
         label: "Payout Ratio",
         path: "perShare.payoutRatio",
         format: formatPct,
+        termKey: "payoutRatio",
       },
     ],
     cashquality: [
@@ -846,26 +912,31 @@ function renderRatios(analysis, category) {
         label: "OCF / Net Income",
         path: "cashFlowQuality.ocfToNetIncome",
         format: formatRatio,
+        termKey: "ocfToNetIncome",
       },
       {
         label: "FCF / Net Income",
         path: "cashFlowQuality.fcfToNetIncome",
         format: formatRatio,
+        termKey: "fcfToNetIncome",
       },
       {
         label: "CapEx / Revenue",
         path: "cashFlowQuality.capexToRevenue",
         format: formatPct,
+        termKey: "capexToRevenue",
       },
       {
         label: "CapEx / OCF",
         path: "cashFlowQuality.capexToOcf",
         format: formatPct,
+        termKey: "capexToOcf",
       },
       {
         label: "FCF Margin",
         path: "cashFlowQuality.fcfToRevenue",
         format: formatPct,
+        termKey: "fcfMargin",
       },
     ],
   };
@@ -891,13 +962,22 @@ function renderRatios(analysis, category) {
     const maxVal = Math.max(...validVals.map((v) => Math.abs(v)), 0.001);
 
     let barsHTML = "";
-    reversedValues.forEach((v) => {
+    const reversedRatios = [...ratios].reverse();
+    reversedValues.forEach((v, i) => {
+      const year = reversedRatios[i]?.fy || "";
+      const formattedVal = v !== null ? item.format(v) : "—";
       if (v === null) {
-        barsHTML += `<div class="ratio-bar" style="height: 2px; background-color: var(--border);"></div>`;
+        barsHTML += `
+          <div class="ratio-bar-wrapper" data-year="${year}" data-val="—">
+            <div class="ratio-bar" style="height: 2px; background-color: var(--border);"></div>
+          </div>`;
       } else {
         const height = Math.max((Math.abs(v) / maxVal) * 100, 4);
         const color = v >= 0 ? "var(--accent)" : "#f472b6";
-        barsHTML += `<div class="ratio-bar" style="height: ${height}%; background-color: ${color};"></div>`;
+        barsHTML += `
+          <div class="ratio-bar-wrapper" data-year="${year}" data-val="${formattedVal}">
+            <div class="ratio-bar" style="height: ${height}%; background-color: ${color};"></div>
+          </div>`;
       }
     });
 
@@ -905,12 +985,17 @@ function renderRatios(analysis, category) {
     const firstYear = ratios[ratios.length - 1]?.fy || "";
     const lastYear = ratios[0]?.fy || "";
 
+    const displayLabel = item.termKey
+      ? tt(item.label, item.termKey)
+      : item.label;
+
     html += `
       <div class="ratio-card">
         <div class="ratio-card-header">
-          <span class="ratio-card-name">${item.label}</span>
+          <span class="ratio-card-name">${displayLabel}</span>
           <span class="ratio-card-value">${item.format(latestVal)}</span>
         </div>
+        <div class="ratio-card-hover-info"> </div>
         <div class="ratio-card-trend">${barsHTML}</div>
         <div class="ratio-card-years">
           <span>${firstYear}</span>
@@ -921,6 +1006,29 @@ function renderRatios(analysis, category) {
   });
 
   el.innerHTML = html;
+
+  // Bind hover events for ratio bars
+  el.querySelectorAll(".ratio-card").forEach((card) => {
+    const hoverInfo = card.querySelector(".ratio-card-hover-info");
+    const valueEl = card.querySelector(".ratio-card-value");
+    const originalValue = valueEl.textContent;
+
+    card.querySelectorAll(".ratio-bar-wrapper").forEach((bar) => {
+      bar.addEventListener("mouseenter", () => {
+        const year = bar.dataset.year;
+        const val = bar.dataset.val;
+        hoverInfo.textContent = `FY ${year}`;
+        valueEl.textContent = val;
+        valueEl.style.color = "var(--accent)";
+      });
+
+      bar.addEventListener("mouseleave", () => {
+        hoverInfo.innerHTML = " ";
+        valueEl.textContent = originalValue;
+        valueEl.style.color = "";
+      });
+    });
+  });
 }
 
 // ===================================================================
