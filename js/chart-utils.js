@@ -24,3 +24,10 @@ function createChartContext(canvas, width, height) {
     },
   };
 }
+// Get logical dimensions from a canvas already set up by createChartContext
+function getChartDimensions(canvas) {
+  return {
+    width: parseInt(canvas.style.width) || canvas.width,
+    height: parseInt(canvas.style.height) || canvas.height,
+  };
+}

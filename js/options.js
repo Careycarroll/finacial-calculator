@@ -776,7 +776,6 @@ function selectStrategy(strategy) {
 
 function drawReferenceChart(strategy) {
   const canvas = document.getElementById("reference-chart-canvas");
-  const ctx = canvas.getContext("2d");
 
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
@@ -784,12 +783,12 @@ function drawReferenceChart(strategy) {
     requestAnimationFrame(() => drawReferenceChart(strategy));
     return;
   }
-  canvas.width = rect.width;
-  canvas.height = 300;
+  const chart = createChartContext(canvas, rect.width, 300);
+  const ctx = chart.ctx;
 
   const padding = { top: 40, right: 40, bottom: 50, left: 40 };
-  const w = canvas.width - padding.left - padding.right;
-  const h = canvas.height - padding.top - padding.bottom;
+  const w = chart.width - padding.left - padding.right;
+  const h = chart.height - padding.top - padding.bottom;
 
   // Center point
   const cx = padding.left + w / 2;
@@ -803,11 +802,11 @@ function drawReferenceChart(strategy) {
     return padding.top + (1 - pct) * h;
   }
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  chart.clear();
 
   // Background
   ctx.fillStyle = "var(--bg-primary)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, chart.width, chart.height);
 
   // Profit zone (top half)
   ctx.fillStyle = "rgba(74, 222, 128, 0.05)";
@@ -839,13 +838,13 @@ function drawReferenceChart(strategy) {
   ctx.fillStyle = "#94a3b8";
   ctx.font = "11px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("Stock Price →", padding.left + w / 2, canvas.height - 8);
+  ctx.fillText("Stock Price →", padding.left + w / 2, chart.height - 8);
 
   // Title
   ctx.fillStyle = "#e2e8f0";
   ctx.font = "bold 14px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(strategy.name, canvas.width / 2, 22);
+  ctx.fillText(strategy.name, chart.width / 2, 22);
 
   // Get the payoff shape for this strategy
   const shape = getReferenceShape(strategy.id);
@@ -2557,8 +2556,7 @@ function redrawPayoffChart() {
     const canvas = document.getElementById("payoff-chart-canvas");
     const container = canvas.parentElement;
     const rect = container.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = 400;
+    createChartContext(canvas, rect.width, 400);
 
     const pnlValues = lastPayoffData.map((d) => d.pnl);
     const pnlMin = Math.min(...pnlValues);
@@ -2677,8 +2675,7 @@ function redrawPayoffChart() {
   const canvas = document.getElementById("payoff-chart-canvas");
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = 400;
+  createChartContext(canvas, rect.width, 400);
 
   drawMultiCurvePayoff(
     canvas,
@@ -2868,10 +2865,12 @@ function drawMultiCurvePayoff(
   yMax,
   highlightPrice,
 ) {
-  const ctx = canvas.getContext("2d");
+  const dim = getChartDimensions(canvas);
+  const chart = createChartContext(canvas, dim.width, dim.height);
+  const ctx = chart.ctx;
   const padding = { top: 30, right: 30, bottom: 50, left: 80 };
-  const chartWidth = canvas.width - padding.left - padding.right;
-  const chartHeight = canvas.height - padding.top - padding.bottom;
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
 
   function toX(price) {
     return (
@@ -2885,7 +2884,7 @@ function drawMultiCurvePayoff(
     );
   }
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  chart.clear();
 
   // Grid
   ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
@@ -2896,7 +2895,7 @@ function drawMultiCurvePayoff(
     const y = toY(value);
     ctx.beginPath();
     ctx.moveTo(padding.left, y);
-    ctx.lineTo(canvas.width - padding.right, y);
+    ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
     ctx.font = "11px sans-serif";
@@ -2912,12 +2911,12 @@ function drawMultiCurvePayoff(
     ctx.fillText(
       "$" + price.toFixed(0),
       toX(price),
-      canvas.height - padding.bottom + 20,
+      chart.height - padding.bottom + 20,
     );
   }
   ctx.fillStyle = "#94a3b8";
   ctx.font = "12px sans-serif";
-  ctx.fillText("Stock Price", canvas.width / 2, canvas.height - 5);
+  ctx.fillText("Stock Price", chart.width / 2, chart.height - 5);
 
   // Zero line
   const zeroY = toY(0);
@@ -2926,7 +2925,7 @@ function drawMultiCurvePayoff(
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
   ctx.moveTo(padding.left, zeroY);
-  ctx.lineTo(canvas.width - padding.right, zeroY);
+  ctx.lineTo(chart.width - padding.right, zeroY);
   ctx.stroke();
   ctx.setLineDash([]);
 
@@ -3020,7 +3019,7 @@ function drawMultiCurvePayoff(
 
     let tx = hx + 15;
     let ty = padding.top + 10;
-    if (tx + tooltipWidth > canvas.width - padding.right)
+    if (tx + tooltipWidth > chart.width - padding.right)
       tx = hx - tooltipWidth - 15;
 
     const radius = 6;
@@ -3071,7 +3070,8 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
   const yMax = Math.max(pnlMax + pnlPadding, pnlPadding);
 
   const padding = { left: 80 };
-  const chartWidth = canvas.width - padding.left - 30;
+  const dim = getChartDimensions(canvas);
+  const chartWidth = dim.width - padding.left - 30;
 
   function fromX(x) {
     return priceMin + ((x - padding.left) / chartWidth) * (priceMax - priceMin);
@@ -3097,8 +3097,7 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
 
   newCanvas.addEventListener("mousemove", (e) => {
     const r = newCanvas.getBoundingClientRect();
-    const scaleX = newCanvas.width / r.width;
-    const mouseX = (e.clientX - r.left) * scaleX;
+    const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
 
     if (price >= priceMin && price <= priceMax) {
@@ -3161,7 +3160,8 @@ function bindMultiCurveMouse(
   yMax,
 ) {
   const padding = { left: 80 };
-  const chartWidth = canvas.width - padding.left - 30;
+  const dim2 = getChartDimensions(canvas);
+  const chartWidth = dim2.width - padding.left - 30;
 
   function fromX(x) {
     return priceMin + ((x - padding.left) / chartWidth) * (priceMax - priceMin);
@@ -3186,8 +3186,7 @@ function bindMultiCurveMouse(
 
   newCanvas.addEventListener("mousemove", (e) => {
     const r = newCanvas.getBoundingClientRect();
-    const scaleX = newCanvas.width / r.width;
-    const mouseX = (e.clientX - r.left) * scaleX;
+    const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
 
     if (price >= priceMin && price <= priceMax) {
@@ -4030,7 +4029,6 @@ function handlePayoffCalculate() {
 
 function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
   const canvas = document.getElementById("payoff-chart-canvas");
-  const ctx = canvas.getContext("2d");
 
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
@@ -4040,12 +4038,12 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
     );
     return;
   }
-  canvas.width = rect.width;
-  canvas.height = 400;
+  const chart = createChartContext(canvas, rect.width, 400);
+  const ctx = chart.ctx;
 
   const padding = { top: 30, right: 30, bottom: 50, left: 80 };
-  const chartWidth = canvas.width - padding.left - padding.right;
-  const chartHeight = canvas.height - padding.top - padding.bottom;
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
 
   const priceMin = payoffData[0].price;
   const priceMax = payoffData[payoffData.length - 1].price;
@@ -4073,7 +4071,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
   }
 
   function draw(highlightPrice) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    chart.clear();
 
     // Grid
     ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
@@ -4085,7 +4083,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       const y = toY(value);
       ctx.beginPath();
       ctx.moveTo(padding.left, y);
-      ctx.lineTo(canvas.width - padding.right, y);
+      ctx.lineTo(chart.width - padding.right, y);
       ctx.stroke();
 
       ctx.fillStyle = "#94a3b8";
@@ -4104,7 +4102,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.fillText(
         "$" + price.toFixed(0),
         x,
-        canvas.height - padding.bottom + 20,
+        chart.height - padding.bottom + 20,
       );
     }
 
@@ -4112,8 +4110,8 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
     ctx.font = "12px sans-serif";
     ctx.fillText(
       "Stock Price at Expiration",
-      canvas.width / 2,
-      canvas.height - 5,
+      chart.width / 2,
+      chart.height - 5,
     );
 
     // Zero line (breakeven reference)
@@ -4123,7 +4121,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
     ctx.moveTo(padding.left, zeroY);
-    ctx.lineTo(canvas.width - padding.right, zeroY);
+    ctx.lineTo(chart.width - padding.right, zeroY);
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -4253,7 +4251,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       let tx = hx + 15;
       let ty = hy - tooltipHeight / 2;
 
-      if (tx + tooltipWidth > canvas.width - padding.right)
+      if (tx + tooltipWidth > chart.width - padding.right)
         tx = hx - tooltipWidth - 15;
       if (ty < padding.top) ty = padding.top;
       if (ty + tooltipHeight > padding.top + chartHeight)
@@ -4312,8 +4310,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
 
   newCanvas.addEventListener("mousemove", (e) => {
     const r = newCanvas.getBoundingClientRect();
-    const scaleX = newCanvas.width / r.width;
-    const mouseX = (e.clientX - r.left) * scaleX;
+    const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
 
     if (price >= priceMin && price <= priceMax) {
@@ -4383,10 +4380,12 @@ function drawPayoffDirect(
   yMax,
   highlightPrice,
 ) {
-  const ctx = canvas.getContext("2d");
+  const dim = getChartDimensions(canvas);
+  const chart = createChartContext(canvas, dim.width, dim.height);
+  const ctx = chart.ctx;
   const padding = { top: 30, right: 30, bottom: 50, left: 80 };
-  const chartWidth = canvas.width - padding.left - padding.right;
-  const chartHeight = canvas.height - padding.top - padding.bottom;
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
 
   function toX(price) {
     return (
@@ -4400,7 +4399,7 @@ function drawPayoffDirect(
     );
   }
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  chart.clear();
 
   // Grid
   ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
@@ -4411,7 +4410,7 @@ function drawPayoffDirect(
     const y = toY(value);
     ctx.beginPath();
     ctx.moveTo(padding.left, y);
-    ctx.lineTo(canvas.width - padding.right, y);
+    ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
     ctx.font = "11px sans-serif";
@@ -4427,16 +4426,12 @@ function drawPayoffDirect(
     ctx.fillText(
       "$" + price.toFixed(0),
       toX(price),
-      canvas.height - padding.bottom + 20,
+      chart.height - padding.bottom + 20,
     );
   }
   ctx.fillStyle = "#94a3b8";
   ctx.font = "12px sans-serif";
-  ctx.fillText(
-    "Stock Price at Expiration",
-    canvas.width / 2,
-    canvas.height - 5,
-  );
+  ctx.fillText("Stock Price at Expiration", chart.width / 2, chart.height - 5);
 
   // Zero line
   const zeroY = toY(0);
@@ -4445,7 +4440,7 @@ function drawPayoffDirect(
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
   ctx.moveTo(padding.left, zeroY);
-  ctx.lineTo(canvas.width - padding.right, zeroY);
+  ctx.lineTo(chart.width - padding.right, zeroY);
   ctx.stroke();
   ctx.setLineDash([]);
 
@@ -4556,7 +4551,7 @@ function drawPayoffDirect(
 
     let tx = hx + 15;
     let ty = hy - tooltipHeight / 2;
-    if (tx + tooltipWidth > canvas.width - padding.right)
+    if (tx + tooltipWidth > chart.width - padding.right)
       tx = hx - tooltipWidth - 15;
     if (ty < padding.top) ty = padding.top;
     if (ty + tooltipHeight > padding.top + chartHeight)
@@ -4712,7 +4707,6 @@ function drawGreeksSensitivity(greek) {
   const { S, K, T, r, sigma, optionType, range, steps } = greeksChartData;
 
   const canvas = document.getElementById("gk-chart-canvas");
-  const ctx = canvas.getContext("2d");
 
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
@@ -4720,12 +4714,12 @@ function drawGreeksSensitivity(greek) {
     requestAnimationFrame(() => drawGreeksSensitivity(greek));
     return;
   }
-  canvas.width = rect.width;
-  canvas.height = 400;
+  const chart = createChartContext(canvas, rect.width, 400);
+  const ctx = chart.ctx;
 
   const padding = { top: 30, right: 30, bottom: 50, left: 80 };
-  const chartWidth = canvas.width - padding.left - padding.right;
-  const chartHeight = canvas.height - padding.top - padding.bottom;
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
 
   // Generate data
   const priceMin = Math.max(1, S - range);
@@ -4759,7 +4753,7 @@ function drawGreeksSensitivity(greek) {
     );
   }
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  chart.clear();
 
   // Grid
   ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
@@ -4769,7 +4763,7 @@ function drawGreeksSensitivity(greek) {
     const y = toY(val);
     ctx.beginPath();
     ctx.moveTo(padding.left, y);
-    ctx.lineTo(canvas.width - padding.right, y);
+    ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
     ctx.font = "11px sans-serif";
@@ -4785,10 +4779,10 @@ function drawGreeksSensitivity(greek) {
     ctx.fillText(
       "$" + price.toFixed(0),
       toX(price),
-      canvas.height - padding.bottom + 20,
+      chart.height - padding.bottom + 20,
     );
   }
-  ctx.fillText("Stock Price", canvas.width / 2, canvas.height - 5);
+  ctx.fillText("Stock Price", chart.width / 2, chart.height - 5);
 
   // Current stock price line
   ctx.strokeStyle = "rgba(96, 165, 250, 0.4)";
@@ -4805,7 +4799,7 @@ function drawGreeksSensitivity(greek) {
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
     ctx.moveTo(padding.left, toY(0));
-    ctx.lineTo(canvas.width - padding.right, toY(0));
+    ctx.lineTo(chart.width - padding.right, toY(0));
     ctx.stroke();
     ctx.setLineDash([]);
   }
@@ -5092,8 +5086,7 @@ function handlePnLCalculate() {
   const canvas = document.getElementById("pnl-chart-canvas");
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = 400;
+  createChartContext(canvas, rect.width, 400);
 
   drawPayoffDirect(
     canvas,
