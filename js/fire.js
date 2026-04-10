@@ -561,7 +561,6 @@ function displayFireSensitivity(portfolioMustCover, profile, yearsToRetire) {
 // ===== FIRE PROJECTION CHART (Canvas) =====
 function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
   const canvas = document.getElementById("fire-chart-canvas");
-  const ctx = canvas.getContext("2d");
 
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
@@ -571,12 +570,12 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     );
     return;
   }
-  canvas.width = rect.width;
-  canvas.height = 350;
+  const chart = createChartContext(canvas, rect.width, 350);
+  const ctx = chart.ctx;
 
   const padding = { top: 30, right: 30, bottom: 50, left: 70 };
-  const chartWidth = canvas.width - padding.left - padding.right;
-  const chartHeight = canvas.height - padding.top - padding.bottom;
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
 
   const totalYears = Math.max(yearsToRetire + 10, 40);
   const dataPoints = [];
@@ -613,7 +612,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
   }
 
   function drawChart(highlightYear) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, chart.width, chart.height);
 
     // Grid
     ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
@@ -625,7 +624,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       const y = toY(value);
       ctx.beginPath();
       ctx.moveTo(padding.left, y);
-      ctx.lineTo(canvas.width - padding.right, y);
+      ctx.lineTo(chart.width - padding.right, y);
       ctx.stroke();
 
       ctx.fillStyle = "#94a3b8";
@@ -645,7 +644,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       const x = toX(year);
       const age = profile.currentAge + year;
       ctx.fillStyle = "#94a3b8";
-      ctx.fillText(`${age}`, x, canvas.height - padding.bottom + 20);
+      ctx.fillText(`${age}`, x, chart.height - padding.bottom + 20);
 
       ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
       ctx.beginPath();
@@ -656,7 +655,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
 
     ctx.fillStyle = "#94a3b8";
     ctx.font = "12px sans-serif";
-    ctx.fillText("Age", canvas.width / 2, canvas.height - 5);
+    ctx.fillText("Age", chart.width / 2, chart.height - 5);
 
     // FIRE target line
     ctx.strokeStyle = "#ef4444";
@@ -664,7 +663,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     ctx.setLineDash([8, 4]);
     ctx.beginPath();
     ctx.moveTo(padding.left, toY(fireTarget));
-    ctx.lineTo(canvas.width - padding.right, toY(fireTarget));
+    ctx.lineTo(chart.width - padding.right, toY(fireTarget));
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -845,7 +844,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
         let ty = hy - tooltipHeight / 2;
 
         // Keep tooltip on screen
-        if (tx + tooltipWidth > canvas.width - padding.right) {
+        if (tx + tooltipWidth > chart.width - padding.right) {
           tx = hx - tooltipWidth - 15;
         }
         if (ty < padding.top) ty = padding.top;
@@ -912,8 +911,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
   // Mouse interaction
   canvas.addEventListener("mousemove", (e) => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseX = e.clientX - rect.left;
     const year = fromX(mouseX);
 
     if (year >= 0 && year <= totalYears) {
@@ -939,7 +937,6 @@ function displayCoastChart(
   yearsToRetire,
 ) {
   const canvas = document.getElementById("coast-chart-canvas");
-  const ctx = canvas.getContext("2d");
 
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
@@ -949,12 +946,12 @@ function displayCoastChart(
     );
     return;
   }
-  canvas.width = rect.width;
-  canvas.height = 350;
+  const chart = createChartContext(canvas, rect.width, 350);
+  const ctx = chart.ctx;
 
   const padding = { top: 30, right: 30, bottom: 50, left: 70 };
-  const chartWidth = canvas.width - padding.left - padding.right;
-  const chartHeight = canvas.height - padding.top - padding.bottom;
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
 
   const totalYears = yearsToRetire + 5;
 
@@ -1007,7 +1004,7 @@ function displayCoastChart(
   }
 
   function drawChart(highlightYear) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, chart.width, chart.height);
     // Grid
     ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
     ctx.lineWidth = 1;
@@ -1018,7 +1015,7 @@ function displayCoastChart(
       const y = toY(value);
       ctx.beginPath();
       ctx.moveTo(padding.left, y);
-      ctx.lineTo(canvas.width - padding.right, y);
+      ctx.lineTo(chart.width - padding.right, y);
       ctx.stroke();
 
       ctx.fillStyle = "#94a3b8";
@@ -1038,12 +1035,12 @@ function displayCoastChart(
       const x = toX(year);
       const age = profile.currentAge + year;
       ctx.fillStyle = "#94a3b8";
-      ctx.fillText(`${age}`, x, canvas.height - padding.bottom + 20);
+      ctx.fillText(`${age}`, x, chart.height - padding.bottom + 20);
     }
 
     ctx.fillStyle = "#94a3b8";
     ctx.font = "12px sans-serif";
-    ctx.fillText("Age", canvas.width / 2, canvas.height - 5);
+    ctx.fillText("Age", chart.width / 2, chart.height - 5);
 
     // FIRE target line
     ctx.strokeStyle = "#ef4444";
@@ -1051,7 +1048,7 @@ function displayCoastChart(
     ctx.setLineDash([8, 4]);
     ctx.beginPath();
     ctx.moveTo(padding.left, toY(fireTarget));
-    ctx.lineTo(canvas.width - padding.right, toY(fireTarget));
+    ctx.lineTo(chart.width - padding.right, toY(fireTarget));
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -1244,7 +1241,7 @@ function displayCoastChart(
         let tx = hx + 15;
         let ty = hy - tooltipHeight / 2;
 
-        if (tx + tooltipWidth > canvas.width - padding.right) {
+        if (tx + tooltipWidth > chart.width - padding.right) {
           tx = hx - tooltipWidth - 15;
         }
         if (ty < padding.top) ty = padding.top;
@@ -1320,8 +1317,7 @@ function displayCoastChart(
   // Mouse interaction
   canvas.addEventListener("mousemove", (e) => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseX = e.clientX - rect.left;
     const year = fromX(mouseX);
 
     if (year >= 0 && year <= totalYears) {
