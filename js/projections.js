@@ -171,13 +171,16 @@ function handleCalculate() {
   const showSP500 = document.getElementById("proj-sp500").value === "yes";
 
   // Validate
-  if (!horizon || !expectedReturn) {
-    alert("Please enter a time horizon and expected annual return.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "proj-horizon",   label: "Time Horizon",    required: true, min: 1,  max: 60, integer: true },
+    { id: "proj-return",    label: "Expected Return", required: true, min: 0,  max: 50  },
+    { id: "proj-deviation", label: "Std Deviation",   required: false, min: 0, max: 30  },
+    { id: "proj-inflation", label: "Inflation Rate",  required: false, min: 0, max: 20  },
+  ], ".calc-form");
+  if (!valid) return;
 
   if (portfolio === 0 && monthly === 0) {
-    alert("Please enter a portfolio value or monthly contribution.");
+    showFieldError("proj-portfolio", "Please enter a portfolio value or monthly contribution.");
     return;
   }
 

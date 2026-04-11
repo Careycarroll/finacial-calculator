@@ -483,10 +483,101 @@ function drawLineChart(canvas, data, options) {
   }, { signal });
 }
 
+// ===== INPUT VALIDATION UTILITY =====
+// schema: array of { id, label, required, min, max, integer }
+// containerSelector: string or element — used to clear errors before validating
+// Returns true if all fields pass, false if any fail (errors shown inline)
+
+function validateInputs(schema, containerSelector) {
+  if (containerSelector) clearAllErrors(containerSelector);
+  let valid = true;
+
+  schema.forEach(({ id, label, required, min, max, integer }) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const raw = el.value.trim();
+    const num = integer ? parseInt(raw, 10) : parseFloat(raw);
+
+    if (required && raw === "") {
+      showFieldError(id, `${label} is required.`);
+      valid = false;
+      return;
+    }
+
+    if (raw === "") return;
+
+    if (isNaN(num)) {
+      showFieldError(id, `${label} must be a valid number.`);
+      valid = false;
+      return;
+    }
+
+    if (min !== undefined && num < min) {
+      showFieldError(id, `${label} must be at least ${min}.`);
+      valid = false;
+      return;
+    }
+
+    if (max !== undefined && num > max) {
+      showFieldError(id, `${label} must be no more than ${max}.`);
+      valid = false;
+      return;
+    }
+  });
+
+  return valid;
+}
+
+// ===== INLINE FIELD VALIDATION HELPERS =====
+// showFieldError: marks an input with a red border and shows a message below it
+// clearFieldError: removes error state from a single field
+// clearAllErrors: removes all error states within a container
+
+function showFieldError(fieldId, message) {
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  el.classList.add("input-error");
+  let msg = el.parentElement.querySelector(".field-error-msg");
+  if (!msg) {
+    msg = document.createElement("span");
+    msg.className = "field-error-msg";
+    el.parentElement.appendChild(msg);
+  }
+  msg.textContent = message;
+  msg.style.display = "block";
+}
+
+function clearFieldError(fieldId) {
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  el.classList.remove("input-error");
+  const msg = el.parentElement.querySelector(".field-error-msg");
+  if (msg) msg.style.display = "none";
+}
+
+function clearAllErrors(containerSelector) {
+  const container = typeof containerSelector === "string"
+    ? document.querySelector(containerSelector)
+    : containerSelector;
+  if (!container) return;
+  container.querySelectorAll(".input-error").forEach((el) => {
+    el.classList.remove("input-error");
+  });
+  container.querySelectorAll(".field-error-msg").forEach((el) => {
+    el.style.display = "none";
+  });
+}
+
 // ===== FORM ENTER-KEY DELEGATION =====
 // Single delegated listener on each.calc-form instead of per-input listeners
-function bindFormEnter(callback) {
-  document.querySelectorAll(".calc-form").forEach((form) => {
+function bindFormEnter(callback, containerSelector) {
+  const root = containerSelector
+    ? document.querySelector(containerSelector)
+    : document;
+  if (!root) return;
+  const forms = root.querySelectorAll(".calc-form");
+  forms.forEach((form) => {
     form.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")) {
         e.preventDefault();

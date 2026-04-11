@@ -565,20 +565,13 @@ function suggestPremiums() {
   const iv = safeParseFloat(document.getElementById("opt-iv").value) / 100;
   const rfr = safeParseFloat(document.getElementById("opt-rfr").value) / 100;
 
-  if (!stockPrice || stockPrice <= 0) {
-    alert("Please enter the current stock price.");
-    return;
-  }
-
-  if (!days || days <= 0) {
-    alert("Please enter days to expiration.");
-    return;
-  }
-
-  if (!iv || iv <= 0) {
-    alert("Please enter implied volatility.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "opt-stock-price", label: "Stock Price",          required: true, min: 0.01          },
+    { id: "opt-days",        label: "Days to Expiration",   required: true, min: 1,   max: 2000, integer: true },
+    { id: "opt-iv",          label: "Implied Volatility",   required: true, min: 0.1, max: 500  },
+    { id: "opt-rfr",         label: "Risk-Free Rate",       required: false, min: 0,  max: 30   },
+  ], ".calc-form");
+  if (!valid) return;
 
   const T = days / 365;
   const rows = document.querySelectorAll(".leg-row");
@@ -1506,15 +1499,15 @@ function handlePayoffCalculate() {
     );
   const legs = getLegsFromInputs();
 
-  if (!stockPrice || stockPrice <= 0) {
-    alert("Please enter the current stock price.");
-    return;
-  }
-
-  // Validate legs
+  const valid = validateInputs([
+    { id: "opt-stock-price", label: "Stock Price",        required: true, min: 0.01          },
+    { id: "opt-days",        label: "Days to Expiration", required: true, min: 1,   max: 2000, integer: true },
+    { id: "opt-iv",          label: "Implied Volatility", required: true, min: 0.1, max: 500  },
+  ], ".calc-form");
+  if (!valid) return;
   for (const leg of legs) {
     if (leg.type !== "stock" && leg.strike <= 0) {
-      alert("Please enter strike prices for all legs.");
+      showFieldError("opt-stock-price", "Please enter strike prices for all legs.");
       return;
     }
   }
@@ -2213,10 +2206,15 @@ function handleBSCalculate() {
   const r = safeParseFloat(document.getElementById("bs-rate").value) / 100;
   const q = safeParseFloat(document.getElementById("bs-dividend").value) / 100;
 
-  if (!S || !K || !days || !sigma) {
-    alert("Please fill in all required fields.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "bs-stock",      label: "Stock Price",  required: true, min: 0.01          },
+    { id: "bs-strike",     label: "Strike Price", required: true, min: 0.01          },
+    { id: "bs-time",       label: "Days",         required: true, min: 1,   max: 2000 },
+    { id: "bs-volatility", label: "Volatility",   required: true, min: 0.1, max: 500  },
+    { id: "bs-rate",       label: "Rate",         required: false, min: 0,  max: 30   },
+    { id: "bs-dividend",   label: "Dividend",     required: false, min: 0,  max: 30   },
+  ], ".calc-form");
+  if (!valid) return;
 
   const T = days / 365;
   const result = blackScholes(S, K, T, r, sigma, q);
@@ -2266,15 +2264,21 @@ function handleGreeksCalculate() {
   const sigma =
     safeParseFloat(document.getElementById("gk-volatility").value) / 100;
   const r = safeParseFloat(document.getElementById("gk-rate").value) / 100;
+  const q = safeParseFloat(document.getElementById("gk-dividend").value) / 100;
   const optionType = document.getElementById("gk-type").value;
 
-  if (!S || !K || !days || !sigma) {
-    alert("Please fill in all required fields.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "gk-stock",      label: "Stock Price",  required: true, min: 0.01          },
+    { id: "gk-strike",     label: "Strike Price", required: true, min: 0.01          },
+    { id: "gk-time",       label: "Days",         required: true, min: 1,   max: 2000 },
+    { id: "gk-volatility", label: "Volatility",   required: true, min: 0.1, max: 500  },
+    { id: "gk-rate",       label: "Rate",         required: false, min: 0,  max: 30   },
+    { id: "gk-dividend",   label: "Dividend",     required: false, min: 0,  max: 30   },
+  ], ".calc-form");
+  if (!valid) return;
 
   const T = days / 365;
-  const greeks = calculateGreeks(S, K, T, r, sigma, 0);
+  const greeks = calculateGreeks(S, K, T, r, sigma, q);
   const g = optionType === "call" ? greeks.call : greeks.put;
 
   // Display cards
@@ -2333,7 +2337,7 @@ function drawGreeksSensitivity(greek) {
 
   for (let i = 0; i <= steps; i++) {
     const price = priceMin + i * stepSize;
-    const g = calculateGreeks(price, K, T, r, sigma, 0);
+    const g = calculateGreeks(price, K, T, r, sigma, q);
     const val = optionType === "call" ? g.call[greek] : g.put[greek];
     data.push({ price, value: val });
   }
@@ -2571,10 +2575,12 @@ function handlePnLCalculate() {
     document.getElementById("pnl-current-premium").value
     );
 
-  if (!strike || !premium || !currentStock) {
-    alert("Please fill in strike, premium, and current stock price.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "pnl-strike",        label: "Strike Price",   required: true, min: 0.01 },
+    { id: "pnl-premium",       label: "Premium",        required: true, min: 0.01 },
+    { id: "pnl-current-stock", label: "Current Stock",  required: true, min: 0.01 },
+  ], ".calc-form");
+  if (!valid) return;
 
   const shares = contracts * 100;
   const isLong = type.startsWith("long");

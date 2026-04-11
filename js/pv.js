@@ -68,15 +68,10 @@ function handleCalculate() {
   const years = safeParseInt(document.getElementById("pv-periods").value);
   const compounding = safeParseInt(document.getElementById("pv-compounding").value);
 
-  if (!annualRate || !years) {
-    alert("Please fill in the discount rate and number of years.");
-    return;
-  }
-
-  if (annualRate <= 0 || years <= 0) {
-    alert("Discount rate and years must be greater than zero.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "pv-rate",    label: "Discount Rate", required: true, min: 0.01, max: 50  },
+    { id: "pv-periods", label: "Years",         required: true, min: 1,    max: 100, integer: true },
+  ], ".calc-form");
 
   const ratePerPeriod = annualRate / 100 / compounding;
   const totalPeriods = years * compounding;
@@ -87,7 +82,7 @@ function handleCalculate() {
     futureValue = safeParseFloat(document.getElementById("pv-future-value").value);
 
     if (!futureValue || futureValue <= 0) {
-      alert("Please enter a valid future value.");
+      showFieldError("pv-future-value", "Please enter a valid future value.");
       return;
     }
 
@@ -97,7 +92,7 @@ function handleCalculate() {
     const payment = safeParseFloat(document.getElementById("pv-payment").value);
 
     if (!payment || payment <= 0) {
-      alert("Please enter a valid payment amount.");
+      showFieldError("pv-payment", "Please enter a valid payment amount.");
       return;
     }
 
@@ -154,22 +149,24 @@ function handleCompare() {
     document.getElementById("pv-compare-years").value
     );
 
-  if (!annualRate || !lumpSum || !annuityPayment || !annuityYears) {
-    alert(
-      "Please fill in all fields: lump sum, annuity payment, annuity duration, and discount rate.",
-    );
-    return;
+  if (!annualRate || annualRate <= 0) {
+    showFieldError("pv-rate", "Please enter a valid discount rate.");
+    valid = false;
+  }
+  if (!lumpSum || lumpSum <= 0) {
+    showFieldError("pv-compare-lump", "Please enter a valid lump sum.");
+    valid = false;
+  }
+  if (!annuityPayment || annuityPayment <= 0) {
+    showFieldError("pv-compare-payment", "Please enter a valid annuity payment.");
+    valid = false;
+  }
+  if (!annuityYears || annuityYears <= 0) {
+    showFieldError("pv-compare-years", "Please enter a valid number of years.");
+    valid = false;
   }
 
-  if (
-    annualRate <= 0 ||
-    lumpSum <= 0 ||
-    annuityPayment <= 0 ||
-    annuityYears <= 0
-  ) {
-    alert("All values must be greater than zero.");
-    return;
-  }
+  if (!valid) return;
 
   const useTax = taxToggle.checked;
   let lumpTaxRate = 0;

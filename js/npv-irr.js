@@ -131,7 +131,7 @@ function quickFill(amountId, fromId, toId, listElement) {
   const to = safeParseInt(document.getElementById(toId).value);
 
   if (!amount || !from || !to || from > to || from < 1) {
-    alert("Please enter a valid amount and period range (From must be ≤ To).");
+    showFieldError(amountId, "Please enter a valid amount and period range (From ≤ To).");
     return;
   }
 
@@ -365,13 +365,13 @@ function handleSingleCalculate() {
   const periodType = document.getElementById("npv-period-type").value;
   const cashflows = getCashflows(cashflowList);
 
-  if (!initialInvestment || !annualRate) {
-    alert("Please enter the initial investment and discount rate.");
-    return;
-  }
-
+  const valid = validateInputs([
+    { id: "npv-initial", label: "Initial Investment", required: true, min: 1    },
+    { id: "npv-rate",    label: "Discount Rate",       required: true, min: 0.01, max: 100 },
+  ], ".calc-form");
+  if (!valid) return;
   if (cashflows.length === 0) {
-    alert("Please add at least one cash flow period.");
+    showFieldError("npv-initial", "Please add at least one cash flow period.");
     return;
   }
 
@@ -471,13 +471,19 @@ function handleCompareCalculate() {
   const nameB = document.getElementById("npv-b-name").value || "Investment B";
   const cashflowsB = getCashflows(cashflowListB);
 
-  if (!initialA || !rateA || cashflowsA.length === 0) {
-    alert("Please complete all fields for Investment A.");
+  const valid = validateInputs([
+    { id: "npv-a-initial", label: "Investment A Initial", required: true, min: 1              },
+    { id: "npv-a-rate",    label: "Investment A Rate",    required: true, min: 0.01, max: 100 },
+    { id: "npv-b-initial", label: "Investment B Initial", required: true, min: 1              },
+    { id: "npv-b-rate",    label: "Investment B Rate",    required: true, min: 0.01, max: 100 },
+  ], ".calc-form");
+  if (!valid) return;
+  if (cashflowsA.length === 0) {
+    showFieldError("npv-a-initial", "Please add cash flows for Investment A.");
     return;
   }
-
-  if (!initialB || !rateB || cashflowsB.length === 0) {
-    alert("Please complete all fields for Investment B.");
+  if (cashflowsB.length === 0) {
+    showFieldError("npv-b-initial", "Please add cash flows for Investment B.");
     return;
   }
 

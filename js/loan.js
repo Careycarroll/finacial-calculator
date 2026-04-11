@@ -26,15 +26,12 @@ function handleCalculate() {
   const termYears = safeParseInt(document.getElementById("loan-term").value);
 
   // Validate
-  if (!principal || !annualRate || !termYears) {
-    alert("Please fill in all fields with valid numbers.");
-    return;
-  }
-
-  if (principal <= 0 || annualRate <= 0 || termYears <= 0) {
-    alert("All values must be greater than zero.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "loan-amount",   label: "Loan Amount",    required: true, min: 1              },
+    { id: "interest-rate", label: "Interest Rate",  required: true, min: 0.01, max: 30  },
+    { id: "loan-term",     label: "Loan Term",      required: true, min: 1,    max: 50, integer: true },
+  ], ".calc-form");
+  if (!valid) return;
 
   // Calculate
   const monthlyRate = annualRate / 100 / 12;

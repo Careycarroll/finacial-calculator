@@ -137,20 +137,23 @@ function handleFireCalculate() {
     }
   }
   // Validate
-  if (!profile.currentAge || !profile.retireAge) {
-    alert(
-      "Please fill in your current age and target retirement age in the Profile section.",
-    );
-    return;
-  }
-
-  if (annualExpenses <= 0 || withdrawalRate <= 0) {
-    alert("Please enter your annual expenses and withdrawal rate.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "fire-current-age",        label: "Current Age",          required: true, min: 18,  max: 100, integer: true },
+    { id: "fire-retire-age",         label: "Retirement Age",       required: true, min: 19,  max: 100, integer: true },
+    { id: "fire-life-expectancy",    label: "Life Expectancy",      required: true, min: 20,  max: 120, integer: true },
+    { id: "fire-annual-return",      label: "Annual Return",        required: true, min: 0,   max: 50  },
+    { id: "fire-inflation",          label: "Inflation Rate",       required: true, min: 0,   max: 20  },
+    { id: "fire-annual-expenses",    label: "Annual Expenses",      required: true, min: 1            },
+    { id: "fire-withdrawal-rate",    label: "Withdrawal Rate",      required: true, min: 0.1, max: 20  },
+  ], ".calc-form");
+  if (!valid) return;
 
   if (profile.retireAge <= profile.currentAge) {
-    alert("Target retirement age must be greater than current age.");
+    showFieldError("fire-retire-age", "Retirement age must be greater than current age.");
+    return;
+  }
+  if (profile.lifeExpectancy <= profile.retireAge) {
+    showFieldError("fire-life-expectancy", "Life expectancy must be greater than retirement age.");
     return;
   }
 
@@ -292,22 +295,16 @@ function handleCoastCalculate() {
     );
 
   // Validate
-  if (!profile.currentAge || !profile.retireAge) {
-    alert(
-      "Please fill in your current age and target retirement age in the Profile section.",
-    );
-    return;
-  }
-
-  if (!fireTarget || fireTarget <= 0) {
-    alert(
-      "Please enter a FIRE number target. Calculate your FIRE Number first, or enter one manually.",
-    );
-    return;
-  }
+  const valid = validateInputs([
+    { id: "fire-current-age",     label: "Current Age",      required: true, min: 18, max: 100, integer: true },
+    { id: "fire-retire-age",      label: "Retirement Age",   required: true, min: 19, max: 100, integer: true },
+    { id: "fire-annual-return",   label: "Annual Return",    required: true, min: 0,  max: 50  },
+    { id: "coast-fire-number",    label: "FIRE Number",      required: true, min: 1            },
+  ], "#coast-fire-tab");
+  if (!valid) return;
 
   if (profile.retireAge <= profile.currentAge) {
-    alert("Target retirement age must be greater than current age.");
+    showFieldError("fire-retire-age", "Retirement age must be greater than current age.");
     return;
   }
 

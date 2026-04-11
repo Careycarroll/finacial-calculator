@@ -90,15 +90,16 @@ function addExtraRange() {
   const ongoing = document.getElementById("adv-range-ongoing").checked;
   const amount = safeParseFloat(document.getElementById("adv-range-amount").value);
 
+  let valid = true;
   if (!startMonth || !startYear || !amount || amount <= 0) {
-    alert("Please enter a start date and amount.");
-    return;
+    showFieldError("adv-range-amount", "Please enter a start date and amount.");
+    valid = false;
   }
-
   if (!ongoing && (!endMonth || !endYear)) {
-    alert("Please enter an end date or check 'Ongoing'.");
-    return;
+    showFieldError("adv-range-amount", "Please enter an end date or check Ongoing.");
+    valid = false;
   }
+  if (!valid) return;
 
   const startDate = `${startYear}-${String(startMonth).padStart(2, "0")}`;
   let endDate = "9999-12"; // Ongoing = effectively forever
@@ -106,7 +107,7 @@ function addExtraRange() {
   if (!ongoing) {
     endDate = `${endYear}-${String(endMonth).padStart(2, "0")}`;
     if (endDate < startDate) {
-      alert("End date must be after start date.");
+      showFieldError("adv-range-amount", "End date must be after start date.");
       return;
     }
   }
@@ -171,7 +172,7 @@ function addOneTimePayment() {
   const amount = safeParseFloat(amountInput.value);
 
   if (!month || !year || !amount || amount <= 0) {
-    alert("Please select a month, year, and enter a valid amount.");
+    showFieldError("adv-onetime-amount", "Please select a month, year, and enter a valid amount.");
     return;
   }
 
@@ -272,15 +273,13 @@ function handleCalculate() {
   const isExisting = existingToggle.checked;
 
   // Validate
-  if (!principal || !annualRate || !termValue || !startMonth || !startYear) {
-    alert("Please fill in all required fields in Loan Setup.");
-    return;
-  }
-
-  if (principal <= 0 || annualRate <= 0 || termValue <= 0) {
-    alert("Loan amount, interest rate, and term must be greater than zero.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "adv-loan-amount",   label: "Loan Amount",   required: true, min: 1              },
+    { id: "adv-interest-rate", label: "Interest Rate", required: true, min: 0.01, max: 30  },
+    { id: "adv-loan-term",     label: "Loan Term",     required: true, min: 1,    max: 50  },
+    { id: "adv-start-year",    label: "Start Year",    required: true, min: 2000, max: 2100, integer: true },
+  ], ".calc-form");
+  if (!valid) return;
 
   // Calculate total months from term
   const totalMonths = termUnit === "years" ? termValue * 12 : termValue;
@@ -296,7 +295,7 @@ function handleCalculate() {
       safeParseInt(document.getElementById("adv-payments-made").value, 0);
 
     if (!currentBalance || currentBalance <= 0) {
-      alert("Please enter a valid current balance.");
+      showFieldError("adv-current-balance", "Please enter a valid current balance.");
       return;
     }
   }

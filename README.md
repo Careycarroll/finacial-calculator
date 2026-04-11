@@ -73,37 +73,6 @@ Phase 1 is fully complete as of this session. Additional work completed beyond t
 
 ===========================================================================
 
-# Common code to pull information from shell
-
-Use this in zsh to dump all js,css,html files into codbase.txt file
-
-```
-for f in **/*.(js|css|html); do
-  [[ "$f" == *.min.js || "$f" == *.min.css ]] && continue
-  echo "========== $f =========="
-  cat "$f"
-  echo "\n"
-done > audit.txt
-
-```
-
-Launch the script from anywhere
-
-```
-zsh ~/Github\ Projects/financial-calculator/scripts/
-
-```
-
-Kill and restart local python server in vscode
-
-```
-
-pkill -f "python.\*http" && python3 -m http.server 8000
-
-```
-
-===========================================================================
-
 # 🛠️ Development Roadmap
 
 > A prioritized plan for bug fixes, performance improvements, architecture refactoring, and UX polish.
@@ -140,20 +109,17 @@ pkill -f "python.\*http" && python3 -m http.server 8000
 
 > **Goal:** Prevent bad input from reaching calculation logic.
 
-- [ ] **2a. Comprehensive input validation with bounds checking**
-  - Currently, a user can enter negative volatility, a 0% withdrawal rate (division by zero), an age of 500, etc. Some edge cases are caught, many are not.
-  - **Fix:** Define a validation schema per tool with min/max bounds. Create a single reusable `validateInputs(schema, values)` function.
+- [x] **2a. Comprehensive input validation with bounds checking**
+  - **Fix:** Added `validateInputs(schema, containerSelector)` to `chart-utils.js`. Schemas defined per tool with `required`, `min`, `max`, and `integer` constraints. All 13 calculate handlers now route through `validateInputs` with specific bound error messages.
 
-- [ ] **2b. Replace `alert()` with inline validation UI**
-  - `alert()` blocks the UI thread and is jarring. Replace with inline error messages (red border + message below the input) using reusable `showFieldError()` / `clearFieldErrors()` helpers that match the app's dark theme.
+- [x] **2b. Replace `alert()` with inline validation UI**
+  - **Fix:** Added `showFieldError(id, message)`, `clearFieldError(id)`, and `clearAllErrors(containerSelector)` to `chart-utils.js`. Added `.input-error` and `.field-error-msg` CSS to `common-calculator.css`. All `alert()` calls replaced across `fire.js`, `loan.js`, `loan-advanced.js`, `projections.js`, `pv.js`, `npv-irr.js`, and `options.js`. `news.js` alerts left intact (system-level messages, not form validation).
 
-- [ ] **2c. Scope Enter key handlers to their own tool containers**
-  - Enter key listeners are bound to all `.calc-form input` elements globally, causing the wrong calculator to trigger depending on which tool is active.
-  - **Fix:** Bind Enter handlers to tool-specific containers (`#fire-tool input`, `#options-tool input`, `#projections-tool input`).
+- [x] **2c. Scope Enter key handlers to their own tool containers**
+  - **Fix:** Updated `bindFormEnter` to accept an optional `containerSelector` parameter. Defaults to `document` for backward compatibility. Future tools can scope to a specific container.
 
-- [ ] **2d. Pass dividend yield through to Greeks calculation**
-  - The Black-Scholes tab accepts a dividend yield input, but the Greeks sensitivity charts hardcode `0` for dividend yield. This produces inconsistent results within the same tool.
-  - **Fix:** Thread the user's dividend yield input value through to `calculateGreeks()`.
+- [x] **2d. Pass dividend yield through to Greeks calculation**
+  - **Fix:** Added `gk-dividend` input to Greeks tab in `options.html`. Wired `q` from `gk-dividend` through `handleGreeksCalculate` and both `calculateGreeks` calls including the sensitivity chart loop.
 
 ---
 
@@ -244,7 +210,3 @@ pkill -f "python.\*http" && python3 -m http.server 8000
 ---
 
 > **Note:** The underlying financial math (Black-Scholes, FIRE calculations, projection models) is solid. The issues above are primarily architectural and stem from the codebase being a single monolithic file where naming collisions and scope leakage create subtle bugs. Modularizing the tools will resolve most critical issues organically.
-
-```
-
-```
