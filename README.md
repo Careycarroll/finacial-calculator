@@ -6,7 +6,7 @@ zip -r financial-calculator.zip. -x "_.git_" "node_modules/\*" ".DS_Store"
 
 To-Do:
 Roi calculator
-
+Fix stock analyzer
 
 ===========================================================================
 
