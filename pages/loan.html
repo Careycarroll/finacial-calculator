@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Loan Calculator | Financial Calculator</title>
-    <!-- Gridstack CSS -->
     <link rel="stylesheet" href="../css/base.css" />
     <link rel="stylesheet" href="../css/common-calculator.css" />
   </head>
@@ -30,210 +29,153 @@
       </header>
 
       <main>
-        <div class="grid-stack" data-gs-column="12">
-          <!-- Input Form -->
-          <div
-            id="item-form"
-            class="grid-stack-item"
-            data-gs-x="0"
-            data-gs-y="0"
-            data-gs-w="4"
-            data-gs-h="4"
-          >
-            <div class="grid-stack-item-content">
-              <div class="gs-drag-handle">Input Parameters</div>
-              <div class="gs-resize-handle"></div>
-              <div class="calc-form">
-                <div class="form-group">
-                  <label for="loan-amount">Loan Amount ($)</label>
-                  <input
-                    type="number"
-                    id="loan-amount"
-                    placeholder="e.g. 250000"
-                    min="0"
-                    step="any"
-                  />
-                </div>
+        <!-- Input Form -->
+        <div id="item-form">
+          <div class="calc-form">
+            <div class="form-group">
+              <label for="loan-amount">Loan Amount ($)</label>
+              <input
+                type="number"
+                id="loan-amount"
+                placeholder="e.g. 250000"
+                min="0"
+                step="any"
+              />
+            </div>
 
-                <div class="form-group">
-                  <label for="interest-rate">Annual Interest Rate (%)</label>
-                  <input
-                    type="number"
-                    id="interest-rate"
-                    placeholder="e.g. 6.5"
-                    min="0"
-                    step="any"
-                  />
-                </div>
+            <div class="form-group">
+              <label for="interest-rate">Annual Interest Rate (%)</label>
+              <input
+                type="number"
+                id="interest-rate"
+                placeholder="e.g. 6.5"
+                min="0"
+                step="any"
+              />
+            </div>
 
-                <div class="form-group">
-                  <label for="loan-term">Loan Term (Years)</label>
-                  <input
-                    type="number"
-                    id="loan-term"
-                    placeholder="e.g. 30"
-                    min="1"
-                    step="1"
-                  />
-                </div>
+            <div class="form-group">
+              <label for="loan-term">Loan Term (Years)</label>
+              <input
+                type="number"
+                id="loan-term"
+                placeholder="e.g. 30"
+                min="1"
+                step="1"
+              />
+            </div>
 
-                <button id="calculate-btn" class="btn-primary">
-                  Calculate
-                </button>
+            <button id="calculate-btn" class="btn-primary">
+              Calculate
+            </button>
+          </div>
+        </div>
+
+        <!-- Cumulative Chart -->
+        <div id="item-cumulative">
+          <div id="cumulative-chart-section" class="chart-panel hidden">
+            <div class="line-chart-legend">
+              <span class="legend-item"
+                ><span class="legend-color legend-principal"></span>
+                Principal</span
+              >
+              <span class="legend-item"
+                ><span class="legend-color legend-interest"></span>
+                Interest</span
+              >
+              <span class="legend-item"
+                ><span
+                  class="legend-color"
+                  style="background-color: #8b5cf6"
+                ></span>
+                Balance</span
+              >
+              <span class="legend-item"
+                ><span
+                  class="legend-color"
+                  style="background-color: #38bdf8"
+                ></span>
+                Total Paid</span
+              >
+            </div>
+            <div class="line-chart-container">
+              <svg
+                id="cumulative-chart-svg"
+                class="line-chart-svg"
+                viewBox="0 0 700 260"
+                preserveAspectRatio="none"
+              ></svg>
+              <div id="cumulative-chart-tooltip" class="line-tooltip"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stacked Bar Chart -->
+        <div id="item-chart">
+          <div id="chart-section" class="chart-panel hidden">
+            <div class="chart-container">
+              <div class="chart-y-axis" id="chart-y-axis"></div>
+              <div class="chart-bars" id="chart-bars"></div>
+            </div>
+            <div class="chart-legend">
+              <span class="legend-item"
+                ><span class="legend-color legend-principal"></span>
+                Principal</span
+              >
+              <span class="legend-item"
+                ><span class="legend-color legend-interest"></span>
+                Interest</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Summary -->
+        <div id="item-results">
+          <div id="results" class="results-panel hidden">
+            <div class="results-grid">
+              <div class="result-item">
+                <span class="result-label">Monthly Payment</span>
+                <span id="monthly-payment" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Total Principal</span>
+                <span id="total-principal" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Total Interest</span>
+                <span id="total-interest" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Total Cost</span>
+                <span id="total-cost" class="result-value">—</span>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Cumulative Chart -->
-          <div
-            id="item-cumulative"
-            class="grid-stack-item"
-            data-gs-x="4"
-            data-gs-y="0"
-            data-gs-w="8"
-            data-gs-h="4"
-          >
-            <div class="grid-stack-item-content">
-              <div class="gs-drag-handle">Cumulative Payments</div>
-              <div class="gs-resize-handle"></div>
-              <div id="cumulative-chart-section" class="chart-panel hidden">
-                <div class="line-chart-legend">
-                  <span class="legend-item"
-                    ><span class="legend-color legend-principal"></span>
-                    Principal</span
-                  >
-                  <span class="legend-item"
-                    ><span class="legend-color legend-interest"></span>
-                    Interest</span
-                  >
-                  <span class="legend-item"
-                    ><span
-                      class="legend-color"
-                      style="background-color: #8b5cf6"
-                    ></span>
-                    Balance</span
-                  >
-                  <span class="legend-item"
-                    ><span
-                      class="legend-color"
-                      style="background-color: #38bdf8"
-                    ></span>
-                    Total Paid</span
-                  >
-                </div>
-                <div class="line-chart-container">
-                  <svg
-                    id="cumulative-chart-svg"
-                    class="line-chart-svg"
-                    viewBox="0 0 700 260"
-                    preserveAspectRatio="none"
-                  ></svg>
-                  <div id="cumulative-chart-tooltip" class="line-tooltip"></div>
-                </div>
-              </div>
+        <!-- Amortization Table -->
+        <div id="item-table">
+          <div id="amortization-section" class="table-panel hidden">
+            <div class="table-controls">
+              <button id="view-monthly" class="btn-toggle active">
+                Monthly
+              </button>
+              <button id="view-yearly" class="btn-toggle">Yearly</button>
             </div>
-          </div>
-
-          <!-- Stacked Bar Chart -->
-          <div
-            id="item-chart"
-            class="grid-stack-item"
-            data-gs-x="0"
-            data-gs-y="4"
-            data-gs-w="6"
-            data-gs-h="4"
-          >
-            <div class="grid-stack-item-content">
-              <div class="gs-drag-handle">Principal vs. Interest</div>
-              <div class="gs-resize-handle"></div>
-              <div id="chart-section" class="chart-panel hidden">
-                <div class="chart-container">
-                  <div class="chart-y-axis" id="chart-y-axis"></div>
-                  <div class="chart-bars" id="chart-bars"></div>
-                </div>
-                <div class="chart-legend">
-                  <span class="legend-item"
-                    ><span class="legend-color legend-principal"></span>
-                    Principal</span
-                  >
-                  <span class="legend-item"
-                    ><span class="legend-color legend-interest"></span>
-                    Interest</span
-                  >
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Results Summary -->
-          <div
-            id="item-results"
-            class="grid-stack-item"
-            data-gs-x="6"
-            data-gs-y="4"
-            data-gs-w="6"
-            data-gs-h="4"
-          >
-            <div class="grid-stack-item-content">
-              <div class="gs-drag-handle">Summary</div>
-              <div class="gs-resize-handle"></div>
-              <div id="results" class="results-panel hidden">
-                <div class="results-grid">
-                  <div class="result-item">
-                    <span class="result-label">Monthly Payment</span>
-                    <span id="monthly-payment" class="result-value">—</span>
-                  </div>
-                  <div class="result-item">
-                    <span class="result-label">Total Principal</span>
-                    <span id="total-principal" class="result-value">—</span>
-                  </div>
-                  <div class="result-item">
-                    <span class="result-label">Total Interest</span>
-                    <span id="total-interest" class="result-value">—</span>
-                  </div>
-                  <div class="result-item">
-                    <span class="result-label">Total Cost</span>
-                    <span id="total-cost" class="result-value">—</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Amortization Table -->
-          <div
-            id="item-table"
-            class="grid-stack-item"
-            data-gs-x="0"
-            data-gs-y="8"
-            data-gs-w="12"
-            data-gs-h="4"
-          >
-            <div class="grid-stack-item-content">
-              <div class="gs-drag-handle">Amortization Schedule</div>
-              <div class="gs-resize-handle"></div>
-              <div id="amortization-section" class="table-panel hidden">
-                <div class="table-controls">
-                  <button id="view-monthly" class="btn-toggle active">
-                    Monthly
-                  </button>
-                  <button id="view-yearly" class="btn-toggle">Yearly</button>
-                </div>
-                <div class="table-wrapper">
-                  <table id="amortization-table">
-                    <thead>
-                      <tr>
-                        <th id="period-header">Month</th>
-                        <th>Payment</th>
-                        <th>Principal</th>
-                        <th>Interest</th>
-                        <th>Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody id="amortization-body"></tbody>
-                  </table>
-                </div>
-              </div>
+            <div class="table-wrapper">
+              <table id="amortization-table">
+                <thead>
+                  <tr>
+                    <th id="period-header">Month</th>
+                    <th>Payment</th>
+                    <th>Principal</th>
+                    <th>Interest</th>
+                    <th>Balance</th>
+                  </tr>
+                </thead>
+                <tbody id="amortization-body"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -246,7 +188,5 @@
 
     <script src="../js/loan.js" defer></script>
     <script src="../js/prefetch.js"></script>
-    <!-- Gridstack Library -->
-    <!-- Gridstack Initialization -->
   </body>
 </html>
