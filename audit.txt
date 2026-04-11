@@ -1,2 +1,1 @@
-=== Final stale refs check ===
----
+=== valuator using formatCurrency or bindFormEnter? ===

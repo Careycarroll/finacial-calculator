@@ -56,14 +56,6 @@ function switchMode(mode) {
 }
 
 // ===== FORMATTING =====
-function formatCurrency(value) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
 
 // ===== MAIN CALCULATION =====
 function handleCalculate() {

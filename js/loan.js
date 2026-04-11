@@ -135,14 +135,6 @@ function buildYearlySchedule(monthly) {
 }
 
 // ===== DISPLAY FUNCTIONS =====
-function formatCurrency(value) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
 
 function displaySummary(monthlyPayment, principal, totalInterest, totalCost) {
   document.getElementById("monthly-payment").textContent =
