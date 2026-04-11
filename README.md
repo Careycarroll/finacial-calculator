@@ -44,14 +44,14 @@ pkill -f "python.*http" && python3 -m http.server 8000
 
 > **Goal:** Fix issues that are actively producing incorrect output or degrading performance.
 
-- [ ] **1a. Unify `formatCurrency` into a single configurable function**
+- [x] **1a. Unify `formatCurrency` into a single configurable function**
   - `formatCurrency` is redefined three times in global scope (0 decimals, 2 decimals, and compact/abbreviated). The last definition silently overwrites the others, causing incorrect display in the FIRE calculator and Options lab.
   - **Fix:** Replace all three with a single function accepting an options parameter:
     ```
     formatCurrency(value, { decimals, compact })
     ```
 
-- [ ] **1b. Fix event listener accumulation on FIRE/Coast charts**
+- [x] **1b. Fix event listener accumulation on FIRE/Coast charts**
   - New `mousemove` and `mouseleave` listeners are added to the canvas on every recalculation but never removed. After multiple recalculations, dozens of redundant handlers fire simultaneously, causing progressive performance degradation.
   - **Fix:** Use an `AbortController` per chart instance. Call `controller.abort()` before each redraw and create a new controller.
 
