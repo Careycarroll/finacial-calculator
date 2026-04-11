@@ -59,6 +59,22 @@
           </div>
           <div class="form-row">
             <div class="form-group">
+              <label for="fire-life-expectancy">Life Expectancy</label>
+              <input
+                type="number"
+                id="fire-life-expectancy"
+                placeholder="e.g. 90"
+                min="50"
+                max="120"
+                step="1"
+                value="90"
+              />
+              <span class="form-hint">Used to project portfolio through retirement.</span>
+            </div>
+            <div class="form-group"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label for="fire-current-portfolio"
                 >Current Portfolio Value ($)</label
               >
@@ -226,44 +242,28 @@
             </div>
             <div id="fire-fv-options" class="form-row hidden">
               <div class="form-group">
-                <label for="fire-income-start-age"
-                  >Age You Start Receiving ($)</label
-                >
+                <label for="fire-income-start-age">Income Start Age</label>
                 <input
                   type="number"
                   id="fire-income-start-age"
-                  placeholder="e.g. 60"
-                  min="25"
-                  max="90"
+                  placeholder="e.g. 67"
+                  min="0"
+                  max="100"
                   step="1"
                 />
                 <span class="form-hint"
-                  >The age when this income begins (e.g. 60 for military
-                  pension, 62-67 for Social Security).</span
+                  >Age when you expect to start receiving this income.</span
                 >
               </div>
               <div class="form-group">
-                <label>Converted to Today's Dollars</label>
-                <div
-                  id="fire-income-pv-display"
-                  class="result-value"
-                  style="
-                    font-size: 1.1rem;
-                    padding: 0.75rem 1rem;
-                    background-color: var(--bg-primary);
-                    border: 1px solid var(--border);
-                    border-radius: 8px;
-                  "
-                >
-                  —
-                </div>
+                <label>Present Value Equivalent</label>
+                <span id="fire-income-pv-display" class="result-value">—</span>
                 <span class="form-hint"
-                  >What your future income is worth in today's purchasing
-                  power.</span
+                  >Estimated today's dollar value of your future income.</span
                 >
               </div>
             </div>
-            <div id="fire-fv-options" class="form-row hidden">...</div>
+            
 
             <button id="fire-calculate-btn" class="btn-primary">
               Calculate FIRE Number
@@ -324,6 +324,7 @@
                     <th>FIRE Number</th>
                     <th>Monthly Withdrawal</th>
                     <th>Years to FIRE</th>
+                    <th>Portfolio at Life Expectancy</th>
                     <th>Risk Level</th>
                   </tr>
                 </thead>
@@ -351,6 +352,24 @@
                 ><span class="legend-color legend-fire-target"></span> FIRE
                 Target</span
               >
+            </div>
+          </div>
+
+          <!-- Retirement Lifecycle Chart -->
+          <div id="fire-lifecycle-section" class="chart-panel hidden">
+            <h2>Retirement Lifecycle</h2>
+            <p class="form-hint" style="margin-bottom: 1rem;">
+              Accumulation to retirement, then drawdown at multiple withdrawal rates to life expectancy.
+            </p>
+            <div class="canvas-chart">
+              <canvas id="fire-lifecycle-canvas"></canvas>
+            </div>
+            <div class="chart-legend" id="fire-lifecycle-legend">
+              <span class="legend-item"><span class="legend-color" style="background:#2dd4bf"></span> Accumulation</span>
+              <span class="legend-item"><span class="legend-color" style="background:#22c55e"></span> 3% Withdrawal</span>
+              <span class="legend-item"><span class="legend-color" style="background:#a78bfa"></span> 4% Withdrawal</span>
+              <span class="legend-item"><span class="legend-color" style="background:#f59e0b"></span> 5% Withdrawal</span>
+              <span class="legend-item"><span class="legend-color" style="background:#f472b6"></span> 6% Withdrawal</span>
             </div>
           </div>
         </div>
@@ -464,7 +483,7 @@
     </div>
 
     <script src="../js/chart-utils.js"></script>
-    <script src="../js/fire.js" defer></script>
+    <script src="../js/fire.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>

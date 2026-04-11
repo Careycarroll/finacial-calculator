@@ -362,9 +362,8 @@
         <!-- Breakdown Chart -->
         <div id="pv-chart-section" class="chart-panel hidden">
           <h2>Value Over Time</h2>
-          <div class="chart-container">
-            <div class="chart-y-axis" id="pv-chart-y-axis"></div>
-            <div class="chart-bars" id="pv-chart-bars"></div>
+          <div class="canvas-chart">
+            <canvas id="pv-bar-canvas"></canvas>
           </div>
           <
           <div class="chart-legend" id="pv-chart-legend">
@@ -404,7 +403,7 @@
     </div>
 
     <script src="../js/chart-utils.js"></script>
-    <script src="../js/pv.js" defer></script>
+    <script src="../js/pv.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>

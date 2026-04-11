@@ -6,8 +6,70 @@ zip -r financial-calculator.zip. -x "_.git_" "node_modules/\*" ".DS_Store"
 
 To-Do:
 
-- Add tool tip to all raios to better understand what they represent. Same for all other financial terms on the page.
-- css cleanup
+===========================================================================
+
+# Common code to pull information from shell
+
+Use this in zsh to dump all js,css,html files into codbase.txt file
+
+```
+for f in **/*.(js|css|html); do
+  [[ "$f" == *.min.js || "$f" == *.min.css ]] && continue
+  echo "========== $f =========="
+  cat "$f"
+  echo "\n"
+done > audit.txt
+
+```
+
+Launch the script from anywhere
+
+```
+zsh ~/Github\ Projects/financial-calculator/scripts/
+
+```
+
+Kill and restart local python server in vscode
+
+```
+
+pkill -f "python.\*http" && python3 -m http.server 8000
+
+```
+
+===========================================================================
+
+---
+
+## Phase 1 Completion Notes
+
+Phase 1 is fully complete as of this session. Additional work completed beyond the original plan:
+
+### Chart Standardization
+
+- Converted all DOM bar charts (`loan.js`, `loan-advanced.js`, `pv.js`, `npv-irr.js`) to canvas using shared `drawBarChart()` utility in `chart-utils.js`
+- Converted all SVG line charts (`loan.js`, `loan-advanced.js`) to canvas using shared `drawLineChart()` utility
+- All charts now use `createChartContext()` for DPI scaling and crosshair hover with tooltips
+- Removed hardcoded SVG `width=700` — all charts are now fully responsive
+
+### FIRE Calculator Enhancements
+
+- Added life expectancy input to profile section
+- Added Retirement Lifecycle Chart showing full accumulation + multi-rate drawdown (3%, 4%, 5%, 6%) to life expectancy
+- Fixed FIRE projection chart to stop contributions at retirement age and show drawdown phase in orange
+- Added "Portfolio at Life Expectancy" column to withdrawal rate sensitivity table
+- Fixed FIRE number calculation to always show gross number regardless of other income
+- Added `fire-income-start-age` and `fire-fv-options` HTML elements that were missing from the page
+- Fixed withdrawal rate sensitivity table math (FIRE number, monthly withdrawal, years to FIRE)
+
+### Loan Advanced
+
+- Added paginated amortization table (30 rows per page) with Prev/Next navigation
+
+### Bug Fixes
+
+- Removed `defer` mismatch on `loan.js`, `loan-advanced.js`, `pv.js`, `npv-irr.js`, `fire.js` — `chart-utils.js` must load before dependent scripts
+- Fixed `safeParseFloat` validation logic in `handleFireCalculate` (`!annualExpenses` → `annualExpenses <= 0`)
 
 ===========================================================================
 
@@ -21,14 +83,23 @@ for f in **/*.(js|css|html); do
   echo "========== $f =========="
   cat "$f"
   echo "\n"
-done > codebase.txt
+done > audit.txt
+
+```
+
+Launch the script from anywhere
+
+```
+zsh ~/Github\ Projects/financial-calculator/scripts/
 
 ```
 
 Kill and restart local python server in vscode
 
 ```
-pkill -f "python.*http" && python3 -m http.server 8000
+
+pkill -f "python.\*http" && python3 -m http.server 8000
+
 ```
 
 ===========================================================================
@@ -55,13 +126,13 @@ pkill -f "python.*http" && python3 -m http.server 8000
   - New `mousemove` and `mouseleave` listeners are added to the canvas on every recalculation but never removed. After multiple recalculations, dozens of redundant handlers fire simultaneously, causing progressive performance degradation.
   - **Fix:** Use an `AbortController` per chart instance. Call `controller.abort()` before each redraw and create a new controller.
 
-- [ ] **1c. Replace canvas clone-and-replace pattern**
+- [x] **1c. Replace canvas clone-and-replace pattern**
   - The payoff chart clones the canvas node to clear listeners (`canvas.cloneNode(true)`), but any code holding a reference to the old canvas gets a stale reference. This is a latent crash / race condition.
-  - **Fix:** Stop cloning canvases. Use the `AbortController` approach from 1b to manage listeners on a single stable canvas reference per chart.
+  - **Fix:** Replaced all `cloneNode(true)` + `replaceChild` patterns in `projections.js` and `options.js` with `AbortController` per canvas. One controller per chart function, aborted and reissued on each redraw. Canvas references are now stable throughout.
 
-- [ ] **1d. Add `NaN` guard at the input parsing layer**
+- [x] **1d. Add `NaN` guard at the input parsing layer**
   - If any input field is empty or non-numeric, `parseFloat` returns `NaN`, which silently propagates through all calculations and canvas draw calls. The user sees a blank or corrupted chart with no error message.
-  - **Fix:** Create a `safeParseFloat(value, fallback)` utility and route all input parsing through it.
+  - **Fix:** Added `safeParseFloat(value, fallback = 0)` and `safeParseInt(value, fallback = 0)` to `chart-utils.js`. All DOM input parsing across `fire.js`, `projections.js`, `pv.js`, `loan.js`, `loan-advanced.js`, `npv-irr.js`, and `options.js` now routes through these utilities.
 
 ---
 
@@ -173,3 +244,7 @@ pkill -f "python.*http" && python3 -m http.server 8000
 ---
 
 > **Note:** The underlying financial math (Black-Scholes, FIRE calculations, projection models) is solid. The issues above are primarily architectural and stem from the codebase being a single monolithic file where naming collisions and scope leakage create subtle bugs. Modularizing the tools will resolve most critical issues organically.
+
+```
+
+```

@@ -338,9 +338,8 @@
             </button>
             <button id="chart-adjusted" class="btn-toggle">With Extras</button>
           </div>
-          <div class="chart-container">
-            <div class="chart-y-axis" id="adv-chart-y-axis"></div>
-            <div class="chart-bars" id="adv-chart-bars"></div>
+          <div class="canvas-chart">
+            <canvas id="adv-bar-canvas"></canvas>
           </div>
           <div class="chart-legend">
             <span class="legend-item"
@@ -378,14 +377,8 @@
               Total Paid</span
             >
           </div>
-          <div class="line-chart-container">
-            <svg
-              id="adv-cumulative-chart-svg"
-              class="line-chart-svg"
-              viewBox="0 0 700 260"
-              preserveAspectRatio="none"
-            ></svg>
-            <div id="adv-cumulative-chart-tooltip" class="line-tooltip"></div>
+          <div class="canvas-chart">
+            <canvas id="adv-line-canvas"></canvas>
           </div>
         </div>
 
@@ -432,7 +425,7 @@
     </div>
 
     <script src="../js/chart-utils.js"></script>
-    <script src="../js/loan-advanced.js" defer></script>
+    <script src="../js/loan-advanced.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>

@@ -21,9 +21,9 @@ bindFormEnter(() => handleCalculate());
 // ===== MAIN CALCULATION =====
 function handleCalculate() {
   // Grab inputs
-  const principal = parseFloat(document.getElementById("loan-amount").value);
-  const annualRate = parseFloat(document.getElementById("interest-rate").value);
-  const termYears = parseInt(document.getElementById("loan-term").value);
+  const principal = safeParseFloat(document.getElementById("loan-amount").value);
+  const annualRate = safeParseFloat(document.getElementById("interest-rate").value);
+  const termYears = safeParseInt(document.getElementById("loan-term").value);
 
   // Validate
   if (!principal || !annualRate || !termYears) {
@@ -146,104 +146,31 @@ function displaySummary(monthlyPayment, principal, totalInterest, totalCost) {
   document.getElementById("total-cost").textContent = formatCurrency(totalCost);
 }
 
+let loanBarController = null;
+let loanLineController = null;
+
 function displayChart(yearly) {
-  const chartBars = document.getElementById("chart-bars");
-  const chartYAxis = document.getElementById("chart-y-axis");
-
-  // Find the max total (principal + interest) for scaling
-  const maxTotal = Math.max(...yearly.map((y) => y.principal + y.interest));
-
-  // Build Y-axis labels
-  chartYAxis.innerHTML = "";
-  const steps = 5;
-  for (let i = steps; i >= 0; i--) {
-    const label = document.createElement("span");
-    const value = (maxTotal / steps) * i;
-    label.textContent =
-      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
-    chartYAxis.appendChild(label);
-  }
-
-  // Build bars
-  chartBars.innerHTML = "";
-  yearly.forEach((year) => {
-    const total = year.principal + year.interest;
-    const totalHeight = (total / maxTotal) * 100;
-    const principalHeight = (year.principal / total) * totalHeight;
-    const interestHeight = (year.interest / total) * totalHeight;
-
-    const group = document.createElement("div");
-    group.className = "bar-group";
-
-    const stack = document.createElement("div");
-    stack.className = "bar-stack";
-    stack.style.height = `${totalHeight}%`;
-
-    const interestBar = document.createElement("div");
-    interestBar.className = "bar-interest";
-    interestBar.style.height = `${interestHeight}%`;
-
-    const principalBar = document.createElement("div");
-    principalBar.className = "bar-principal";
-    principalBar.style.height = `${principalHeight}%`;
-
-    stack.appendChild(interestBar);
-    stack.appendChild(principalBar);
-
-    const label = document.createElement("div");
-    label.className = "bar-label";
-    label.textContent = year.period;
-
-    group.appendChild(stack);
-    group.appendChild(label);
-    chartBars.appendChild(group);
-
-    // Add tooltip via mouse events instead of CSS
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    tooltip.innerHTML = `<strong>Year ${year.period}</strong><br>Principal: ${formatCurrency(year.principal)}<br>Interest: ${formatCurrency(year.interest)}`;
-    group.appendChild(tooltip);
-
-    const positionYearTooltip = (event) => {
-      const tooltipRect = tooltip.getBoundingClientRect();
-      const margin = 8;
-      let left = event.clientX + 12;
-      let top = event.clientY - tooltipRect.height - 8;
-
-      if (left + tooltipRect.width > window.innerWidth - margin) {
-        left = window.innerWidth - tooltipRect.width - margin;
-      }
-      if (left < margin) {
-        left = margin;
-      }
-      if (top < margin) {
-        top = event.clientY + 12;
-      }
-
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${top}px`;
-    };
-
-    group.addEventListener("mouseenter", (event) => {
-      tooltip.style.display = "block";
-      positionYearTooltip(event);
-    });
-    group.addEventListener("mousemove", positionYearTooltip);
-    group.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  const canvas = document.getElementById("loan-bar-canvas");
+  if (!canvas) return;
+  drawBarChart(canvas, yearly, {
+    series: [
+      { key: "principal", color: "#2dd4bf", label: "Principal" },
+      { key: "interest", color: "#f472b6", label: "Interest" },
+    ],
+    xLabel: (d) => `Yr ${d.period}`,
+    tooltip: (d) => [
+      `Year ${d.period}`,
+      `Principal: ${formatCurrency(d.principal)}`,
+      `Interest: ${formatCurrency(d.interest)}`,
+      `Balance: ${formatCurrency(d.balance)}`,
+    ],
+    controller: loanBarController,
   });
 }
 
 function displayCumulativeChart(schedule) {
-  const svg = document.getElementById("cumulative-chart-svg");
-  const tooltip = document.getElementById("cumulative-chart-tooltip");
-  if (!svg || !tooltip || schedule.length === 0) return;
-
-  const width = 700;
-  const height = 240;
-  const padding = 40;
-  const points = schedule.length;
+  const canvas = document.getElementById("loan-line-canvas");
+  if (!canvas || schedule.length === 0) return;
 
   const cumulative = schedule.reduce((acc, row) => {
     const previous = acc.length
@@ -261,101 +188,23 @@ function displayCumulativeChart(schedule) {
     return acc;
   }, []);
 
-  const maxValue =
-    Math.max(
-      cumulative[cumulative.length - 1].total || 0,
-      cumulative[0]?.balance || 0,
-    ) || 1;
-  const xStep = points > 1 ? (width - padding * 2) / (points - 1) : 0;
-
-  const getX = (index) => padding + index * xStep;
-  const getY = (value) =>
-    height - padding - (value / maxValue) * (height - padding * 2);
-
-  const buildPath = (key) =>
-    cumulative
-      .map((point, index) =>
-        index === 0
-          ? `M ${getX(index)} ${getY(point[key])}`
-          : `L ${getX(index)} ${getY(point[key])}`,
-      )
-      .join(" ");
-
-  let svgContent = `
-    <g class="line-chart-grid">
-      <line x1="${padding}" y1="${padding}" x2="${width - padding}" y2="${padding}" class="line-axis-line" />
-      <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" class="line-axis-line" />
-    </g>
-  `;
-
-  for (let i = 0; i <= 5; i += 1) {
-    const y = padding + ((height - padding * 2) / 5) * i;
-    svgContent += `
-      <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" class="line-chart-grid" />
-      <text x="${padding - 10}" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--text-secondary)">$${((maxValue * (5 - i)) / 5 / 1000).toFixed(0)}k</text>
-    `;
-  }
-
-  svgContent += `
-    <path d="${buildPath("total")}" class="line-series line-total" />
-    <path d="${buildPath("principal")}" class="line-series line-principal" />
-    <path d="${buildPath("interest")}" class="line-series line-interest" />
-    <path d="${buildPath("balance")}" class="line-series line-balance" />
-  `;
-
-  cumulative.forEach((point, index) => {
-    [
-      { key: "total", label: "Total Paid" },
-      { key: "principal", label: "Principal" },
-      { key: "interest", label: "Interest" },
-      { key: "balance", label: "Balance" },
-    ].forEach((series) => {
-      const x = getX(index);
-      const y = getY(point[series.key]);
-      svgContent += `
-        <circle cx="${x}" cy="${y}" r="10" fill="transparent" class="line-point" data-series="${series.key}" data-index="${index}" />
-      `;
-    });
-  });
-
-  svg.innerHTML = svgContent;
-
-  svg.querySelectorAll("circle").forEach((circle) => {
-    circle.addEventListener("mouseenter", (event) => {
-      const index = Number(event.target.dataset.index);
-      const series = event.target.dataset.series;
-      const point = cumulative[index];
-      const label =
-        series === "total"
-          ? "Total Paid"
-          : series.charAt(0).toUpperCase() + series.slice(1);
-      tooltip.innerHTML = `
-        <strong>Payment ${point.period}</strong>
-        ${label}: ${formatCurrency(point[series])}
-      `;
-      tooltip.style.display = "block";
-      const rect = svg.getBoundingClientRect();
-      const tooltipRect = tooltip.getBoundingClientRect();
-      const margin = 8;
-      let left = event.clientX - rect.left + 14;
-      let top = event.clientY - rect.top - tooltipRect.height - 8;
-
-      if (left + tooltipRect.width > rect.width - margin) {
-        left = rect.width - tooltipRect.width - margin;
-      }
-      if (left < margin) {
-        left = margin;
-      }
-      if (top < margin) {
-        top = event.clientY - rect.top + 12;
-      }
-
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${top}px`;
-    });
-    circle.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  drawLineChart(canvas, cumulative, {
+    series: [
+      { key: "total", color: "#2dd4bf", label: "Total Paid", fill: true },
+      { key: "principal", color: "#60a5fa", label: "Principal" },
+      { key: "interest", color: "#f472b6", label: "Interest" },
+      { key: "balance", color: "#f59e0b", label: "Balance" },
+    ],
+    xLabel: (d) => `Mo ${d.period}`,
+    xTicks: 12,
+    tooltip: (d) => [
+      `Month ${d.period}`,
+      `Total Paid: ${formatCurrency(d.total)}`,
+      `Principal: ${formatCurrency(d.principal)}`,
+      `Interest: ${formatCurrency(d.interest)}`,
+      `Balance: ${formatCurrency(d.balance)}`,
+    ],
+    controller: loanLineController,
   });
 }
 

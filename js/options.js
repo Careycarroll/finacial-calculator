@@ -174,6 +174,9 @@ let lastPayoffData = null;
 let lastPayoffLegs = null;
 let lastPayoffStockPrice = null;
 let lastPayoffBreakevens = null;
+let payoffChartController = null;
+let payoffMouseController = null;
+let multiCurveMouseController = null;
 
 async function renderStrategyButtons() {
   const strategies = await loadStrategies();
@@ -545,7 +548,7 @@ document.getElementById("payoff-before-btn").addEventListener("click", () => {
 });
 
 document.getElementById("payoff-days-slider").addEventListener("input", (e) => {
-  const days = parseInt(e.target.value);
+  const days = safeParseInt(e.target.value);
   const label =
     days === 0 ? "Expiration (0)" : days === 1 ? "1 day" : `${days} days`;
   document.getElementById("payoff-days-display").textContent = label;
@@ -555,12 +558,12 @@ document.getElementById("payoff-days-slider").addEventListener("input", (e) => {
   }
 });
 function suggestPremiums() {
-  const stockPrice = parseFloat(
-    document.getElementById("opt-stock-price").value,
-  );
-  const days = parseFloat(document.getElementById("opt-days").value);
-  const iv = parseFloat(document.getElementById("opt-iv").value) / 100;
-  const rfr = parseFloat(document.getElementById("opt-rfr").value) / 100;
+  const stockPrice = safeParseFloat(
+    document.getElementById("opt-stock-price").value
+    );
+  const days = safeParseFloat(document.getElementById("opt-days").value);
+  const iv = safeParseFloat(document.getElementById("opt-iv").value) / 100;
+  const rfr = safeParseFloat(document.getElementById("opt-rfr").value) / 100;
 
   if (!stockPrice || stockPrice <= 0) {
     alert("Please enter the current stock price.");
@@ -588,7 +591,7 @@ function suggestPremiums() {
     const premiumInput = row.querySelector(".leg-premium");
     const suggestion = row.querySelector(".leg-premium-suggestion");
 
-    const strike = parseFloat(strikeInput?.value);
+    const strike = safeParseFloat(strikeInput?.value);
 
     if (!strike || strike <= 0) {
       if (suggestion) {
@@ -633,9 +636,9 @@ document.getElementById("legs-container").addEventListener("input", (e) => {
     // Debounce
     clearTimeout(e.target._suggestTimeout);
     e.target._suggestTimeout = setTimeout(() => {
-      const stockPrice = parseFloat(
-        document.getElementById("opt-stock-price").value,
-      );
+      const stockPrice = safeParseFloat(
+        document.getElementById("opt-stock-price").value
+        );
       if (stockPrice > 0) {
         suggestSingleLeg(e.target);
       }
@@ -644,12 +647,12 @@ document.getElementById("legs-container").addEventListener("input", (e) => {
 });
 
 function suggestSingleLeg(strikeInput) {
-  const stockPrice = parseFloat(
-    document.getElementById("opt-stock-price").value,
-  );
-  const days = parseFloat(document.getElementById("opt-days").value);
-  const iv = parseFloat(document.getElementById("opt-iv").value) / 100;
-  const rfr = parseFloat(document.getElementById("opt-rfr").value) / 100;
+  const stockPrice = safeParseFloat(
+    document.getElementById("opt-stock-price").value
+    );
+  const days = safeParseFloat(document.getElementById("opt-days").value);
+  const iv = safeParseFloat(document.getElementById("opt-iv").value) / 100;
+  const rfr = safeParseFloat(document.getElementById("opt-rfr").value) / 100;
 
   if (!stockPrice || !days || !iv) return;
 
@@ -657,7 +660,7 @@ function suggestSingleLeg(strikeInput) {
   const type = row.dataset.legType;
   if (type === "stock") return;
 
-  const strike = parseFloat(strikeInput.value);
+  const strike = safeParseFloat(strikeInput.value);
   const suggestion = row.querySelector(".leg-premium-suggestion");
   const premiumInput = row.querySelector(".leg-premium");
 
@@ -746,10 +749,10 @@ function redrawPayoffChart() {
   const legs = lastPayoffLegs;
   const breakevens = lastPayoffBreakevens;
 
-  const iv = parseFloat(document.getElementById("opt-iv").value) / 100 || 0.25;
+  const iv = safeParseFloat(document.getElementById("opt-iv").value) / 100 || 0.25;
   const rfr =
-    parseFloat(document.getElementById("opt-rfr").value) / 100 || 0.05;
-  const totalDays = parseFloat(document.getElementById("opt-days").value) || 30;
+    safeParseFloat(document.getElementById("opt-rfr").value) / 100 || 0.05;
+  const totalDays = safeParseFloat(document.getElementById("opt-days").value, 30);
 
   if (payoffMode === "expiration") {
     // Just redraw the standard expiration chart
@@ -785,9 +788,9 @@ function redrawPayoffChart() {
   }
 
   // Before expiration mode — draw multiple curves
-  const daysRemaining = parseInt(
-    document.getElementById("payoff-days-slider").value,
-  );
+  const daysRemaining = safeParseInt(
+    document.getElementById("payoff-days-slider").value
+    );
   const priceMin = lastPayoffData[0].price;
   const priceMax = lastPayoffData[lastPayoffData.length - 1].price;
   const steps = lastPayoffData.length - 1;
@@ -922,8 +925,8 @@ function updateTimeExplainer(daysRemaining, curves, legs) {
   explainer.classList.remove("hidden");
 
   const stockPrice = lastPayoffStockPrice;
-  const iv = parseFloat(document.getElementById("opt-iv").value) || 25;
-  const totalDays = parseInt(document.getElementById("opt-days").value) || 30;
+  const iv = safeParseFloat(document.getElementById("opt-iv").value, 25);
+  const totalDays = safeParseInt(document.getElementById("opt-days").value, 30);
 
   // Calculate P&L at current stock price for today vs expiration
   const todayCurve = curves.find((c) => c.days === daysRemaining);
@@ -1277,13 +1280,13 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
     return priceMin + ((x - padding.left) / chartWidth) * (priceMax - priceMin);
   }
 
-  const newCanvas = canvas.cloneNode(true);
-  newCanvas.id = "payoff-chart-canvas";
-  canvas.parentNode.replaceChild(newCanvas, canvas);
+  if (payoffChartController) payoffChartController.abort();
+  payoffChartController = new AbortController();
+  const { signal } = payoffChartController;
 
   // Redraw initial state on new canvas
   drawPayoffDirect(
-    newCanvas,
+    canvas,
     payoffData,
     stockPrice,
     breakevens,
@@ -1295,15 +1298,15 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
     null,
   );
 
-  newCanvas.addEventListener("mousemove", (e) => {
-    const r = newCanvas.getBoundingClientRect();
+  canvas.addEventListener("mousemove", (e) => {
+    const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
 
     if (price >= priceMin && price <= priceMax) {
-      newCanvas.style.cursor = "crosshair";
+      canvas.style.cursor = "crosshair";
       drawPayoffDirect(
-        newCanvas,
+        canvas,
         payoffData,
         stockPrice,
         breakevens,
@@ -1315,9 +1318,9 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
         price,
       );
     } else {
-      newCanvas.style.cursor = "default";
+      canvas.style.cursor = "default";
       drawPayoffDirect(
-        newCanvas,
+        canvas,
         payoffData,
         stockPrice,
         breakevens,
@@ -1329,12 +1332,12 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
         null,
       );
     }
-  });
+  }, { signal });
 
-  newCanvas.addEventListener("mouseleave", () => {
-    newCanvas.style.cursor = "default";
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
     drawPayoffDirect(
-      newCanvas,
+        canvas,
       payoffData,
       stockPrice,
       breakevens,
@@ -1345,7 +1348,7 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
       yMax,
       null,
     );
-  });
+  }, { signal });
 }
 
 function bindMultiCurveMouse(
@@ -1367,12 +1370,12 @@ function bindMultiCurveMouse(
     return priceMin + ((x - padding.left) / chartWidth) * (priceMax - priceMin);
   }
 
-  const newCanvas = canvas.cloneNode(true);
-  newCanvas.id = "payoff-chart-canvas";
-  canvas.parentNode.replaceChild(newCanvas, canvas);
+  if (multiCurveMouseController) multiCurveMouseController.abort();
+  multiCurveMouseController = new AbortController();
+  const { signal } = multiCurveMouseController;
 
   drawMultiCurvePayoff(
-    newCanvas,
+    canvas,
     curves,
     stockPrice,
     breakevens,
@@ -1384,15 +1387,15 @@ function bindMultiCurveMouse(
     null,
   );
 
-  newCanvas.addEventListener("mousemove", (e) => {
-    const r = newCanvas.getBoundingClientRect();
+  canvas.addEventListener("mousemove", (e) => {
+    const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
 
     if (price >= priceMin && price <= priceMax) {
-      newCanvas.style.cursor = "crosshair";
+      canvas.style.cursor = "crosshair";
       drawMultiCurvePayoff(
-        newCanvas,
+        canvas,
         curves,
         stockPrice,
         breakevens,
@@ -1404,9 +1407,9 @@ function bindMultiCurveMouse(
         price,
       );
     } else {
-      newCanvas.style.cursor = "default";
+      canvas.style.cursor = "default";
       drawMultiCurvePayoff(
-        newCanvas,
+        canvas,
         curves,
         stockPrice,
         breakevens,
@@ -1418,12 +1421,12 @@ function bindMultiCurveMouse(
         null,
       );
     }
-  });
+  }, { signal });
 
-  newCanvas.addEventListener("mouseleave", () => {
-    newCanvas.style.cursor = "default";
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
     drawMultiCurvePayoff(
-      newCanvas,
+        canvas,
       curves,
       stockPrice,
       breakevens,
@@ -1434,7 +1437,7 @@ function bindMultiCurveMouse(
       yMax,
       null,
     );
-  });
+  }, { signal });
 }
 // ===================================================================
 // PAYOFF CALCULATION
@@ -1464,18 +1467,18 @@ function calculatePayoff(stockPrice, legs) {
 function getLegsFromInputs() {
   const rows = document.querySelectorAll(".leg-row");
   const contracts =
-    parseInt(document.getElementById("opt-contracts").value) || 1;
+    safeParseInt(document.getElementById("opt-contracts").value, 1);
   const legs = [];
 
   rows.forEach((row) => {
     const type = row.dataset.legType;
     const action = row.dataset.legAction;
-    const qty = parseInt(row.dataset.legQty) || 1;
+    const qty = safeParseInt(row.dataset.legQty, 1);
     const strikeInput = row.querySelector(".leg-strike");
     const premiumInput = row.querySelector(".leg-premium");
 
-    const strike = parseFloat(strikeInput?.value) || 0;
-    const premium = parseFloat(premiumInput?.value) || 0;
+    const strike = safeParseFloat(strikeInput?.value, 0);
+    const premium = safeParseFloat(premiumInput?.value, 0);
 
     legs.push({
       type,
@@ -1498,9 +1501,9 @@ document
   .addEventListener("click", handlePayoffCalculate);
 
 function handlePayoffCalculate() {
-  const stockPrice = parseFloat(
-    document.getElementById("opt-stock-price").value,
-  );
+  const stockPrice = safeParseFloat(
+    document.getElementById("opt-stock-price").value
+    );
   const legs = getLegsFromInputs();
 
   if (!stockPrice || stockPrice <= 0) {
@@ -1583,7 +1586,7 @@ function handlePayoffCalculate() {
   lastPayoffBreakevens = breakevens;
 
   // Set slider max to days input
-  const totalDays = parseInt(document.getElementById("opt-days").value) || 30;
+  const totalDays = safeParseInt(document.getElementById("opt-days").value, 30);
   const slider = document.getElementById("payoff-days-slider");
   slider.max = totalDays;
   slider.value = totalDays;
@@ -1911,19 +1914,19 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
   draw(null);
 
   // Mouse events — clone canvas to remove old listeners
-  const newCanvas = canvas.cloneNode(true);
-  newCanvas.id = "payoff-chart-canvas";
-  canvas.parentNode.replaceChild(newCanvas, canvas);
+  if (payoffMouseController) payoffMouseController.abort();
+  payoffMouseController = new AbortController();
+  const { signal } = payoffMouseController;
 
-  newCanvas.addEventListener("mousemove", (e) => {
-    const r = newCanvas.getBoundingClientRect();
+  canvas.addEventListener("mousemove", (e) => {
+    const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
 
     if (price >= priceMin && price <= priceMax) {
-      newCanvas.style.cursor = "crosshair";
+      canvas.style.cursor = "crosshair";
       drawPayoffDirect(
-        newCanvas,
+        canvas,
         payoffData,
         stockPrice,
         breakevens,
@@ -1935,9 +1938,9 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
         price,
       );
     } else {
-      newCanvas.style.cursor = "default";
+      canvas.style.cursor = "default";
       drawPayoffDirect(
-        newCanvas,
+        canvas,
         payoffData,
         stockPrice,
         breakevens,
@@ -1949,12 +1952,12 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
         null,
       );
     }
-  });
+  }, { signal });
 
-  newCanvas.addEventListener("mouseleave", () => {
-    newCanvas.style.cursor = "default";
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
     drawPayoffDirect(
-      newCanvas,
+        canvas,
       payoffData,
       stockPrice,
       breakevens,
@@ -1965,7 +1968,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       yMax,
       null,
     );
-  });
+  }, { signal });
 }
 
 // Direct draw function for mouse events (avoids closure issues with canvas replacement)
@@ -2202,13 +2205,13 @@ document
   .addEventListener("click", handleBSCalculate);
 
 function handleBSCalculate() {
-  const S = parseFloat(document.getElementById("bs-stock").value);
-  const K = parseFloat(document.getElementById("bs-strike").value);
-  const days = parseFloat(document.getElementById("bs-time").value);
+  const S = safeParseFloat(document.getElementById("bs-stock").value);
+  const K = safeParseFloat(document.getElementById("bs-strike").value);
+  const days = safeParseFloat(document.getElementById("bs-time").value);
   const sigma =
-    parseFloat(document.getElementById("bs-volatility").value) / 100;
-  const r = parseFloat(document.getElementById("bs-rate").value) / 100;
-  const q = parseFloat(document.getElementById("bs-dividend").value) / 100;
+    safeParseFloat(document.getElementById("bs-volatility").value) / 100;
+  const r = safeParseFloat(document.getElementById("bs-rate").value) / 100;
+  const q = safeParseFloat(document.getElementById("bs-dividend").value) / 100;
 
   if (!S || !K || !days || !sigma) {
     alert("Please fill in all required fields.");
@@ -2257,12 +2260,12 @@ document
 let greeksChartData = null;
 
 function handleGreeksCalculate() {
-  const S = parseFloat(document.getElementById("gk-stock").value);
-  const K = parseFloat(document.getElementById("gk-strike").value);
-  const days = parseFloat(document.getElementById("gk-time").value);
+  const S = safeParseFloat(document.getElementById("gk-stock").value);
+  const K = safeParseFloat(document.getElementById("gk-strike").value);
+  const days = safeParseFloat(document.getElementById("gk-time").value);
   const sigma =
-    parseFloat(document.getElementById("gk-volatility").value) / 100;
-  const r = parseFloat(document.getElementById("gk-rate").value) / 100;
+    safeParseFloat(document.getElementById("gk-volatility").value) / 100;
+  const r = safeParseFloat(document.getElementById("gk-rate").value) / 100;
   const optionType = document.getElementById("gk-type").value;
 
   if (!S || !K || !days || !sigma) {
@@ -2558,15 +2561,15 @@ document
 function handlePnLCalculate() {
   const type = document.getElementById("pnl-type").value;
   const contracts =
-    parseInt(document.getElementById("pnl-contracts").value) || 1;
-  const strike = parseFloat(document.getElementById("pnl-strike").value);
-  const premium = parseFloat(document.getElementById("pnl-premium").value);
-  const currentStock = parseFloat(
-    document.getElementById("pnl-current-stock").value,
-  );
-  const currentPremium = parseFloat(
-    document.getElementById("pnl-current-premium").value,
-  );
+    safeParseInt(document.getElementById("pnl-contracts").value, 1);
+  const strike = safeParseFloat(document.getElementById("pnl-strike").value);
+  const premium = safeParseFloat(document.getElementById("pnl-premium").value);
+  const currentStock = safeParseFloat(
+    document.getElementById("pnl-current-stock").value
+    );
+  const currentPremium = safeParseFloat(
+    document.getElementById("pnl-current-premium").value
+    );
 
   if (!strike || !premium || !currentStock) {
     alert("Please fill in strike, premium, and current stock price.");

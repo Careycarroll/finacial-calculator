@@ -9,6 +9,7 @@ const realBtn = document.getElementById("proj-real-btn");
 
 let currentView = "nominal";
 let storedProjections = null;
+let projectionChartController = null;
 let storedInputs = null;
 
 // ===== EVENT LISTENERS =====
@@ -156,17 +157,17 @@ function findMilestoneYear(yearlyData, milestone) {
 // ===== MAIN HANDLER =====
 function handleCalculate() {
   const portfolio =
-    parseFloat(document.getElementById("proj-portfolio").value) || 0;
+    safeParseFloat(document.getElementById("proj-portfolio").value, 0);
   const monthly =
-    parseFloat(document.getElementById("proj-monthly").value) || 0;
+    safeParseFloat(document.getElementById("proj-monthly").value, 0);
   const contribIncrease =
-    parseFloat(document.getElementById("proj-contrib-increase").value) || 0;
-  const horizon = parseInt(document.getElementById("proj-horizon").value);
-  const expectedReturn = parseFloat(
-    document.getElementById("proj-return").value,
-  );
-  const deviation = parseFloat(document.getElementById("proj-deviation").value);
-  const inflation = parseFloat(document.getElementById("proj-inflation").value);
+    safeParseFloat(document.getElementById("proj-contrib-increase").value, 0);
+  const horizon = safeParseInt(document.getElementById("proj-horizon").value);
+  const expectedReturn = safeParseFloat(
+    document.getElementById("proj-return").value
+    );
+  const deviation = safeParseFloat(document.getElementById("proj-deviation").value);
+  const inflation = safeParseFloat(document.getElementById("proj-inflation").value);
   const showSP500 = document.getElementById("proj-sp500").value === "yes";
 
   // Validate
@@ -181,9 +182,9 @@ function handleCalculate() {
   }
 
   const milestones = [];
-  const m1 = parseFloat(document.getElementById("proj-milestone-1").value);
-  const m2 = parseFloat(document.getElementById("proj-milestone-2").value);
-  const m3 = parseFloat(document.getElementById("proj-milestone-3").value);
+  const m1 = safeParseFloat(document.getElementById("proj-milestone-1").value);
+  const m2 = safeParseFloat(document.getElementById("proj-milestone-2").value);
+  const m3 = safeParseFloat(document.getElementById("proj-milestone-3").value);
   if (m1) milestones.push(m1);
   if (m2) milestones.push(m2);
   if (m3) milestones.push(m3);
@@ -497,31 +498,32 @@ function displayChart(projections, inputs, view) {
   }
 
   // Remove old listeners by replacing canvas
-  const newCanvas = canvas.cloneNode(true);
-  canvas.parentNode.replaceChild(newCanvas, canvas);
+  if (projectionChartController) projectionChartController.abort();
+  projectionChartController = new AbortController();
+  const { signal } = projectionChartController;
 
   // Initial draw on the new canvas
-  displayChartDirect(newCanvas, adjustedProjections, inputs, view, null);
+  displayChartDirect(canvas, adjustedProjections, inputs, view, null);
 
   // Bind mouse events on new canvas
-  newCanvas.addEventListener("mousemove", (e) => {
-    const r = newCanvas.getBoundingClientRect();
+  canvas.addEventListener("mousemove", (e) => {
+    const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const year = fromX(mouseX);
 
     if (year >= 0 && year <= horizon) {
-      newCanvas.style.cursor = "crosshair";
-      displayChartDirect(newCanvas, adjustedProjections, inputs, view, year);
+      canvas.style.cursor = "crosshair";
+      displayChartDirect(canvas, adjustedProjections, inputs, view, year);
     } else {
-      newCanvas.style.cursor = "default";
-      displayChartDirect(newCanvas, adjustedProjections, inputs, view, null);
+      canvas.style.cursor = "default";
+      displayChartDirect(canvas, adjustedProjections, inputs, view, null);
     }
-  });
+  }, { signal });
 
-  newCanvas.addEventListener("mouseleave", () => {
-    newCanvas.style.cursor = "default";
-    displayChartDirect(newCanvas, adjustedProjections, inputs, view, null);
-  });
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
+    displayChartDirect(canvas, adjustedProjections, inputs, view, null);
+  }, { signal });
 
   // Build legend
   const legend = document.getElementById("proj-chart-legend");

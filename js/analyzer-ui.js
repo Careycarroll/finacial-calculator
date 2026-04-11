@@ -1039,7 +1039,7 @@ function renderFlags(analysis) {
   const container = document.getElementById("analyzer-flags");
   if (!container) return;
 
-  const flags = analysis.flags || [];
+  const flags = analysis.redFlags || [];
 
   if (flags.length === 0) {
     container.innerHTML = `
@@ -1049,24 +1049,30 @@ function renderFlags(analysis) {
     return;
   }
 
-  container.innerHTML = flags
-    .map((flag) => {
-      const severity =
-        flag.severity === "high"
-          ? "🔴"
-          : flag.severity === "medium"
-            ? "🟡"
-            : "🟢";
-      return `
-        <div style="display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 0.75rem; padding: 0.75rem; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border);">
-          <span style="font-size: 1.1rem; flex-shrink: 0;">${severity}</span>
-          <div>
-            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem;">${flag.label}</div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary);">${flag.detail}</div>
+  const negatives = flags.filter(f => f.type === "negative");
+  const warnings = flags.filter(f => f.type === "warning");
+  const positives = flags.filter(f => f.type === "positive");
+
+  function renderGroup(title, items, icon) {
+    if (items.length === 0) return "";
+    return `<h3 style="font-size: 0.95rem; font-weight: 700; margin: 1.25rem 0 0.75rem; color: var(--text-primary);">${icon} ${title} (${items.length})</h3>` +
+      items.map(flag => `
+        <div class="flag-item flag-${flag.type}">
+          <span class="flag-icon">${flag.type === "negative" ? "🔴" : flag.type === "warning" ? "🟡" : "🟢"}</span>
+          <div class="flag-content">
+            <div class="flag-header">
+              <span class="flag-message">${flag.message}</span>
+              <span class="flag-category">${flag.category}</span>
+            </div>
+            <div class="flag-detail">${flag.detail}</div>
           </div>
-        </div>`;
-    })
-    .join("");
+        </div>`).join("");
+  }
+
+  container.innerHTML =
+    renderGroup("Red Flags", negatives, "🚩") +
+    renderGroup("Warnings", warnings, "⚠️") +
+    renderGroup("Highlights", positives, "✅");
 }
 
 // ===================================================================
@@ -1087,7 +1093,7 @@ const chartObserver = new IntersectionObserver(
   { threshold: 0.1 },
 );
 
-const chartSection = document.querySelector(".analyzer-chart-container");
+const chartSection = document.querySelector(".canvas-chart");
 if (chartSection) chartObserver.observe(chartSection);
 
 // ===================================================================

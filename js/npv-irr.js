@@ -121,14 +121,14 @@ function getPeriodTypeForList(listElement) {
 
 function getCashflows(listElement) {
   const rows = listElement.querySelectorAll(".cashflow-row input");
-  return Array.from(rows).map((input) => parseFloat(input.value) || 0);
+  return Array.from(rows).map((input) => safeParseFloat(input.value, 0));
 }
 
 // ===== QUICK FILL =====
 function quickFill(amountId, fromId, toId, listElement) {
-  const amount = parseFloat(document.getElementById(amountId).value);
-  const from = parseInt(document.getElementById(fromId).value);
-  const to = parseInt(document.getElementById(toId).value);
+  const amount = safeParseFloat(document.getElementById(amountId).value);
+  const from = safeParseInt(document.getElementById(fromId).value);
+  const to = safeParseInt(document.getElementById(toId).value);
 
   if (!amount || !from || !to || from > to || from < 1) {
     alert("Please enter a valid amount and period range (From must be ≤ To).");
@@ -355,13 +355,13 @@ function buildSensitivity(
 
 // ===== SINGLE INVESTMENT HANDLER =====
 function handleSingleCalculate() {
-  const initialInvestment = parseFloat(
-    document.getElementById("npv-initial").value,
-  );
-  const annualRate = parseFloat(document.getElementById("npv-rate").value);
-  const compounding = parseInt(
-    document.getElementById("npv-compounding").value,
-  );
+  const initialInvestment = safeParseFloat(
+    document.getElementById("npv-initial").value
+    );
+  const annualRate = safeParseFloat(document.getElementById("npv-rate").value);
+  const compounding = safeParseInt(
+    document.getElementById("npv-compounding").value
+    );
   const periodType = document.getElementById("npv-period-type").value;
   const cashflows = getCashflows(cashflowList);
 
@@ -457,16 +457,16 @@ function handleSingleCalculate() {
 
 // ===== COMPARE HANDLER =====
 function handleCompareCalculate() {
-  const initialA = parseFloat(document.getElementById("npv-a-initial").value);
-  const rateA = parseFloat(document.getElementById("npv-a-rate").value);
-  const compA = parseInt(document.getElementById("npv-a-compounding").value);
+  const initialA = safeParseFloat(document.getElementById("npv-a-initial").value);
+  const rateA = safeParseFloat(document.getElementById("npv-a-rate").value);
+  const compA = safeParseInt(document.getElementById("npv-a-compounding").value);
   const periodA = document.getElementById("npv-a-period-type").value;
   const nameA = document.getElementById("npv-a-name").value || "Investment A";
   const cashflowsA = getCashflows(cashflowListA);
 
-  const initialB = parseFloat(document.getElementById("npv-b-initial").value);
-  const rateB = parseFloat(document.getElementById("npv-b-rate").value);
-  const compB = parseInt(document.getElementById("npv-b-compounding").value);
+  const initialB = safeParseFloat(document.getElementById("npv-b-initial").value);
+  const rateB = safeParseFloat(document.getElementById("npv-b-rate").value);
+  const compB = safeParseInt(document.getElementById("npv-b-compounding").value);
   const periodB = document.getElementById("npv-b-period-type").value;
   const nameB = document.getElementById("npv-b-name").value || "Investment B";
   const cashflowsB = getCashflows(cashflowListB);
@@ -702,11 +702,13 @@ function displayCompareSensitivity(sensA, sensB, nameA, nameB) {
 }
 
 // ===== DISPLAY: CHART =====
+let npvBarController = null;
+
 function displayChart(breakdown, periodType) {
-  const chartBars = document.getElementById("npv-chart-bars");
-  const chartYAxis = document.getElementById("npv-chart-y-axis");
+  const canvas = document.getElementById("npv-bar-canvas");
   const legend = document.getElementById("npv-chart-legend");
   const title = document.getElementById("npv-chart-title");
+  if (!canvas) return;
 
   title.textContent = "Cash Flows by Period";
   legend.innerHTML = `
@@ -714,67 +716,27 @@ function displayChart(breakdown, periodType) {
     <span class="legend-item"><span class="legend-color legend-interest"></span> Cash Outflow</span>
   `;
 
-  const maxAbs = Math.max(...breakdown.map((d) => Math.abs(d.cashflow)));
-
-  chartYAxis.innerHTML = "";
-  const steps = 5;
-  for (let i = steps; i >= 0; i--) {
-    const label = document.createElement("span");
-    const value = (maxAbs / steps) * i;
-    label.textContent =
-      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
-    chartYAxis.appendChild(label);
-  }
-
-  chartBars.innerHTML = "";
-  breakdown.forEach((d) => {
-    const group = document.createElement("div");
-    group.className = "bar-group";
-
-    const stack = document.createElement("div");
-    stack.className = "bar-stack";
-    stack.style.height = `${(Math.abs(d.cashflow) / maxAbs) * 100}%`;
-
-    const bar = document.createElement("div");
-    bar.className = d.cashflow >= 0 ? "bar-principal" : "bar-interest";
-    bar.style.height = "100%";
-
-    stack.appendChild(bar);
-
-    const label = document.createElement("div");
-    label.className = "bar-label";
-    const pLabel = periodType === "months" ? "M" : "Yr";
-    label.textContent = d.period === 0 ? "Init" : `${pLabel}${d.period}`;
-
-    group.appendChild(stack);
-    group.appendChild(label);
-    chartBars.appendChild(group);
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    tooltip.innerHTML = `<strong>${d.period === 0 ? "Initial Investment" : `Period ${d.period}`}</strong><br>Cash Flow: ${formatCurrency(d.cashflow)}<br>Discounted: ${formatCurrency(d.discountedValue)}<br>Cumulative NPV: ${formatCurrency(d.cumulativeNPV)}`;
-    group.appendChild(tooltip);
-
-    group.addEventListener("mouseenter", (e) => {
-      tooltip.style.display = "block";
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mousemove", (e) => {
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  const pLabel = periodType === "months" ? "M" : "Yr";
+  drawBarChart(canvas, breakdown, {
+    series: [
+      { key: "cashflow", color: "#2dd4bf", label: "Cash Flow" },
+    ],
+    xLabel: (d) => d.period === 0 ? "Init" : `${pLabel}${d.period}`,
+    tooltip: (d) => [
+      d.period === 0 ? "Initial Investment" : `Period ${d.period}`,
+      `Cash Flow: ${formatCurrency(d.cashflow)}`,
+      `Discounted: ${formatCurrency(d.discountedValue)}`,
+      `Cumulative NPV: ${formatCurrency(d.cumulativeNPV)}`,
+    ],
+    controller: npvBarController,
   });
 }
 
 function displayCompareChart(breakdownA, breakdownB, nameA, nameB) {
-  const chartBars = document.getElementById("npv-chart-bars");
-  const chartYAxis = document.getElementById("npv-chart-y-axis");
+  const canvas = document.getElementById("npv-bar-canvas");
   const legend = document.getElementById("npv-chart-legend");
   const title = document.getElementById("npv-chart-title");
+  if (!canvas) return;
 
   title.textContent = "Cumulative NPV Comparison";
   legend.innerHTML = `
@@ -783,87 +745,28 @@ function displayCompareChart(breakdownA, breakdownB, nameA, nameB) {
   `;
 
   const maxPeriods = Math.max(breakdownA.length, breakdownB.length);
-  const allValues = [
-    ...breakdownA.map((d) => d.cumulativeNPV),
-    ...breakdownB.map((d) => d.cumulativeNPV),
-  ];
-  const maxAbs = Math.max(...allValues.map((v) => Math.abs(v)));
-
-  chartYAxis.innerHTML = "";
-  const steps = 5;
-  for (let i = steps; i >= 0; i--) {
-    const label = document.createElement("span");
-    const value = (maxAbs / steps) * i;
-    label.textContent =
-      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
-    chartYAxis.appendChild(label);
-  }
-
-  chartBars.innerHTML = "";
+  const combined = [];
   for (let i = 0; i < maxPeriods; i++) {
-    const group = document.createElement("div");
-    group.className = "bar-group";
-
-    const barContainer = document.createElement("div");
-    barContainer.style.display = "flex";
-    barContainer.style.alignItems = "flex-end";
-    barContainer.style.gap = "2px";
-    barContainer.style.width = "100%";
-    barContainer.style.height = "100%";
-    barContainer.style.justifyContent = "center";
-
-    const valA = breakdownA[i] ? breakdownA[i].cumulativeNPV : null;
-    const valB = breakdownB[i] ? breakdownB[i].cumulativeNPV : null;
-
-    if (valA !== null) {
-      const barA = document.createElement("div");
-      barA.className = "bar-principal";
-      barA.style.width = "45%";
-      barA.style.height = `${(Math.abs(valA) / maxAbs) * 100}%`;
-      barA.style.borderRadius = "3px 3px 0 0";
-      if (valA < 0) barA.style.opacity = "0.5";
-      barContainer.appendChild(barA);
-    }
-
-    if (valB !== null) {
-      const barB = document.createElement("div");
-      barB.className = "bar-interest";
-      barB.style.width = "45%";
-      barB.style.height = `${(Math.abs(valB) / maxAbs) * 100}%`;
-      barB.style.borderRadius = "3px 3px 0 0";
-      if (valB < 0) barB.style.opacity = "0.5";
-      barContainer.appendChild(barB);
-    }
-
-    const label = document.createElement("div");
-    label.className = "bar-label";
-    label.textContent = i === 0 ? "Init" : `${i}`;
-
-    group.appendChild(barContainer);
-    group.appendChild(label);
-    chartBars.appendChild(group);
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    let tooltipHTML = `<strong>Period ${i}</strong>`;
-    if (valA !== null) tooltipHTML += `<br>${nameA}: ${formatCurrency(valA)}`;
-    if (valB !== null) tooltipHTML += `<br>${nameB}: ${formatCurrency(valB)}`;
-    tooltip.innerHTML = tooltipHTML;
-    group.appendChild(tooltip);
-
-    group.addEventListener("mouseenter", (e) => {
-      tooltip.style.display = "block";
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mousemove", (e) => {
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
+    combined.push({
+      period: i,
+      npvA: breakdownA[i] ? breakdownA[i].cumulativeNPV : 0,
+      npvB: breakdownB[i] ? breakdownB[i].cumulativeNPV : 0,
     });
   }
+
+  drawBarChart(canvas, combined, {
+    series: [
+      { key: "npvA", color: "#2dd4bf", label: nameA },
+      { key: "npvB", color: "#f472b6", label: nameB },
+    ],
+    xLabel: (d) => d.period === 0 ? "Init" : `${d.period}`,
+    tooltip: (d) => [
+      `Period ${d.period}`,
+      `${nameA}: ${formatCurrency(d.npvA)}`,
+      `${nameB}: ${formatCurrency(d.npvB)}`,
+    ],
+    controller: npvBarController,
+  });
 }
 
 // ===== DISPLAY: TABLE =====

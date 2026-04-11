@@ -98,14 +98,8 @@
                 Total Paid</span
               >
             </div>
-            <div class="line-chart-container">
-              <svg
-                id="cumulative-chart-svg"
-                class="line-chart-svg"
-                viewBox="0 0 700 260"
-                preserveAspectRatio="none"
-              ></svg>
-              <div id="cumulative-chart-tooltip" class="line-tooltip"></div>
+            <div class="canvas-chart">
+              <canvas id="loan-line-canvas"></canvas>
             </div>
           </div>
         </div>
@@ -113,9 +107,8 @@
         <!-- Stacked Bar Chart -->
         <div id="item-chart">
           <div id="chart-section" class="chart-panel hidden">
-            <div class="chart-container">
-              <div class="chart-y-axis" id="chart-y-axis"></div>
-              <div class="chart-bars" id="chart-bars"></div>
+            <div class="canvas-chart">
+              <canvas id="loan-bar-canvas"></canvas>
             </div>
             <div class="chart-legend">
               <span class="legend-item"
@@ -187,7 +180,7 @@
     </div>
 
     <script src="../js/chart-utils.js"></script>
-    <script src="../js/loan.js" defer></script>
+    <script src="../js/loan.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>

@@ -443,9 +443,8 @@
         <!-- Chart -->
         <div id="npv-chart-section" class="chart-panel hidden">
           <h2 id="npv-chart-title">Cash Flows by Period</h2>
-          <div class="chart-container">
-            <div class="chart-y-axis" id="npv-chart-y-axis"></div>
-            <div class="chart-bars" id="npv-chart-bars"></div>
+          <div class="canvas-chart">
+            <canvas id="npv-bar-canvas"></canvas>
           </div>
           <div class="chart-legend" id="npv-chart-legend">
             <span class="legend-item"
@@ -493,7 +492,7 @@
     </div>
 
     <script src="../js/chart-utils.js"></script>
-    <script src="../js/npv-irr.js" defer></script>
+    <script src="../js/npv-irr.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>

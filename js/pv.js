@@ -64,9 +64,9 @@ function handleCalculate() {
     return;
   }
 
-  const annualRate = parseFloat(document.getElementById("pv-rate").value);
-  const years = parseInt(document.getElementById("pv-periods").value);
-  const compounding = parseInt(document.getElementById("pv-compounding").value);
+  const annualRate = safeParseFloat(document.getElementById("pv-rate").value);
+  const years = safeParseInt(document.getElementById("pv-periods").value);
+  const compounding = safeParseInt(document.getElementById("pv-compounding").value);
 
   if (!annualRate || !years) {
     alert("Please fill in the discount rate and number of years.");
@@ -84,7 +84,7 @@ function handleCalculate() {
   let presentValue, futureValue, totalPayments;
 
   if (currentMode === "lump") {
-    futureValue = parseFloat(document.getElementById("pv-future-value").value);
+    futureValue = safeParseFloat(document.getElementById("pv-future-value").value);
 
     if (!futureValue || futureValue <= 0) {
       alert("Please enter a valid future value.");
@@ -94,7 +94,7 @@ function handleCalculate() {
     presentValue = futureValue / Math.pow(1 + ratePerPeriod, totalPeriods);
     totalPayments = futureValue;
   } else {
-    const payment = parseFloat(document.getElementById("pv-payment").value);
+    const payment = safeParseFloat(document.getElementById("pv-payment").value);
 
     if (!payment || payment <= 0) {
       alert("Please enter a valid payment amount.");
@@ -144,15 +144,15 @@ function handleCalculate() {
 
 // ===== COMPARE CALCULATION =====
 function handleCompare() {
-  const annualRate = parseFloat(document.getElementById("pv-rate").value);
-  const compounding = parseInt(document.getElementById("pv-compounding").value);
-  const lumpSum = parseFloat(document.getElementById("pv-compare-lump").value);
-  const annuityPayment = parseFloat(
-    document.getElementById("pv-compare-payment").value,
-  );
-  const annuityYears = parseInt(
-    document.getElementById("pv-compare-years").value,
-  );
+  const annualRate = safeParseFloat(document.getElementById("pv-rate").value);
+  const compounding = safeParseInt(document.getElementById("pv-compounding").value);
+  const lumpSum = safeParseFloat(document.getElementById("pv-compare-lump").value);
+  const annuityPayment = safeParseFloat(
+    document.getElementById("pv-compare-payment").value
+    );
+  const annuityYears = safeParseInt(
+    document.getElementById("pv-compare-years").value
+    );
 
   if (!annualRate || !lumpSum || !annuityPayment || !annuityYears) {
     alert(
@@ -178,14 +178,13 @@ function handleCompare() {
 
   if (useTax) {
     lumpTaxRate =
-      (parseFloat(document.getElementById("pv-lump-tax-rate").value) || 0) /
+      (safeParseFloat(document.getElementById("pv-lump-tax-rate").value, 0)) /
       100;
     annuityTaxRate =
-      (parseFloat(document.getElementById("pv-annuity-tax-rate").value) || 0) /
+      (safeParseFloat(document.getElementById("pv-annuity-tax-rate").value, 0)) /
       100;
     investmentTaxRate =
-      (parseFloat(document.getElementById("pv-investment-tax-rate").value) ||
-        0) / 100;
+      (safeParseFloat(document.getElementById("pv-investment-tax-rate").value, 0)) / 100;
   }
 
   const ratePerPeriod = annualRate / 100 / compounding;
@@ -391,7 +390,7 @@ function buildBreakdown(
       });
     }
   } else {
-    const payment = parseFloat(document.getElementById("pv-payment").value);
+    const payment = safeParseFloat(document.getElementById("pv-payment").value);
 
     for (let year = 0; year <= years; year++) {
       const periods = year * compounding;
@@ -453,166 +452,61 @@ function buildComparisonBreakdown(
 }
 
 // ===== STANDARD CHART =====
-function displayChart(breakdown) {
-  const chartBars = document.getElementById("pv-chart-bars");
-  const chartYAxis = document.getElementById("pv-chart-y-axis");
-  const legend = document.getElementById("pv-chart-legend");
+let pvBarController = null;
 
-  // Update header and legend for standard mode
-  document.querySelector("#pv-chart-section h2").textContent =
-    "Value Over Time";
+function displayChart(breakdown) {
+  const canvas = document.getElementById("pv-bar-canvas");
+  const legend = document.getElementById("pv-chart-legend");
+  if (!canvas) return;
+
+  document.querySelector("#pv-chart-section h2").textContent = "Value Over Time";
   legend.innerHTML = `
     <span class="legend-item"><span class="legend-color legend-principal"></span> Present Value Portion</span>
     <span class="legend-item"><span class="legend-color legend-interest"></span> Interest (Discount)</span>
   `;
 
   const data = breakdown.filter((d) => d.year > 0);
-  const maxTotal = Math.max(...data.map((d) => d.value + d.interest));
-
-  chartYAxis.innerHTML = "";
-  const steps = 5;
-  for (let i = steps; i >= 0; i--) {
-    const label = document.createElement("span");
-    const value = (maxTotal / steps) * i;
-    label.textContent =
-      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
-    chartYAxis.appendChild(label);
-  }
-
-  chartBars.innerHTML = "";
-  data.forEach((d) => {
-    const total = d.value + d.interest;
-    const totalHeight = (total / maxTotal) * 100;
-    const pvHeight = (d.value / total) * totalHeight;
-    const interestHeight = (d.interest / total) * totalHeight;
-
-    const group = document.createElement("div");
-    group.className = "bar-group";
-
-    const stack = document.createElement("div");
-    stack.className = "bar-stack";
-    stack.style.height = `${totalHeight}%`;
-
-    const interestBar = document.createElement("div");
-    interestBar.className = "bar-interest";
-    interestBar.style.height = `${interestHeight}%`;
-
-    const pvBar = document.createElement("div");
-    pvBar.className = "bar-principal";
-    pvBar.style.height = `${pvHeight}%`;
-
-    stack.appendChild(interestBar);
-    stack.appendChild(pvBar);
-
-    const label = document.createElement("div");
-    label.className = "bar-label";
-    label.textContent = `Yr ${d.year}`;
-
-    group.appendChild(stack);
-    group.appendChild(label);
-    chartBars.appendChild(group);
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    tooltip.innerHTML = `<strong>Year ${d.year}</strong><br>Present Value: ${formatCurrency(d.value)}<br>Discount: ${formatCurrency(d.interest)}`;
-    group.appendChild(tooltip);
-
-    group.addEventListener("mouseenter", (e) => {
-      tooltip.style.display = "block";
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mousemove", (e) => {
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  drawBarChart(canvas, data, {
+    series: [
+      { key: "value", color: "#2dd4bf", label: "Present Value" },
+      { key: "interest", color: "#f472b6", label: "Discount" },
+    ],
+    xLabel: (d) => `Yr ${d.year}`,
+    tooltip: (d) => [
+      `Year ${d.year}`,
+      `Present Value: ${formatCurrency(d.value)}`,
+      `Discount: ${formatCurrency(d.interest)}`,
+    ],
+    controller: pvBarController,
   });
 }
 
 // ===== COMPARISON CHART =====
 function displayComparisonChart(breakdown, lumpAfterTax) {
-  const chartBars = document.getElementById("pv-chart-bars");
-  const chartYAxis = document.getElementById("pv-chart-y-axis");
+  const canvas = document.getElementById("pv-bar-canvas");
   const legend = document.getElementById("pv-chart-legend");
+  if (!canvas) return;
 
-  document.querySelector("#pv-chart-section h2").textContent =
-    "Lump Sum Growth vs. Annuity Payments";
+  document.querySelector("#pv-chart-section h2").textContent = "Lump Sum Growth vs. Annuity Payments";
   legend.innerHTML = `
     <span class="legend-item"><span class="legend-color legend-principal"></span> Lump Sum (Invested)</span>
     <span class="legend-item"><span class="legend-color legend-interest"></span> Annuity (Cumulative Received)</span>
   `;
 
   const data = breakdown.filter((d) => d.year > 0);
-  const maxVal = Math.max(
-    ...data.map((d) => Math.max(d.lumpGrowth, d.annuityReceived)),
-  );
-
-  chartYAxis.innerHTML = "";
-  const steps = 5;
-  for (let i = steps; i >= 0; i--) {
-    const label = document.createElement("span");
-    const value = (maxVal / steps) * i;
-    label.textContent =
-      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
-    chartYAxis.appendChild(label);
-  }
-
-  chartBars.innerHTML = "";
-  data.forEach((d) => {
-    const group = document.createElement("div");
-    group.className = "bar-group";
-
-    const barContainer = document.createElement("div");
-    barContainer.style.display = "flex";
-    barContainer.style.alignItems = "flex-end";
-    barContainer.style.gap = "2px";
-    barContainer.style.width = "100%";
-    barContainer.style.height = "100%";
-    barContainer.style.justifyContent = "center";
-
-    const lumpBar = document.createElement("div");
-    lumpBar.className = "bar-principal";
-    lumpBar.style.width = "45%";
-    lumpBar.style.height = `${(d.lumpGrowth / maxVal) * 100}%`;
-    lumpBar.style.borderRadius = "3px 3px 0 0";
-
-    const annuityBar = document.createElement("div");
-    annuityBar.className = "bar-interest";
-    annuityBar.style.width = "45%";
-    annuityBar.style.height = `${(d.annuityReceived / maxVal) * 100}%`;
-    annuityBar.style.borderRadius = "3px 3px 0 0";
-
-    barContainer.appendChild(lumpBar);
-    barContainer.appendChild(annuityBar);
-
-    const label = document.createElement("div");
-    label.className = "bar-label";
-    label.textContent = `Yr ${d.year}`;
-
-    group.appendChild(barContainer);
-    group.appendChild(label);
-    chartBars.appendChild(group);
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    tooltip.innerHTML = `<strong>Year ${d.year}</strong><br>Lump Invested: ${formatCurrency(d.lumpGrowth)}<br>Annuity Received: ${formatCurrency(d.annuityReceived)}<br>Annuity PV: ${formatCurrency(d.annuityPV)}`;
-    group.appendChild(tooltip);
-
-    group.addEventListener("mouseenter", (e) => {
-      tooltip.style.display = "block";
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mousemove", (e) => {
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  drawBarChart(canvas, data, {
+    series: [
+      { key: "lumpGrowth", color: "#2dd4bf", label: "Lump Sum" },
+      { key: "annuityReceived", color: "#f472b6", label: "Annuity" },
+    ],
+    xLabel: (d) => `Yr ${d.year}`,
+    tooltip: (d) => [
+      `Year ${d.year}`,
+      `Lump Invested: ${formatCurrency(d.lumpGrowth)}`,
+      `Annuity Received: ${formatCurrency(d.annuityReceived)}`,
+      `Annuity PV: ${formatCurrency(d.annuityPV)}`,
+    ],
+    controller: pvBarController,
   });
 }
 

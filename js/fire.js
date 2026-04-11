@@ -52,17 +52,17 @@ bindFormEnter(() => {
 // ===== GET PROFILE VALUES =====
 function getProfile() {
   return {
-    currentAge: parseInt(document.getElementById("fire-current-age").value),
-    retireAge: parseInt(document.getElementById("fire-retire-age").value),
+    currentAge: safeParseInt(document.getElementById("fire-current-age").value),
+    retireAge: safeParseInt(document.getElementById("fire-retire-age").value),
+    lifeExpectancy: safeParseInt(document.getElementById("fire-life-expectancy").value, 90),
     portfolio:
-      parseFloat(document.getElementById("fire-current-portfolio").value) || 0,
+      safeParseFloat(document.getElementById("fire-current-portfolio").value, 0),
     monthlyContribution:
-      parseFloat(document.getElementById("fire-monthly-contribution").value) ||
-      0,
+      safeParseFloat(document.getElementById("fire-monthly-contribution").value, 0),
     annualReturn:
-      parseFloat(document.getElementById("fire-annual-return").value) / 100,
+      safeParseFloat(document.getElementById("fire-annual-return").value) / 100,
     inflation:
-      parseFloat(document.getElementById("fire-inflation").value) / 100,
+      safeParseFloat(document.getElementById("fire-inflation").value) / 100,
   };
 }
 
@@ -116,21 +116,21 @@ function monthlyNeeded(currentValue, annualRate, target, years) {
 // ===== FIRE NUMBER CALCULATION =====
 function handleFireCalculate() {
   const profile = getProfile();
-  const annualExpenses = parseFloat(
-    document.getElementById("fire-annual-expenses").value,
+  const annualExpenses = safeParseFloat(
+    document.getElementById("fire-annual-expenses").value, 0
   );
   const withdrawalRate =
-    parseFloat(document.getElementById("fire-withdrawal-rate").value) / 100;
+    safeParseFloat(document.getElementById("fire-withdrawal-rate").value, 0) / 100;
   const otherIncomeRaw =
-    parseFloat(document.getElementById("fire-other-income").value) || 0;
+    safeParseFloat(document.getElementById("fire-other-income").value, 0);
   const incomeType = document.getElementById("fire-income-type").value;
   let otherIncome = otherIncomeRaw;
 
   if (incomeType === "fv") {
     const startAge =
-      parseFloat(document.getElementById("fire-income-start-age").value) || 0;
+      safeParseFloat(document.getElementById("fire-income-start-age").value, 0);
     const inflation =
-      (parseFloat(document.getElementById("fire-inflation").value) || 3) / 100;
+      (safeParseFloat(document.getElementById("fire-inflation").value, 3)) / 100;
     const years = startAge - profile.currentAge;
     if (years > 0) {
       otherIncome = otherIncomeRaw / Math.pow(1 + inflation, years);
@@ -144,7 +144,7 @@ function handleFireCalculate() {
     return;
   }
 
-  if (!annualExpenses || !withdrawalRate) {
+  if (annualExpenses <= 0 || withdrawalRate <= 0) {
     alert("Please enter your annual expenses and withdrawal rate.");
     return;
   }
@@ -156,40 +156,45 @@ function handleFireCalculate() {
 
   const yearsToRetire = profile.retireAge - profile.currentAge;
 
+  // Gross FIRE number always based on full expenses
+  const fireNumberToday = annualExpenses / withdrawalRate;
+
   // Portfolio must cover = expenses minus other income
   const portfolioMustCover = Math.max(0, annualExpenses - otherIncome);
+  const fireNumberAdjusted = portfolioMustCover / withdrawalRate;
 
-  // FIRE number in today's dollars
-  const fireNumberToday = portfolioMustCover / withdrawalRate;
-
-  // FIRE number in future dollars (inflation adjusted)
+  // FIRE number in future dollars (inflation adjusted) — gross, for display
   const fireNumberFuture =
     fireNumberToday * Math.pow(1 + profile.inflation, yearsToRetire);
 
-  // Store for Coast FIRE tab
+  // Adjusted future number — what portfolio actually needs to cover
+  const fireNumberAdjustedFuture =
+    fireNumberAdjusted * Math.pow(1 + profile.inflation, yearsToRetire);
+
+  // Store for Coast FIRE tab (use gross number)
   calculatedFireNumber = fireNumberToday;
   calculatedFireNumberFuture = fireNumberFuture;
 
-  // Auto-fill coast fire input
+  // Auto-fill coast fire input (use gross number)
   const coastInput = document.getElementById("coast-fire-number");
   coastInput.value = Math.round(fireNumberFuture);
 
-  // Years to FIRE at current rate (using real return)
+  // Years to FIRE at current rate — based on adjusted target
   const realReturn = (1 + profile.annualReturn) / (1 + profile.inflation) - 1;
   const yearsAtCurrentRate = yearsToTarget(
     profile.portfolio,
     profile.monthlyContribution,
     profile.annualReturn,
-    fireNumberFuture,
+    fireNumberAdjustedFuture,
   );
 
   const retireAgeAtCurrentRate = profile.currentAge + yearsAtCurrentRate;
 
-  // Monthly needed to hit target by retirement age
+  // Monthly needed to hit adjusted target by retirement age
   const monthlyNeededAmount = monthlyNeeded(
     profile.portfolio,
     profile.annualReturn,
-    fireNumberFuture,
+    fireNumberAdjustedFuture,
     yearsToRetire,
   );
 
@@ -247,7 +252,7 @@ function handleFireCalculate() {
   updateProgressBars(profile, fireNumberFuture);
 
   // Sensitivity table
-  displayFireSensitivity(portfolioMustCover, profile, yearsToRetire);
+  displayFireSensitivity(annualExpenses, otherIncome, profile, yearsToRetire, profile.lifeExpectancy);
 
   // Show results
   document.getElementById("fire-number-results").classList.remove("hidden");
@@ -255,6 +260,7 @@ function handleFireCalculate() {
     .getElementById("fire-sensitivity-section")
     .classList.remove("hidden");
   document.getElementById("fire-chart-section").classList.remove("hidden");
+  document.getElementById("fire-lifecycle-section").classList.remove("hidden");
   document.getElementById("fire-progress-section").classList.remove("hidden");
 
   // Compute Coast FIRE number for chart overlay
@@ -264,6 +270,15 @@ function handleFireCalculate() {
   // Projection chart
   displayFireChart(profile, fireNumberFuture, yearsToRetire, coastFireForChart);
 
+  // Lifecycle chart
+  const retirementPortfolio = futureValue(
+    profile.portfolio,
+    profile.monthlyContribution,
+    profile.annualReturn,
+    yearsToRetire,
+  );
+  displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireNumberFuture);
+
   document
     .getElementById("fire-number-results")
     .scrollIntoView({ behavior: "smooth" });
@@ -272,9 +287,9 @@ function handleFireCalculate() {
 // ===== COAST FIRE CALCULATION =====
 function handleCoastCalculate() {
   const profile = getProfile();
-  const fireTarget = parseFloat(
-    document.getElementById("coast-fire-number").value,
-  );
+  const fireTarget = safeParseFloat(
+    document.getElementById("coast-fire-number").value
+    );
 
   // Validate
   if (!profile.currentAge || !profile.retireAge) {
@@ -504,13 +519,13 @@ function updateProgressBars(profile, fireTarget, coastTarget) {
 }
 
 // ===== FIRE SENSITIVITY TABLE =====
-function displayFireSensitivity(portfolioMustCover, profile, yearsToRetire) {
+function displayFireSensitivity(annualExpenses, otherIncome, profile, yearsToRetire, lifeExpectancy) {
   const tbody = document.getElementById("fire-sensitivity-body");
   tbody.innerHTML = "";
 
   const rates = [3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 5, 5.5, 6];
-  const currentRate = parseFloat(
-    document.getElementById("fire-withdrawal-rate").value,
+  const currentRate = safeParseFloat(
+    document.getElementById("fire-withdrawal-rate").value
   );
 
   function getRiskLabel(rate) {
@@ -521,30 +536,393 @@ function displayFireSensitivity(portfolioMustCover, profile, yearsToRetire) {
   }
 
   rates.forEach((rate) => {
-    const fireNum = portfolioMustCover / (rate / 100);
-    const fireNumFuture =
-      fireNum * Math.pow(1 + profile.inflation, yearsToRetire);
-    const monthlyWithdrawal = (fireNumFuture * (rate / 100)) / 12;
+    const r = rate / 100;
+
+    // Gross FIRE number (full expenses, today's dollars)
+    const fireNumToday = annualExpenses / r;
+    const fireNumFuture = fireNumToday * Math.pow(1 + profile.inflation, yearsToRetire);
+
+    // Adjusted FIRE number (what portfolio must cover after other income)
+    const portfolioMustCover = Math.max(0, annualExpenses - otherIncome);
+    const adjFireNumToday = portfolioMustCover / r;
+    const adjFireNumFuture = adjFireNumToday * Math.pow(1 + profile.inflation, yearsToRetire);
+
+    // Monthly withdrawal from portfolio (today's dollars)
+    const monthlyWithdrawal = portfolioMustCover / 12;
+
+    // Years to reach adjusted target
     const years = yearsToTarget(
       profile.portfolio,
       profile.monthlyContribution,
       profile.annualReturn,
-      fireNumFuture,
+      adjFireNumFuture,
     );
 
     const risk = getRiskLabel(rate);
     const tr = document.createElement("tr");
     const isActive = Math.abs(rate - currentRate) < 0.01;
 
+    const retirementPortfolio = futureValue(
+      profile.portfolio,
+      profile.monthlyContribution,
+      profile.annualReturn,
+      yearsToRetire,
+    );
+    const rateWithdrawal = retirementPortfolio * r;
+    const drawdown = buildDrawdownData(
+      retirementPortfolio,
+      rateWithdrawal,
+      otherIncome,
+      profile.annualReturn,
+      profile.inflation,
+      profile.retireAge,
+      lifeExpectancy || 90,
+    );
+    const lastPoint = drawdown[drawdown.length - 1];
+    const portfolioAtDeath = lastPoint ? lastPoint.portfolio : 0;
+    const ranOut = drawdown.find((d) => d.ranOut);
+
     tr.innerHTML = `
       <td style="${isActive ? "color: var(--accent); font-weight: 700;" : ""}">${rate}%</td>
       <td>${formatCurrency(fireNumFuture)}</td>
       <td>${formatCurrency(monthlyWithdrawal)}</td>
       <td style="color: ${years <= yearsToRetire ? "var(--accent)" : "#f472b6"}">${years === Infinity ? "Not reachable" : years.toFixed(1) + " yrs"}</td>
+      <td style="color: ${portfolioAtDeath > 0 ? "var(--accent)" : "#f472b6"}">${ranOut ? "💀 Age " + ranOut.age : formatCurrency(portfolioAtDeath)}</td>
       <td style="color: ${risk.color}">${risk.label}</td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+
+// ===== DRAWDOWN SIMULATION =====
+function buildDrawdownData(startPortfolio, annualExpenses, otherIncome, annualReturn, inflation, retireAge, lifeExpectancy) {
+  const data = [];
+  let portfolio = startPortfolio;
+  const retirementYears = lifeExpectancy - retireAge;
+
+  for (let year = 0; year <= retirementYears; year++) {
+    const age = retireAge + year;
+    const inflationFactor = Math.pow(1 + inflation, year);
+    const expenses = annualExpenses * inflationFactor;
+    const income = otherIncome * inflationFactor;
+    const netWithdrawal = Math.max(0, expenses - income);
+
+    if (year > 0) {
+      portfolio = portfolio * (1 + annualReturn) - netWithdrawal;
+    }
+
+    const ranOut = portfolio <= 0;
+    if (ranOut) portfolio = 0;
+
+    data.push({
+      year,
+      age,
+      portfolio,
+      withdrawal: netWithdrawal,
+      ranOut: ranOut && year > 0,
+    });
+
+    if (ranOut && year > 0) break;
+  }
+
+  return data;
+}
+
+// ===== RETIREMENT LIFECYCLE CHART =====
+function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireTarget) {
+  const canvas = document.getElementById("fire-lifecycle-canvas");
+  if (!canvas) return;
+
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() => displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireTarget));
+    return;
+  }
+
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 40, right: 30, bottom: 50, left: 70 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+
+  const yearsToRetire = profile.retireAge - profile.currentAge;
+  const retirementYears = profile.lifeExpectancy - profile.retireAge;
+  const totalYears = yearsToRetire + retirementYears;
+
+  // Accumulation data
+  const accumData = [];
+  for (let year = 0; year <= yearsToRetire; year++) {
+    accumData.push({
+      year,
+      age: profile.currentAge + year,
+      portfolio: futureValue(profile.portfolio, profile.monthlyContribution, profile.annualReturn, year),
+    });
+  }
+
+  // Drawdown scenarios
+  const scenarios = [
+    { rate: 0.03, color: "#22c55e", label: "3%" },
+    { rate: 0.04, color: "#a78bfa", label: "4%" },
+    { rate: 0.05, color: "#f59e0b", label: "5%" },
+    { rate: 0.06, color: "#f472b6", label: "6%" },
+  ];
+
+  scenarios.forEach((s) => {
+    const yearlyWithdrawal = retirementPortfolio * s.rate;
+    const adjustedExpenses = Math.max(yearlyWithdrawal, annualExpenses);
+    s.data = buildDrawdownData(
+      retirementPortfolio,
+      adjustedExpenses,
+      otherIncome,
+      profile.annualReturn,
+      profile.inflation,
+      profile.retireAge,
+      profile.lifeExpectancy,
+    );
+  });
+
+  const maxPortfolio = Math.max(...accumData.map((d) => d.portfolio),...scenarios.flatMap((s) => s.data.map((d) => d.portfolio)),
+    fireTarget * 1.1,
+  );
+
+  function toX(age) {
+    return padding.left + ((age - profile.currentAge) / totalYears) * chartWidth;
+  }
+
+  function toY(value) {
+    return padding.top + chartHeight - (value / maxPortfolio) * chartHeight;
+  }
+
+  function fromX(x) {
+    return profile.currentAge + ((x - padding.left) / chartWidth) * totalYears;
+  }
+
+  function drawChart(highlightAge) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+
+    // Y-axis grid
+    const ySteps = 5;
+    for (let i = 0; i <= ySteps; i++) {
+      const value = (maxPortfolio / ySteps) * i;
+      const y = toY(value);
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padding.left, y);
+      ctx.lineTo(chart.width - padding.right, y);
+      ctx.stroke();
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "11px sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(formatCurrency(value), padding.left - 8, y + 4);
+    }
+
+    // X-axis labels
+    ctx.textAlign = "center";
+    const xStep = Math.ceil(totalYears / 10);
+    for (let yr = 0; yr <= totalYears; yr += xStep) {
+      const age = profile.currentAge + yr;
+      const x = toX(age);
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "10px sans-serif";
+      ctx.fillText(`${age}`, x, chart.height - padding.bottom + 16);
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, padding.top);
+      ctx.lineTo(x, padding.top + chartHeight);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Age", chart.width / 2, chart.height - 5);
+
+    // Retirement line
+    const retireX = toX(profile.retireAge);
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(retireX, padding.top);
+    ctx.lineTo(retireX, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("You retire here", retireX, padding.top - 10);
+
+    // Drawdown fills (back to front so 3% is on top)
+    [...scenarios].reverse().forEach((s) => {
+      ctx.beginPath();
+      ctx.moveTo(toX(profile.retireAge), toY(retirementPortfolio));
+      s.data.forEach((d) => {
+        ctx.lineTo(toX(d.age), toY(d.portfolio));
+      });
+      const lastD = s.data[s.data.length - 1];
+      ctx.lineTo(toX(lastD.age), toY(0));
+      ctx.lineTo(toX(profile.retireAge), toY(0));
+      ctx.closePath();
+      ctx.fillStyle = s.color + "55";
+      ctx.fill();
+    });
+
+    // Drawdown lines
+    scenarios.forEach((s) => {
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      s.data.forEach((d, i) => {
+        const x = toX(d.age);
+        const y = toY(d.portfolio);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+
+    // Accumulation fill
+    ctx.beginPath();
+    ctx.moveTo(toX(profile.currentAge), toY(0));
+    accumData.forEach((d) => ctx.lineTo(toX(d.age), toY(d.portfolio)));
+    ctx.lineTo(toX(profile.retireAge), toY(0));
+    ctx.closePath();
+    ctx.fillStyle = "rgba(45, 212, 191, 0.15)";
+    ctx.fill();
+
+    // Accumulation line
+    ctx.strokeStyle = "#2dd4bf";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    accumData.forEach((d, i) => {
+      if (i === 0) ctx.moveTo(toX(d.age), toY(d.portfolio));
+      else ctx.lineTo(toX(d.age), toY(d.portfolio));
+    });
+    ctx.stroke();
+
+    // FIRE target line
+    ctx.strokeStyle = "#ef4444";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 3]);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, toY(fireTarget));
+    ctx.lineTo(chart.width - padding.right, toY(fireTarget));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#ef4444";
+    ctx.font = "10px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(`FIRE: ${formatCurrency(fireTarget)}`, padding.left + 4, toY(fireTarget) - 6);
+
+    // Crosshair
+    if (highlightAge !== null) {
+      const hx = toX(highlightAge);
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(hx, padding.top);
+      ctx.lineTo(hx, padding.top + chartHeight);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const tooltipLines = [`Age ${Math.round(highlightAge)}`];
+
+      if (highlightAge <= profile.retireAge) {
+        const idx = Math.min(Math.round(highlightAge - profile.currentAge), accumData.length - 1);
+        if (idx >= 0) {
+          const d = accumData[idx];
+          const hy = toY(d.portfolio);
+          ctx.beginPath();
+          ctx.arc(hx, hy, 5, 0, Math.PI * 2);
+          ctx.fillStyle = "#2dd4bf";
+          ctx.fill();
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          tooltipLines.push(`Portfolio: ${formatCurrency(d.portfolio)}`);
+          tooltipLines.push(`Gap to FIRE: ${formatCurrency(fireTarget - d.portfolio)}`);
+        }
+      } else {
+        scenarios.forEach((s) => {
+          const idx = Math.round(highlightAge - profile.retireAge);
+          if (idx < s.data.length) {
+            const d = s.data[idx];
+            const hy = toY(d.portfolio);
+            ctx.beginPath();
+            ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+            ctx.fillStyle = s.color;
+            ctx.fill();
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            tooltipLines.push(`${s.label}: ${d.ranOut ? "💀 Ran out" : formatCurrency(d.portfolio)}`);
+          }
+        });
+      }
+
+      ctx.font = "12px sans-serif";
+      const tooltipWidth = Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
+      const tooltipHeight = tooltipLines.length * 20 + 16;
+      let tx = hx + 15;
+      let ty = padding.top + 10;
+      if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
+      if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
+
+      ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+      ctx.lineWidth = 1;
+      const r = 6;
+      ctx.beginPath();
+      ctx.moveTo(tx + r, ty);
+      ctx.lineTo(tx + tooltipWidth - r, ty);
+      ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
+      ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
+      ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
+      ctx.lineTo(tx + r, ty + tooltipHeight);
+      ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
+      ctx.lineTo(tx, ty + r);
+      ctx.arcTo(tx, ty, tx + r, ty, r);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = "left";
+      tooltipLines.forEach((line, li) => {
+        ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
+        ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
+        ctx.fillText(line, tx + 12, ty + 18 + li * 20);
+      });
+    }
+  }
+
+  drawChart(null);
+
+  if (canvas._lifecycleController) canvas._lifecycleController.abort();
+  canvas._lifecycleController = new AbortController();
+  const { signal } = canvas._lifecycleController;
+
+  canvas.addEventListener("mousemove", (e) => {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = chart.width / r.width;
+    const age = fromX((e.clientX - r.left) * scaleX);
+    if (age >= profile.currentAge && age <= profile.lifeExpectancy) {
+      canvas.style.cursor = "crosshair";
+      drawChart(age);
+    } else {
+      canvas.style.cursor = "default";
+      drawChart(null);
+    }
+  }, { signal });
+
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
+    drawChart(null);
+  }, { signal });
 }
 
 // ===== FIRE PROJECTION CHART (Canvas) =====
@@ -569,7 +947,8 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
   const totalYears = Math.max(yearsToRetire + 10, 40);
   const dataPoints = [];
 
-  for (let year = 0; year <= totalYears; year++) {
+  // Accumulation phase — with contributions up to retirement
+  for (let year = 0; year <= yearsToRetire; year++) {
     const value = futureValue(
       profile.portfolio,
       profile.monthlyContribution,
@@ -577,9 +956,28 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       year,
     );
     dataPoints.push({
-      year: year,
+      year,
       age: profile.currentAge + year,
-      value: value,
+      value,
+      retired: false,
+    });
+  }
+
+  // Post-retirement phase — no contributions, portfolio grows then draws down
+  const retirementPortfolioValue = dataPoints[yearsToRetire].value;
+  const annualWithdrawal = retirementPortfolioValue * (
+    safeParseFloat(document.getElementById("fire-withdrawal-rate").value, 4) / 100
+  );
+  let postRetirementValue = retirementPortfolioValue;
+
+  for (let year = 1; year <= totalYears - yearsToRetire; year++) {
+    postRetirementValue = postRetirementValue * (1 + profile.annualReturn) - annualWithdrawal;
+    if (postRetirementValue < 0) postRetirementValue = 0;
+    dataPoints.push({
+      year: yearsToRetire + year,
+      age: profile.currentAge + yearsToRetire + year,
+      value: postRetirementValue,
+      retired: true,
     });
   }
 
@@ -737,11 +1135,14 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     ctx.textAlign = "center";
     ctx.fillText(`Retire: ${profile.retireAge}`, retireX, padding.top - 10);
 
-    // Portfolio line
+    // Accumulation line
+    const accumPoints = dataPoints.filter((d) => !d.retired);
+    const retirePoints = dataPoints.filter((d) => d.retired);
+
     ctx.strokeStyle = "#2dd4bf";
     ctx.lineWidth = 3;
     ctx.beginPath();
-    dataPoints.forEach((point, i) => {
+    accumPoints.forEach((point, i) => {
       const x = toX(point.year);
       const y = toY(point.value);
       if (i === 0) ctx.moveTo(x, y);
@@ -749,12 +1150,32 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     });
     ctx.stroke();
 
-    // Fill under curve
-    ctx.lineTo(toX(totalYears), toY(0));
+    // Fill under accumulation
+    ctx.lineTo(toX(yearsToRetire), toY(0));
     ctx.lineTo(toX(0), toY(0));
     ctx.closePath();
     ctx.fillStyle = "rgba(45, 212, 191, 0.1)";
     ctx.fill();
+
+    // Post-retirement drawdown line
+    if (retirePoints.length > 0) {
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(toX(yearsToRetire), toY(retirementPortfolioValue));
+      retirePoints.forEach((point) => {
+        ctx.lineTo(toX(point.year), toY(point.value));
+      });
+      ctx.stroke();
+
+      // Fill under drawdown
+      const lastRetire = retirePoints[retirePoints.length - 1];
+      ctx.lineTo(toX(lastRetire.year), toY(0));
+      ctx.lineTo(toX(yearsToRetire), toY(0));
+      ctx.closePath();
+      ctx.fillStyle = "rgba(245, 158, 11, 0.1)";
+      ctx.fill();
+    }
 
     // FIRE crossing point
     const crossingPoint = dataPoints.find((d) => d.value >= fireTarget);
@@ -1350,13 +1771,13 @@ function updateIncomePVDisplay() {
   if (type !== "fv") return;
 
   const fv =
-    parseFloat(document.getElementById("fire-other-income").value) || 0;
+    safeParseFloat(document.getElementById("fire-other-income").value, 0);
   const startAge =
-    parseFloat(document.getElementById("fire-income-start-age").value) || 0;
+    safeParseFloat(document.getElementById("fire-income-start-age").value, 0);
   const currentAge =
-    parseFloat(document.getElementById("fire-current-age").value) || 0;
+    safeParseFloat(document.getElementById("fire-current-age").value, 0);
   const inflation =
-    (parseFloat(document.getElementById("fire-inflation").value) || 3) / 100;
+    (safeParseFloat(document.getElementById("fire-inflation").value, 3)) / 100;
 
   const display = document.getElementById("fire-income-pv-display");
 
@@ -1380,6 +1801,7 @@ const FIRE_STORAGE_KEY = "fire_inputs";
 const FIRE_FIELDS = [
   "fire-current-age",
   "fire-retire-age",
+  "fire-life-expectancy",
   "fire-current-portfolio",
   "fire-monthly-contribution",
   "fire-annual-return",
