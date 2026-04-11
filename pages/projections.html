@@ -8,10 +8,8 @@
     <link rel="stylesheet" href="../css/common-calculator.css" />
     <link rel="stylesheet" href="../css/projections.css" />
     <!-- Gridstack CSS -->
-    <link rel="stylesheet" href="../css/gridstack.min.css" />
-    <link rel="stylesheet" href="../css/gridstack.css" />
   </head>
-  <body class="grid-stack-page">
+  <body>
     <!-- Top Nav -->
     <nav class="top-nav">
       <div class="top-nav-inner">
@@ -19,13 +17,6 @@
         <div class="top-nav-links">
           <a href="../index.html" class="top-nav-link active">Calculators</a>
           <a href="news.html" class="top-nav-link">News Feed</a>
-          <button
-            id="reset-layout-btn"
-            class="top-nav-reset"
-            title="Reset page layout"
-          >
-            ↺ Reset
-          </button>
         </div>
       </div>
     </nav>
@@ -220,7 +211,7 @@
               Inflation-Adjusted
             </button>
           </div>
-          <div class="fire-chart-container">
+          <div class="canvas-chart">
             <canvas id="proj-chart-canvas"></canvas>
           </div>
           <div class="chart-legend" id="proj-chart-legend"></div>
@@ -262,8 +253,6 @@
     <script src="../js/projections.js" defer></script>
     <script src="../js/prefetch.js"></script>
     <!-- Gridstack Library -->
-    <script src="../js/gridstack-all.min.js"></script>
     <!-- Gridstack Initialization -->
-    <script src="../js/gridstack-init.js"></script>
   </body>
 </html>

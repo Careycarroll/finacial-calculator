@@ -16,11 +16,7 @@ viewMonthlyBtn.addEventListener("click", () => switchView("monthly"));
 viewYearlyBtn.addEventListener("click", () => switchView("yearly"));
 
 // Allow Enter key to trigger calculation
-document.querySelectorAll(".calc-form input").forEach((input) => {
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleCalculate();
-  });
-});
+bindFormEnter(() => handleCalculate());
 
 // ===== MAIN CALCULATION =====
 function handleCalculate() {

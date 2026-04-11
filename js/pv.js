@@ -23,13 +23,7 @@ taxToggle.addEventListener("change", () => {
   taxFields.classList.toggle("hidden");
 });
 
-document
-  .querySelectorAll(".calc-form input,.calc-form select")
-  .forEach((el) => {
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") handleCalculate();
-    });
-  });
+bindFormEnter(() => handleCalculate());
 
 // ===== MODE SWITCHING =====
 function switchMode(mode) {

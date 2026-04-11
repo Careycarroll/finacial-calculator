@@ -79,14 +79,7 @@ document.getElementById("adv-range-ongoing").addEventListener("change", (e) => {
   }
 });
 
-// Enter key support
-document
-  .querySelectorAll(".calc-form input,.calc-form select")
-  .forEach((el) => {
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") handleCalculate();
-    });
-  });
+bindFormEnter(() => handleCalculate());
 
 // ===== EXTRA RANGE MANAGEMENT =====
 function addExtraRange() {

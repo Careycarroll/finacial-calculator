@@ -5,7 +5,6 @@
 const CORS_PROXIES = [
   { url: "https://corsproxy.io/?url=", encode: true },
   { url: "https://api.allorigins.win/raw?url=", encode: true },
-  { url: "https://corsproxy.org/?url=", encode: true },
 ];
 let currentProxyIndex = 0;
 
@@ -17,6 +16,8 @@ const CACHE_TIME_KEY = "newsfeed_cache_time";
 const CACHE_MAX_AGE = 4 * 60 * 60 * 1000; // 4 hours
 
 let allFeeds = [];
+const FAILED_KEY = "newsfeed_failed";
+const FAILED_MAX_AGE = 24 * 60 * 60 * 1000; // Remember failures for 24h
 let allArticles = [];
 let displayedCount = 0;
 const ARTICLES_PER_PAGE = 30;
@@ -24,6 +25,7 @@ let activeCategory = "all";
 let activeHoursFilter = 24;
 let isFetching = false;
 let cancelRequested = false;
+let fetchController = null;
 let searchQuery = "";
 let searchDebounceTimer = null;
 
@@ -47,6 +49,9 @@ function init() {
   document
     .getElementById("news-empty-import-btn")
     .addEventListener("click", () => {
+      document.getElementById("news-opml-input").click();
+    });
+  document.getElementById("news-import-btn").addEventListener("click", () => {
       document.getElementById("news-opml-input").click();
     });
   document
@@ -85,15 +90,13 @@ function init() {
     if (e.key === "Escape") closeManager();
   });
 
-  // Filter toggle
-  document
-    .getElementById("news-filter-toggle")
-    .addEventListener("click", toggleFilterPanel);
 
   document
     .getElementById("news-cancel-btn")
     .addEventListener("click", cancelFetch);
 
+  document.getElementById("news-export-bookmarks-json").addEventListener("click", exportBookmarksJSON);
+  document.getElementById("news-export-bookmarks-csv").addEventListener("click", exportBookmarksCSV);
   // Search
   document
     .getElementById("news-search")
@@ -101,6 +104,38 @@ function init() {
   document
     .getElementById("news-search-clear")
     .addEventListener("click", clearSearch);
+
+  // Delegated article listeners (one listener instead of 3 per article)
+  document.getElementById("news-articles").addEventListener("click", (e) => {
+    const article = e.target.closest(".news-article");
+    if (!article) return;
+    const articleId = article.dataset.articleId;
+    const articleData = allArticles.find((a) => a.id === articleId);
+    if (!articleData) return;
+
+    if (e.target.closest(".bookmark-btn")) {
+      e.stopPropagation();
+      const nowBookmarked = toggleBookmark(articleId);
+      const btn = article.querySelector(".bookmark-btn");
+      btn.classList.toggle("bookmarked", nowBookmarked);
+      btn.textContent = nowBookmarked ? "★" : "☆";
+      return;
+    }
+
+    if (e.target.closest(".open-btn")) {
+      e.stopPropagation();
+      markAsRead(articleId);
+      article.classList.add("read");
+      window.open(articleData.link, "_blank");
+      return;
+    }
+
+    if (e.target.closest(".news-article-body")) {
+      markAsRead(articleId);
+      article.classList.add("read");
+      window.open(articleData.link, "_blank");
+    }
+  });
 
   if (allFeeds.length > 0) {
     document.getElementById("news-empty").classList.add("hidden");
@@ -113,6 +148,29 @@ function init() {
 // STORAGE
 // ===================================================================
 
+
+function getFailedFeeds() {
+  try {
+    const data = JSON.parse(localStorage.getItem(FAILED_KEY)) || {};
+    const now = Date.now();
+    // Prune expired entries
+    Object.keys(data).forEach(url => {
+      if (now - data[url] > FAILED_MAX_AGE) delete data[url];
+    });
+    localStorage.setItem(FAILED_KEY, JSON.stringify(data));
+    return data;
+  } catch { return {}; }
+}
+
+function markFeedFailed(xmlUrl) {
+  const data = getFailedFeeds();
+  data[xmlUrl] = Date.now();
+  localStorage.setItem(FAILED_KEY, JSON.stringify(data));
+}
+
+function clearFailedFeeds() {
+  localStorage.removeItem(FAILED_KEY);
+}
 function loadFeeds() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -242,6 +300,13 @@ function getCacheAge() {
 
 function cancelFetch() {
   cancelRequested = true;
+  if (fetchController) fetchController.abort();
+  fetchController = null;
+  isFetching = false;
+  document.getElementById("news-loading").classList.add("hidden");
+  const now = new Date();
+  document.getElementById("news-last-updated").textContent =
+    "Stopped — " + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 // ===================================================================
 // SEARCH
@@ -379,6 +444,8 @@ async function refreshFeeds() {
   if (isFetching) return;
 
   isFetching = true;
+  const refreshStart = performance.now();
+  fetchController = new AbortController();
   cancelRequested = false;
 
   const loading = document.getElementById("news-loading");
@@ -398,9 +465,11 @@ async function refreshFeeds() {
   // Rotate proxy for each refresh to spread load
   currentProxyIndex = (currentProxyIndex + 1) % CORS_PROXIES.length;
 
-  const concurrency = 3;
+  const concurrency = 10;
   const queue = [...allFeeds];
 
+  let lastRenderTime = 0;
+  const RENDER_THROTTLE = 1000;
   function renderCurrentArticles() {
     allArticles.sort((a, b) => b.date - a.date);
 
@@ -440,19 +509,32 @@ async function refreshFeeds() {
 
     // Small delay to avoid rate limiting
     if (completed > 0) {
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 100));
     }
 
     if (cancelRequested) return;
+    if (queue.length === 0) return;
 
     const feed = queue.shift();
+    const failedFeeds = getFailedFeeds();
+    if (failedFeeds[feed.xmlUrl]) {
+      completed++;
+      progress.textContent = `${completed} of ${allFeeds.length} feeds loaded${failed > 0 ? ` (${failed} failed)` : ""}`;
+      if (queue.length > 0 && !cancelRequested) await fetchNext();
+      return;
+    }
     try {
       const articles = await fetchFeed(feed);
       allArticles.push(...articles);
-      renderCurrentArticles();
+      const now = Date.now();
+      if (now - lastRenderTime > RENDER_THROTTLE) {
+        lastRenderTime = now;
+        renderCurrentArticles();
+      }
     } catch (err) {
       failed++;
       console.warn(`Failed to fetch ${feed.name}:`, err.message);
+      markFeedFailed(feed.xmlUrl);
     }
 
     completed++;
@@ -485,7 +567,7 @@ async function refreshFeeds() {
   // Hide loading
   loading.classList.add("hidden");
   isFetching = false;
-
+  fetchController = null;
   // Update last refreshed time
   const now = new Date();
 
@@ -494,7 +576,7 @@ async function refreshFeeds() {
       `Stopped at ${completed} of ${allFeeds.length} feeds — ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
   } else {
     document.getElementById("news-last-updated").textContent =
-      `Last updated: ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+      `Last updated: ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} — ${((performance.now() - refreshStart) / 1000).toFixed(1)}s`;
   }
 
   if (allArticles.length === 0 && failed > 0) {
@@ -533,7 +615,7 @@ async function fetchFeed(feed) {
         (proxy.encode ? encodeURIComponent(feed.xmlUrl) : feed.xmlUrl);
 
       const response = await fetch(url, {
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.any([fetchController.signal, AbortSignal.timeout(3000)]),
       });
 
       // If rate limited, try next proxy immediately
@@ -776,33 +858,8 @@ function createArticleElement(article, isRead, isBookmarked) {
     </div>
   `;
 
-  // Click article body to open
-  el.querySelector(".news-article-body").addEventListener("click", () => {
-    markAsRead(article.id);
-    el.classList.add("read");
-    window.open(article.link, "_blank");
-  });
-
-  // Open button
-  el.querySelector(".open-btn").addEventListener("click", (e) => {
-    e.stopPropagation();
-    markAsRead(article.id);
-    el.classList.add("read");
-    window.open(article.link, "_blank");
-  });
-
-  // Bookmark button
-  el.querySelector(".bookmark-btn").addEventListener("click", (e) => {
-    e.stopPropagation();
-    const nowBookmarked = toggleBookmark(article.id);
-    const btn = el.querySelector(".bookmark-btn");
-    btn.classList.toggle("bookmarked", nowBookmarked);
-    btn.textContent = nowBookmarked ? "★" : "☆";
-  });
-
   return el;
 }
-
 function simplifyCategory(category) {
   // Remove "BIZ - " prefix for cleaner display
   return category.replace(/^BIZ\s*-\s*/i, "");
@@ -899,18 +956,18 @@ function renderCategoryBar() {
       .join("")}
   `;
 
-  bar.querySelectorAll(".news-category-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      activeCategory = btn.dataset.category;
-      bar
-        .querySelectorAll(".news-category-btn")
-        .forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      displayedCount = 0;
-      showMoreArticles();
-      document.getElementById("news-articles").classList.remove("hidden");
-      updateActiveFilterTags();
-    });
+  bar.addEventListener("click", (e) => {
+    const btn = e.target.closest(".news-category-btn");
+    if (!btn) return;
+    activeCategory = btn.dataset.category;
+    bar
+      .querySelectorAll(".news-category-btn")
+      .forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    displayedCount = 0;
+    showMoreArticles();
+    document.getElementById("news-articles").classList.remove("hidden");
+    updateActiveFilterTags();
   });
 
   renderDateBar();
@@ -1011,18 +1068,18 @@ function renderFeedList() {
     .join("");
 
   // Remove buttons
-  container.querySelectorAll(".news-feed-item-remove").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const index = parseInt(btn.dataset.index);
-      const feed = allFeeds[index];
-      if (confirm(`Remove "${feed.name}"?`)) {
-        allFeeds.splice(index, 1);
-        saveFeeds();
-        renderFeedList();
-        renderCategoryBar();
-        renderCategoryDropdown();
-      }
-    });
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest(".news-feed-item-remove");
+    if (!btn) return;
+    const index = parseInt(btn.dataset.index);
+    const feed = allFeeds[index];
+    if (confirm(`Remove "${feed.name}"?`)) {
+      allFeeds.splice(index, 1);
+      saveFeeds();
+      renderFeedList();
+      renderCategoryBar();
+      renderCategoryDropdown();
+    }
   });
 }
 
@@ -1197,4 +1254,60 @@ function loadDemoFeeds() {
 // START
 // ===================================================================
 
+// ===================================================================
+// EXPORT BOOKMARKS
+// ===================================================================
+
+function getBookmarkedArticles() {
+  const bookmarks = getBookmarks();
+  return allArticles.filter(a => bookmarks.includes(a.id)).map(a => ({
+    title: a.title,
+    source: a.source,
+    category: a.category,
+    date: a.date.toISOString(),
+    link: a.link,
+    description: a.description || ""
+  }));
+}
+
+function exportBookmarksJSON() {
+  const articles = getBookmarkedArticles();
+  if (articles.length === 0) {
+    alert("No bookmarked articles to export.");
+    return;
+  }
+  const data = {
+    exported: new Date().toISOString(),
+    count: articles.length,
+    articles: articles
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "bookmarks_" + new Date().toISOString().slice(0,10) + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportBookmarksCSV() {
+  const articles = getBookmarkedArticles();
+  if (articles.length === 0) {
+    alert("No bookmarked articles to export.");
+    return;
+  }
+  const header = "Title,Source,Category,Date,Link";
+  const rows = articles.map(a => {
+    const esc = (s) => String.fromCharCode(34) + s.replace(/"/g, String.fromCharCode(34,34)) + String.fromCharCode(34);
+    return [esc(a.title), esc(a.source), esc(a.category), esc(a.date), esc(a.link)].join(",");
+  });
+  const csv = [header,...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "bookmarks_" + new Date().toISOString().slice(0,10) + ".csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 init();

@@ -1,0 +1,140 @@
+=== FILE SIZES ===
+-rw-r--r--@ 1 careycarroll  staff    81K Apr 10 21:47 js/options.js
+-rw-r--r--@ 1 careycarroll  staff    50K Apr 10 13:23 js/analyzer-ui.js
+-rw-r--r--@ 1 careycarroll  staff    44K Apr 10 22:33 js/fire.js
+-rw-r--r--@ 1 careycarroll  staff    38K Apr 11 00:49 js/news.js
+-rw-r--r--@ 1 careycarroll  staff    30K Apr 10 17:02 js/options-reference-shapes.js
+-rw-r--r--@ 1 careycarroll  staff    30K Apr  5 21:31 js/npv-irr.js
+-rw-r--r--@ 1 careycarroll  staff    28K Apr  9 21:41 js/analyzer.js
+-rw-r--r--@ 1 careycarroll  staff    27K Apr 10 22:33 js/loan-advanced.js
+-rw-r--r--@ 1 careycarroll  staff    24K Apr  9 22:35 js/sec-api.js
+-rw-r--r--@ 1 careycarroll  staff    24K Apr  9 11:07 js/valuator-ui.js
+-rw-r--r--@ 1 careycarroll  staff    24K Apr  9 08:13 js/api-manager.js
+-rw-r--r--@ 1 careycarroll  staff    23K Apr 10 22:32 js/projections.js
+-rw-r--r--@ 1 careycarroll  staff    23K Apr 10 20:07 pages/valuator.html
+-rw-r--r--@ 1 careycarroll  staff    22K Apr 10 19:57 data/strategies.json
+-rw-r--r--@ 1 careycarroll  staff    21K Apr 10 22:34 js/pv.js
+-rw-r--r--@ 1 careycarroll  staff    20K Apr 10 13:53 css/analyzer.css
+-rw-r--r--@ 1 careycarroll  staff    20K Apr 10 13:52 css/common-calculator.css
+-rw-r--r--@ 1 careycarroll  staff    20K Apr 10 21:28 pages/options.html
+-rw-r--r--@ 1 careycarroll  staff    19K Apr 10 11:03 js/financial-terms.js
+-rw-r--r--@ 1 careycarroll  staff    18K Apr 10 23:46 pages/npv-irr.html
+-rw-r--r--@ 1 careycarroll  staff    17K Apr 10 21:28 pages/fire.html
+-rw-r--r--@ 1 careycarroll  staff    17K Apr 10 23:46 pages/loan-advanced.html
+-rw-r--r--@ 1 careycarroll  staff    15K Apr 10 23:46 pages/pv.html
+-rw-r--r--@ 1 careycarroll  staff    13K Apr 10 22:33 js/loan.js
+-rw-r--r--@ 1 careycarroll  staff    12K Apr  9 07:15 js/valuator.js
+-rw-r--r--@ 1 careycarroll  staff    11K Apr 10 13:55 css/news.css
+-rw-r--r--@ 1 careycarroll  staff    11K Apr 10 21:31 css/options.css
+-rw-r--r--@ 1 careycarroll  staff    11K Apr 10 14:06 css/valuator.css
+-rw-r--r--@ 1 careycarroll  staff   8.7K Apr  8 19:41 css/loan-advanced.css
+-rw-r--r--@ 1 careycarroll  staff   8.6K Apr 10 23:46 pages/loan.html
+-rw-r--r--@ 1 careycarroll  staff   8.2K Apr 10 23:46 pages/projections.html
+-rw-r--r--@ 1 careycarroll  staff   8.0K Apr 11 00:40 pages/news.html
+-rw-r--r--@ 1 careycarroll  staff   7.5K Apr 10 21:28 pages/analyzer.html
+-rw-r--r--@ 1 careycarroll  staff   5.2K Apr 10 21:56 css/base.css
+-rw-r--r--@ 1 careycarroll  staff   3.6K Apr 11 00:17 js/chart-utils.js
+-rw-r--r--@ 1 careycarroll  staff   3.1K Apr  8 19:41 css/npv-irr.css
+-rw-r--r--@ 1 careycarroll  staff   1.9K Apr 10 21:31 css/fire.css
+-rw-r--r--@ 1 careycarroll  staff   1.5K Apr  8 19:41 css/projections.css
+-rw-r--r--@ 1 careycarroll  staff   1.2K Apr  8 19:50 js/prefetch.js
+
+=== STALE GRIDSTACK REFS ===
+./pages/projections.html:34:        <div class="grid-stack" data-gs-column="12">
+./pages/projections.html:35:          <div class="grid-stack-item" data-gs-x="0" data-gs-y="0" data-gs-w="12" data-gs-h="20">
+./pages/projections.html:36:            <div class="grid-stack-item-content">
+./pages/loan-advanced.html:34:        <div class="grid-stack" data-gs-column="12">
+./pages/loan-advanced.html:35:          <div class="grid-stack-item" data-gs-x="0" data-gs-y="0" data-gs-w="12" data-gs-h="20">
+./pages/loan-advanced.html:36:            <div class="grid-stack-item-content">
+./pages/pv.html:33:        <div class="grid-stack" data-gs-column="12">
+./pages/pv.html:34:          <div class="grid-stack-item" 
+./pages/pv.html:39:            <div class="grid-stack-item-content">
+./pages/loan.html:33:        <div class="grid-stack" data-gs-column="12">
+./pages/loan.html:37:            class="grid-stack-item"
+./pages/loan.html:43:            <div class="grid-stack-item-content">
+./pages/loan.html:90:            class="grid-stack-item"
+./pages/loan.html:96:            <div class="grid-stack-item-content">
+./pages/loan.html:140:            class="grid-stack-item"
+./pages/loan.html:146:            <div class="grid-stack-item-content">
+./pages/loan.html:171:            class="grid-stack-item"
+./pages/loan.html:177:            <div class="grid-stack-item-content">
+./pages/loan.html:206:            class="grid-stack-item"
+./pages/loan.html:212:            <div class="grid-stack-item-content">
+./pages/news.html:32:        <div class="grid-stack" data-gs-column="12">
+./pages/news.html:33:          <div class="grid-stack-item" data-gs-x="0" data-gs-y="0" data-gs-w="12" data-gs-h="20">
+./pages/news.html:34:            <div class="grid-stack-item-content">
+./pages/valuator.html:34:        <div class="grid-stack" data-gs-column="12">
+./pages/valuator.html:37:            class="grid-stack-item"
+./pages/valuator.html:44:            <div class="grid-stack-item-content">
+./pages/valuator.html:181:          <div class="grid-stack-item hidden val-manual-panel-item" id="tile-manual-inputs" data-gs-x="0" data-gs-y="0" data-gs-w="12" data-gs-h="10">
+./pages/valuator.html:182:            <div class="grid-stack-item-content">
+./pages/valuator.html:301:            class="grid-stack-item hidden"
+./pages/valuator.html:308:            <div class="grid-stack-item-content">
+./pages/valuator.html:318:            class="grid-stack-item hidden"
+./pages/valuator.html:325:            <div class="grid-stack-item-content">
+./pages/valuator.html:392:            class="grid-stack-item hidden"
+./pages/valuator.html:399:            <div class="grid-stack-item-content">
+./pages/valuator.html:409:            class="grid-stack-item hidden"
+./pages/valuator.html:416:            <div class="grid-stack-item-content">
+./pages/valuator.html:426:            class="grid-stack-item hidden"
+./pages/valuator.html:433:            <div class="grid-stack-item-content">
+./pages/valuator.html:443:            class="grid-stack-item hidden"
+./pages/valuator.html:450:            <div class="grid-stack-item-content">
+./pages/valuator.html:460:            class="grid-stack-item hidden"
+./pages/valuator.html:467:            <div class="grid-stack-item-content">
+./pages/valuator.html:477:            class="grid-stack-item hidden"
+./pages/valuator.html:484:            <div class="grid-stack-item-content">
+./pages/valuator.html:494:            class="grid-stack-item hidden"
+./pages/valuator.html:501:            <div class="grid-stack-item-content">
+./pages/valuator.html:515:            class="grid-stack-item hidden"
+./pages/valuator.html:522:            <div class="grid-stack-item-content">
+./pages/valuator.html:540:            class="grid-stack-item hidden"
+./pages/valuator.html:547:            <div class="grid-stack-item-content">
+./pages/npv-irr.html:34:        <div class="grid-stack" data-gs-column="12">
+./pages/npv-irr.html:35:          <div class="grid-stack-item" 
+./pages/npv-irr.html:40:            <div class="grid-stack-item-content">
+
+=== DUPLICATE CSS FILES ===
+total 232
+-rw-r--r--@ 1 careycarroll  staff    20K Apr 10 13:53 analyzer.css
+-rw-r--r--@ 1 careycarroll  staff   5.2K Apr 10 21:56 base.css
+-rw-r--r--@ 1 careycarroll  staff    20K Apr 10 13:52 common-calculator.css
+-rw-r--r--@ 1 careycarroll  staff   1.9K Apr 10 21:31 fire.css
+-rw-r--r--@ 1 careycarroll  staff   8.7K Apr  8 19:41 loan-advanced.css
+-rw-r--r--@ 1 careycarroll  staff    11K Apr 10 13:55 news.css
+-rw-r--r--@ 1 careycarroll  staff   3.1K Apr  8 19:41 npv-irr.css
+-rw-r--r--@ 1 careycarroll  staff    11K Apr 10 21:31 options.css
+-rw-r--r--@ 1 careycarroll  staff   1.5K Apr  8 19:41 projections.css
+-rw-r--r--@ 1 careycarroll  staff    11K Apr 10 14:06 valuator.css
+
+=== SCRIPT TAGS PER PAGE ===
+pages/analyzer.html: 5 scripts
+pages/fire.html: 3 scripts
+pages/loan-advanced.html: 2 scripts
+pages/loan.html: 2 scripts
+pages/news.html: 2 scripts
+pages/npv-irr.html: 2 scripts
+pages/options.html: 3 scripts
+pages/projections.html: 3 scripts
+pages/pv.html: 2 scripts
+pages/valuator.html: 4 scripts
+index.html: 1 scripts
+
+=== CSS LINKS PER PAGE ===
+pages/analyzer.html: 3 stylesheets
+pages/fire.html: 3 stylesheets
+pages/loan-advanced.html: 3 stylesheets
+pages/loan.html: 2 stylesheets
+pages/news.html: 3 stylesheets
+pages/npv-irr.html: 3 stylesheets
+pages/options.html: 3 stylesheets
+pages/projections.html: 3 stylesheets
+pages/pv.html: 2 stylesheets
+pages/valuator.html: 3 stylesheets
+index.html: 1 stylesheets
+
+=== CONSOLE ERRORS CHECK ===
+     688
+total getElementById/querySelector calls
+
+=== COMMON-CALCULATOR vs ANALYZER CSS ===

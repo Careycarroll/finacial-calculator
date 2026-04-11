@@ -35,33 +35,11 @@ realBtn.addEventListener("click", () => {
 });
 
 // Enter key
-document.querySelectorAll(".calc-form input").forEach((el) => {
-  el.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleCalculate();
-  });
-});
+bindFormEnter(() => handleCalculate());
 
 // ===== FORMATTING =====
-function formatCurrency(value) {
-  if (value >= 1000000) {
-    return "$" + (value / 1000000).toFixed(2) + "M";
-  }
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatCurrencyFull(value) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+// formatCurrency is now provided by chart-utils.js
+// Unified function auto-scales: <$1K → 2 decimals, $1K-$999K → whole, $1M+ → compact
 
 // ===== SCENARIO DEFINITIONS =====
 function buildScenarios(baseRate, deviation, showSP500) {
@@ -286,9 +264,9 @@ function displayResults(projections) {
         <strong>${proj.name}</strong>
       </td>
       <td style="color:${proj.color}">${proj.rate.toFixed(1)}%</td>
-      <td style="font-weight:${proj.bold ? "700" : "400"};color:${proj.bold ? "var(--accent)" : "var(--text-primary)"}">${formatCurrencyFull(proj.finalValue)}</td>
-      <td>${formatCurrencyFull(proj.totalContributed)}</td>
-      <td style="color:var(--accent)">${formatCurrencyFull(proj.growth)}</td>
+      <td style="font-weight:${proj.bold ? "700" : "400"};color:${proj.bold ? "var(--accent)" : "var(--text-primary)"}">${formatCurrency(proj.finalValue)}</td>
+      <td>${formatCurrency(proj.totalContributed)}</td>
+      <td style="color:var(--accent)">${formatCurrency(proj.growth)}</td>
       <td>${multiple}</td>
     `;
     tbody.appendChild(tr);
@@ -301,11 +279,11 @@ function displayChart(projections, inputs, view) {
 
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
-  if (rect.width === 0) {
+  if (rect.width === 0 || rect.height === 0) {
     requestAnimationFrame(() => displayChart(projections, inputs, view));
     return;
   }
-  const chart = createChartContext(canvas, rect.width, 350);
+  const chart = createChartContext(canvas, rect.width, rect.height);
   const ctx = chart.ctx;
 
   const padding = { top: 30, right: 30, bottom: 50, left: 80 };
@@ -416,16 +394,6 @@ function displayChart(projections, inputs, view) {
       });
       ctx.stroke();
       ctx.setLineDash([]);
-
-      // End label
-      const lastPoint = proj.adjustedData[proj.adjustedData.length - 1];
-      const lx = toX(lastPoint.year);
-      const ly = toY(lastPoint.balance);
-
-      ctx.fillStyle = proj.color;
-      ctx.font = "10px sans-serif";
-      ctx.textAlign = "left";
-      ctx.fillText(`${proj.name}`, lx + 5, ly + 4);
     });
 
     // Hover crosshair and tooltip
@@ -464,9 +432,7 @@ function displayChart(projections, inputs, view) {
           ctx.lineWidth = 1.5;
           ctx.stroke();
 
-          tooltipLines.push(
-            `${proj.name}: ${formatCurrencyFull(point.balance)}`,
-          );
+          tooltipLines.push(`${proj.name}: ${formatCurrency(point.balance)}`);
         }
       });
 
@@ -530,34 +496,14 @@ function displayChart(projections, inputs, view) {
     }
   }
 
-  // Initial draw
-  drawChart(null);
-
   // Remove old listeners by replacing canvas
   const newCanvas = canvas.cloneNode(true);
   canvas.parentNode.replaceChild(newCanvas, canvas);
 
-  // Redraw on new canvas
-  function drawOnNew(highlightYear) {
-    // Reassign ctx reference for the draw function
-    const origCtx = ctx;
-    drawChart.call(null, highlightYear);
-  }
+  // Initial draw on the new canvas
+  displayChartDirect(newCanvas, adjustedProjections, inputs, view, null);
 
-  // Re-bindable draw using new canvas
-  function redraw(hy) {
-    const c = newCanvas;
-    const cx = c.getContext("2d");
-
-    // We need to re-run drawChart with the new context
-    // Simplest: just re-call displayChart which rebinds everything
-    // Instead, let's bind events directly
-
-    // Copy the draw function to use newCtx
-    // Actually, let's just rebind mouse events on the original approach
-  }
-
-  // Simpler approach: bind mouse events
+  // Bind mouse events on new canvas
   newCanvas.addEventListener("mousemove", (e) => {
     const r = newCanvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
@@ -565,14 +511,6 @@ function displayChart(projections, inputs, view) {
 
     if (year >= 0 && year <= horizon) {
       newCanvas.style.cursor = "crosshair";
-      // Redraw on original canvas context since we replaced the node
-      // Actually we need to use the new canvas context
-      const c = newCanvas.getContext("2d");
-
-      // Swap ctx reference
-      const savedCtx = ctx;
-
-      // Rebuild draw with new context - cleanest to just recall
       displayChartDirect(newCanvas, adjustedProjections, inputs, view, year);
     } else {
       newCanvas.style.cursor = "default";
@@ -614,7 +552,6 @@ function displayChartDirect(
   );
   const ctx = chart.ctx;
   const horizon = inputs.horizon;
-  const inflation = inputs.inflation / 100;
 
   const padding = { top: 30, right: 30, bottom: 50, left: 80 };
   const chartWidth = chart.width - padding.left - padding.right;
@@ -691,17 +628,6 @@ function displayChartDirect(
     });
     ctx.stroke();
     ctx.setLineDash([]);
-
-    // End label
-    const lastPoint = proj.adjustedData[proj.adjustedData.length - 1];
-    ctx.fillStyle = proj.color;
-    ctx.font = "10px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText(
-      proj.name,
-      toX(lastPoint.year) + 5,
-      toY(lastPoint.balance) + 4,
-    );
   });
 
   // Hover
@@ -737,7 +663,7 @@ function displayChartDirect(
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        tooltipLines.push(`${proj.name}: ${formatCurrencyFull(point.balance)}`);
+        tooltipLines.push(`${proj.name}: ${formatCurrency(point.balance)}`);
       }
     });
 
@@ -805,7 +731,7 @@ function displayMilestones(projections, milestones) {
   headerRow.innerHTML = "<th>Scenario</th>";
   milestones.forEach((m) => {
     const th = document.createElement("th");
-    th.textContent = formatCurrencyFull(m);
+    th.textContent = formatCurrency(m);
     headerRow.appendChild(th);
   });
   header.appendChild(headerRow);
@@ -860,7 +786,7 @@ function displayBreakdown(projections) {
     row.innerHTML = `
       <div class="breakdown-label">
         <span class="breakdown-label-name" style="color:${proj.color}">${proj.name} (${proj.rate.toFixed(1)}%)</span>
-        <span class="breakdown-label-value">${formatCurrencyFull(total)}</span>
+        <span class="breakdown-label-value">${formatCurrency(total)}</span>
       </div>
       <div class="breakdown-bar-track">
         <div class="breakdown-bar-contrib" style="width:${contribPercent}%">${contribPercent > 10 ? contribPercent.toFixed(0) + "%" : ""}</div>

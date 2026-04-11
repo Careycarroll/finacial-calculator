@@ -91,19 +91,7 @@
 }
 
 /* ===== FIRE CHART (Canvas-based) ===== */
-.fire-chart-container {
-  position: relative;
-  width: 100%;
-  height: 350px;
-  background-color: var(--bg-primary);
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
 
-.fire-chart-container canvas {
-  display: block;
-}
 
 /* ===== FIRE LEGEND COLORS ===== */
 .legend-fire-target {

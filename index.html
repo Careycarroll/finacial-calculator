@@ -4,24 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Financial Calculator</title>
-    <link rel="stylesheet" href="css/gridstack.min.css" />
     <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/gridstack.css" />
   </head>
-  <body class="grid-stack-page">
+  <body>
     <nav class="top-nav">
       <div class="top-nav-inner">
         <a href="index.html" class="top-nav-logo">Financial Calculator</a>
         <div class="top-nav-links">
           <a href="index.html" class="top-nav-link active">Calculators</a>
           <a href="pages/news.html" class="top-nav-link">News Feed</a>
-          <button
-            id="reset-layout-btn"
-            class="top-nav-reset"
-            title="Reset page layout"
-          >
-            ↺ Reset
-          </button>
         </div>
       </div>
     </nav>
@@ -32,162 +23,74 @@
       </header>
 
       <main>
-        <div class="grid-stack" data-gs-column="12">
-          <!-- Calculators -->
-          <div
-            id="item-calculators"
-            class="grid-stack-item"
-            data-gs-x="0"
-            data-gs-y="0"
-            data-gs-w="4"
-            data-gs-h="12"
-          >
-            <div class="grid-stack-item-content">
-              <div class="gs-drag-handle">Calculators</div>
-              <div class="gs-resize-handle"></div>
-              <div class="card-grid">
-                <div class="cards">
-                  <a href="pages/loan.html" class="card">
-                    <div class="card-icon">🏦</div>
-                    <h3>Loan Calculator</h3>
-                    <p>
-                      Quick calculator for monthly payments, total interest, and
-                      amortization schedules.
-                    </p>
-                  </a>
-
-                  <a href="pages/loan-advanced.html" class="card">
-                    <div class="card-icon">🏦</div>
-                    <h3>Advanced Loan Calculator</h3>
-                    <p>
-                      Track existing loans, add extra payments, compare payoff
-                      strategies, and see how much you can save.
-                    </p>
-                  </a>
-
-                  <a href="pages/pv.html" class="card">
-                    <div class="card-icon">💰</div>
-                    <h3>PV Calculator</h3>
-                    <p>
-                      Find the present value of a future sum based on a discount
-                      rate.
-                    </p>
-                  </a>
-
-                  <a href="pages/npv-irr.html" class="card">
-                    <div class="card-icon">📊</div>
-                    <h3>NPV & IRR Calculator</h3>
-                    <p>
-                      Analyze investments with net present value, internal rate
-                      of return, sensitivity analysis, and side-by-side
-                      comparison.
-                    </p>
-                  </a>
-
-                  <a href="pages/projections.html" class="card">
-                    <div class="card-icon">📈</div>
-                    <h3>Investment Projections</h3>
-                    <p>
-                      Project portfolio growth across multiple scenarios with
-                      S&P 500 benchmarking and milestone tracking.
-                    </p>
-                  </a>
-                </div>
-              </div>
-            </div>
+        <section class="dashboard-section">
+          <h2 class="dashboard-section-title">Calculators</h2>
+          <div class="dashboard-cards">
+            <a href="pages/loan.html" class="card">
+              <div class="card-icon">🏦</div>
+              <h3>Loan Calculator</h3>
+              <p>Quick calculator for monthly payments, total interest, and amortization schedules.</p>
+            </a>
+            <a href="pages/loan-advanced.html" class="card">
+              <div class="card-icon">🏦</div>
+              <h3>Advanced Loan Calculator</h3>
+              <p>Track existing loans, add extra payments, compare payoff strategies, and see how much you can save.</p>
+            </a>
+            <a href="pages/pv.html" class="card">
+              <div class="card-icon">💰</div>
+              <h3>PV Calculator</h3>
+              <p>Find the present value of a future sum based on a discount rate.</p>
+            </a>
+            <a href="pages/npv-irr.html" class="card">
+              <div class="card-icon">📊</div>
+              <h3>NPV & IRR Calculator</h3>
+              <p>Analyze investments with net present value, internal rate of return, sensitivity analysis, and side-by-side comparison.</p>
+            </a>
+            <a href="pages/projections.html" class="card">
+              <div class="card-icon">📈</div>
+              <h3>Investment Projections</h3>
+              <p>Project portfolio growth across multiple scenarios with S&P 500 benchmarking and milestone tracking.</p>
+            </a>
           </div>
+        </section>
 
-          <!-- Trading Tools -->
-          <div
-            id="item-trading"
-            class="grid-stack-item"
-            data-gs-x="4"
-            data-gs-y="0"
-            data-gs-w="4"
-            data-gs-h="3"
-          >
-            <div class="grid-stack-item-content">
-              <div class="gs-drag-handle">Trading Tools</div>
-              <div class="gs-resize-handle"></div>
-              <div class="card-grid">
-                <div class="cards">
-                  <a href="pages/options.html" class="card">
-                    <div class="card-icon">🎯</div>
-                    <h3>Options Strategy Lab</h3>
-                    <p>
-                      Visualize payoff diagrams, calculate Black-Scholes
-                      pricing, explore the Greeks, and learn 40+ options
-                      strategies.
-                    </p>
-                  </a>
-                </div>
-              </div>
-            </div>
+        <section class="dashboard-section">
+          <h2 class="dashboard-section-title">Trading Tools</h2>
+          <div class="dashboard-cards">
+            <a href="pages/options.html" class="card">
+              <div class="card-icon">🎯</div>
+              <h3>Options Strategy Lab</h3>
+              <p>Visualize payoff diagrams, calculate Black-Scholes pricing, explore the Greeks, and learn 40+ options strategies.</p>
+            </a>
           </div>
+        </section>
 
-          <!-- Research Tools -->
-          <div
-            id="item-research"
-            class="grid-stack-item"
-            data-gs-x="4"
-            data-gs-y="3"
-            data-gs-w="4"
-            data-gs-h="3"
-          >
-            <div class="grid-stack-item-content">
-              <div class="gs-drag-handle">Research Tools</div>
-              <div class="gs-resize-handle"></div>
-              <div class="card-grid">
-                <div class="cards">
-                  <a href="pages/valuator.html" class="card">
-                    <div class="card-icon">🔍</div>
-                    <h3>Stock Evaluator</h3>
-                    <p>
-                      Multi-method fundamental analysis using DCF, Graham
-                      Number, liquidation value, market multiples, enterprise
-                      value, and more.
-                    </p>
-                  </a>
-                  <a href="pages/analyzer.html" class="card">
-                    <div class="card-icon">📑</div>
-                    <h3>10-K Analyzer</h3>
-                    <p>
-                      Pull SEC filings and get consolidated financial summaries
-                      with automated health scoring and red flag detection.
-                    </p>
-                  </a>
-                </div>
-              </div>
-            </div>
+        <section class="dashboard-section">
+          <h2 class="dashboard-section-title">Research Tools</h2>
+          <div class="dashboard-cards">
+            <a href="pages/valuator.html" class="card">
+              <div class="card-icon">🔍</div>
+              <h3>Stock Evaluator</h3>
+              <p>Multi-method fundamental analysis using DCF, Graham Number, liquidation value, market multiples, enterprise value, and more.</p>
+            </a>
+            <a href="pages/analyzer.html" class="card">
+              <div class="card-icon">📑</div>
+              <h3>10-K Analyzer</h3>
+              <p>Pull SEC filings and get consolidated financial summaries with automated health scoring and red flag detection.</p>
+            </a>
           </div>
+        </section>
 
-          <!-- Retirement Planning -->
-          <div
-            id="item-retirement"
-            class="grid-stack-item"
-            data-gs-x="8"
-            data-gs-y="0"
-            data-gs-w="4"
-            data-gs-h="3"
-          >
-            <div class="grid-stack-item-content">
-              <div class="gs-drag-handle">Retirement Planning</div>
-              <div class="gs-resize-handle"></div>
-              <div class="card-grid">
-                <div class="cards">
-                  <a href="pages/fire.html" class="card">
-                    <div class="card-icon">🔥</div>
-                    <h3>FIRE Dashboard</h3>
-                    <p>
-                      Calculate your Financial Independence number, track
-                      progress, and find your Coast FIRE target.
-                    </p>
-                  </a>
-                </div>
-              </div>
-            </div>
+        <section class="dashboard-section">
+          <h2 class="dashboard-section-title">Retirement Planning</h2>
+          <div class="dashboard-cards">
+            <a href="pages/fire.html" class="card">
+              <div class="card-icon">🔥</div>
+              <h3>FIRE Dashboard</h3>
+              <p>Calculate your Financial Independence number, track progress, and find your Coast FIRE target.</p>
+            </a>
           </div>
-        </div>
+        </section>
       </main>
 
       <footer>
@@ -196,7 +99,5 @@
     </div>
 
     <script src="js/prefetch.js"></script>
-    <script src="js/gridstack-all.min.js"></script>
-    <script src="js/gridstack-init.js"></script>
   </body>
 </html>

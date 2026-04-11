@@ -15,12 +15,21 @@ To-Do:
 
 Use this in zsh to dump all js,css,html files into codbase.txt file
 
-for f in \*_/_.(js|css|html); do
-[["$f" == *.min.js || "$f" == *.min.css]] && continue
-echo "========== $f =========="
+```
+for f in **/*.(js|css|html); do
+  [[ "$f" == *.min.js || "$f" == *.min.css ]] && continue
+  echo "========== $f =========="
   cat "$f"
-echo "\n"
+  echo "\n"
 done > codebase.txt
+
+```
+
+Kill and restart local python server in vscode
+
+```
+pkill -f "python.*http" && python3 -m http.server 8000
+```
 
 ===========================================================================
 

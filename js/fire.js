@@ -38,27 +38,16 @@ fireCalculateBtn.addEventListener("click", handleFireCalculate);
 coastCalculateBtn.addEventListener("click", handleCoastCalculate);
 
 // Enter key support
-document.querySelectorAll(".calc-form input").forEach((el) => {
-  el.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      if (!coastFireTab.classList.contains("hidden")) {
-        handleCoastCalculate();
-      } else {
-        handleFireCalculate();
-      }
-    }
-  });
+bindFormEnter(() => {
+  if (!coastFireTab.classList.contains("hidden")) {
+    handleCoastCalculate();
+  } else {
+    handleFireCalculate();
+  }
 });
 
 // ===== FORMATTING =====
-function formatCurrency(value) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+// formatCurrency is now provided by chart-utils.js
 
 // ===== GET PROFILE VALUES =====
 function getProfile() {
@@ -564,13 +553,13 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
 
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
-  if (rect.width === 0) {
+  if (rect.width === 0 || rect.height === 0) {
     requestAnimationFrame(() =>
       displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber),
     );
     return;
   }
-  const chart = createChartContext(canvas, rect.width, 350);
+  const chart = createChartContext(canvas, rect.width, rect.height);
   const ctx = chart.ctx;
 
   const padding = { top: 30, right: 30, bottom: 50, left: 70 };
@@ -630,11 +619,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       ctx.fillStyle = "#94a3b8";
       ctx.font = "11px sans-serif";
       ctx.textAlign = "right";
-      const label =
-        value >= 1000000
-          ? `$${(value / 1000000).toFixed(1)}M`
-          : `$${(value / 1000).toFixed(0)}k`;
-      ctx.fillText(label, padding.left - 10, y + 4);
+      ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
 
     // X-axis labels
@@ -940,13 +925,13 @@ function displayCoastChart(
 
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
-  if (rect.width === 0) {
+  if (rect.width === 0 || rect.height === 0) {
     requestAnimationFrame(() =>
       displayCoastChart(profile, fireTarget, coastFireNumber, yearsToRetire),
     );
     return;
   }
-  const chart = createChartContext(canvas, rect.width, 350);
+  const chart = createChartContext(canvas, rect.width, rect.height);
   const ctx = chart.ctx;
 
   const padding = { top: 30, right: 30, bottom: 50, left: 70 };
@@ -1021,11 +1006,7 @@ function displayCoastChart(
       ctx.fillStyle = "#94a3b8";
       ctx.font = "11px sans-serif";
       ctx.textAlign = "right";
-      const label =
-        value >= 1000000
-          ? `$${(value / 1000000).toFixed(1)}M`
-          : `$${(value / 1000).toFixed(0)}k`;
-      ctx.fillText(label, padding.left - 10, y + 4);
+      ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
 
     // X-axis
