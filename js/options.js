@@ -50,7 +50,10 @@ async function loadStrategies() {
 // BLACK-SCHOLES MATH
 // ===================================================================
 
-// Standard normal CDF approximation (Abramowitz & Stegun)
+// Standard normal CDF approximation (Abramowitz & Stegun, formula 26.2.17)
+// Maximum absolute error: ~1.5×10⁻⁷ — acceptable for educational/retail options pricing.
+// Limitation: for deep ITM/OTM options where |d₁| > 6, result approaches exactly 0 or 1,
+// which may cause call/put prices to display as exactly $0 or full intrinsic value.
 function normCDF(x) {
   const a1 = 0.254829592;
   const a2 = -0.284496736;
@@ -1594,7 +1597,11 @@ function handlePayoffCalculate() {
   document.getElementById("payoff-before-btn").classList.remove("active");
   document.getElementById("payoff-slider-container").classList.add("hidden");
   // Draw chart
-  drawPayoffChart(payoffData, stockPrice, breakevens, legs);
+  showChartLoading("payoff-chart-canvas");
+  requestAnimationFrame(() => {
+    drawPayoffChart(payoffData, stockPrice, breakevens, legs);
+    hideChartLoading("payoff-chart-canvas");
+  });
 
   // Summary
   const pnlAtCurrent = calculatePayoff(stockPrice, legs);
@@ -2292,6 +2299,7 @@ function handleGreeksCalculate() {
 
   document.getElementById("gk-results-section").classList.remove("hidden");
   document.getElementById("gk-chart-section").classList.remove("hidden");
+  showChartLoading("gk-chart-canvas");
 
   drawGreeksSensitivity("delta");
 
@@ -2315,6 +2323,7 @@ function drawGreeksSensitivity(greek) {
   const { S, K, T, r, sigma, optionType, range, steps } = greeksChartData;
 
   const canvas = document.getElementById("gk-chart-canvas");
+  hideChartLoading("gk-chart-canvas");
 
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
@@ -2691,9 +2700,11 @@ function handlePnLCalculate() {
 
   document.getElementById("pnl-results-section").classList.remove("hidden");
   document.getElementById("pnl-chart-section").classList.remove("hidden");
+  showChartLoading("pnl-chart-canvas");
 
   // Use the direct draw function
   const canvas = document.getElementById("pnl-chart-canvas");
+  hideChartLoading("pnl-chart-canvas");
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
   createChartContext(canvas, rect.width, rect.height);

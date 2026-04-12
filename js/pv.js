@@ -127,7 +127,11 @@ function handleCalculate() {
     years,
   );
 
-  displayChart(breakdown);
+  showChartLoading("pv-bar-canvas");
+  requestAnimationFrame(() => {
+    displayChart(breakdown);
+    hideChartLoading("pv-bar-canvas");
+  });
   displayTable(breakdown);
 
   document.getElementById("pv-results").classList.remove("hidden");
@@ -308,7 +312,11 @@ function handleCompare() {
     annuityYears,
   );
 
-  displayComparisonChart(comparisonBreakdown, lumpAfterTax);
+  showChartLoading("pv-bar-canvas");
+  requestAnimationFrame(() => {
+    displayComparisonChart(comparisonBreakdown, lumpAfterTax);
+    hideChartLoading("pv-bar-canvas");
+  });
   displayComparisonTable(comparisonBreakdown, lumpAfterTax);
 
   document.getElementById("pv-results").classList.remove("hidden");

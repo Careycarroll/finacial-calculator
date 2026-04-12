@@ -129,21 +129,23 @@ pkill -f "python.\*http" && python3 -m http.server 8000
 
 > **Goal:** Improve user experience quality and long-term code health.
 
-- [ ] **5a. Add loading states for chart calculations**
-  - Complex calculations (especially multi-curve payoff with Black-Scholes) can cause a visible delay on slower devices with no feedback.
-  - **Fix:** Show a CSS spinner overlay on chart containers during calculation; hide on draw complete.
+- [x] **5a. Add loading states for chart calculations**
+  - **Fix:** Added `.chart-loading` spinner overlay CSS to `common-calculator.css` with a teal spinning ring animation. Added `showChartLoading(canvasId)` and `hideChartLoading(canvasId)` utilities to `chart-utils.js`. Wired into all calculate handlers across `fire.js`, `loan.js`, `loan-advanced.js`, `projections.js`, `pv.js`, `npv-irr.js`, and `options.js`. Spinner is shown before calculation, hidden after chart draw completes via `requestAnimationFrame`.
 
-- [ ] **5b. Document `normCDF` approximation precision**
-  - The Abramowitz & Stegun approximation has a maximum error of ~1.5×10⁻⁷. For deep ITM/OTM options (|d₁| > 6), prices may show as exactly 0 or full intrinsic value.
-  - **Fix:** Add a doc comment noting the error bound. Acceptable for educational use.
+- [x] **5b. Document `normCDF` approximation precision**
+  - **Fix:** Added doc comment to `normCDF` in `options.js` noting the Abramowitz & Stegun formula reference (26.2.17), maximum absolute error of ~1.5×10⁻⁷, and the deep ITM/OTM limitation where |d₁| > 6.
 
 - [ ] **5c. Wrap each tool in an IIFE or module**
-  - Everything currently lives in a single file with global scope, which is the root cause of the `formatCurrency` collision (#1a) and Enter key conflicts (#2c).
-  - **Fix:** As an intermediate step before full ES module refactoring, wrap each tool (FIRE, Options, Projections) in an IIFE to isolate scope.
+  - **Deferred** — The original motivations (formatCurrency collision, Enter key conflicts) were resolved in Phases 1a and 2c. Current single-page-per-tool architecture means collision risk is low. Full ES module migration (`import/export`) is the correct long-term solution and preferable over IIFEs as an intermediate step. Revisit when undertaking a module refactor.
 
-- [ ] **5d. Accessibility pass**
-  - Canvas-based charts are invisible to screen readers. Interactive elements may lack proper ARIA labels and keyboard navigation.
-  - **Fix:** Add ARIA labels to all interactive elements, provide tabular data fallbacks for charts, and ensure full keyboard navigability.
+- [x] **5d. Accessibility pass**
+  - **Fix:** Added 70 ARIA attributes across all 7 calculator pages. Changes include:
+    - `role="img"` + descriptive `aria-label` on all 15 canvas chart elements
+    - `aria-label` on all calculate buttons, tab buttons, toggle buttons, and add buttons
+    - `aria-live="polite"` on all results panels so screen readers announce when results appear
+    - `aria-required="true"` on all required form inputs
+    - Full keyboard navigability preserved via existing button/input focus order
+    - Canvas keyboard navigation deferred — requires tabular data fallbacks (future work)
 
 ---
 

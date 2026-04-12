@@ -41,14 +41,14 @@
 
         <!-- Tab Navigation -->
         <div class="options-tabs">
-          <button id="tab-payoff" class="options-tab active">
+          <button id="tab-payoff" class="options-tab active" aria-label="Payoff diagram tab">
             📊 Payoff Diagrams
           </button>
-          <button id="tab-blackscholes" class="options-tab">
+          <button id="tab-blackscholes" class="options-tab" aria-label="Black-Scholes pricing tab">
             🧮 Black-Scholes
           </button>
-          <button id="tab-greeks" class="options-tab">Δ Greeks</button>
-          <button id="tab-pnl" class="options-tab">💰 P&L Calculator</button>
+          <button id="tab-greeks" class="options-tab" aria-label="Greeks sensitivity tab">Δ Greeks</button>
+          <button id="tab-pnl" class="options-tab" aria-label="P&L calculator tab">💰 P&L Calculator</button>
         </div>
 
         <!-- ==================== TAB 1: PAYOFF DIAGRAMS ==================== -->
@@ -170,14 +170,14 @@
                 />
               </div>
             </div>
-            <button id="suggest-premiums-btn" class="btn-secondary">
+            <button id="suggest-premiums-btn" class="btn-secondary" aria-label="Suggest option premiums based on Black-Scholes">
               💡 Suggest Fair Premiums (Black-Scholes)
             </button>
 
             <!-- Dynamic legs will be inserted here -->
             <div id="legs-container" class="legs-container"></div>
 
-            <button id="payoff-calculate-btn" class="btn-primary">
+            <button id="payoff-calculate-btn" class="btn-primary" aria-label="Calculate options payoff diagram">
               Calculate Payoff
             </button>
           </div>
@@ -221,7 +221,7 @@
             </div>
 
             <div class="canvas-chart">
-              <canvas id="payoff-chart-canvas"></canvas>
+              <canvas id="payoff-chart-canvas" role="img" aria-label="Options payoff diagram showing profit and loss at expiration"></canvas>
             </div>
             <div id="payoff-chart-legend"></div>
             <div
@@ -323,7 +323,7 @@
               </div>
             </div>
 
-            <button id="bs-calculate-btn" class="btn-primary">
+            <button id="bs-calculate-btn" class="btn-primary" aria-label="Calculate Black-Scholes option price">
               Calculate Price
             </button>
           </div>
@@ -439,7 +439,7 @@
               <div class="form-group"></div>
             </div>
 
-            <button id="gk-calculate-btn" class="btn-primary">
+            <button id="gk-calculate-btn" class="btn-primary" aria-label="Calculate option Greeks">
               Calculate Greeks
             </button>
           </div>
@@ -459,7 +459,7 @@
               <button id="gk-vega-btn" class="btn-toggle">Vega</button>
             </div>
             <div class="canvas-chart">
-              <canvas id="gk-chart-canvas"></canvas>
+              <canvas id="gk-chart-canvas" role="img" aria-label="Greeks sensitivity chart showing option greek vs stock price"></canvas>
             </div>
           </div>
         </div>
@@ -545,7 +545,7 @@
               </div>
             </div>
 
-            <button id="pnl-calculate-btn" class="btn-primary">
+            <button id="pnl-calculate-btn" class="btn-primary" aria-label="Calculate option P&L">
               Calculate P&L
             </button>
           </div>
@@ -560,7 +560,7 @@
           <div id="pnl-chart-section" class="chart-panel hidden">
             <h2>P&L at Expiration</h2>
             <div class="canvas-chart">
-              <canvas id="pnl-chart-canvas"></canvas>
+              <canvas id="pnl-chart-canvas" role="img" aria-label="Options P&L chart showing profit and loss vs stock price"></canvas>
             </div>
           </div>
         </div>

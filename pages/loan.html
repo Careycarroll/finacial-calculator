@@ -36,7 +36,7 @@
               <label for="loan-amount">Loan Amount ($)</label>
               <input
                 type="number"
-                id="loan-amount"
+                id="loan-amount" aria-required="true"
                 placeholder="e.g. 250000"
                 min="0"
                 step="any"
@@ -47,7 +47,7 @@
               <label for="interest-rate">Annual Interest Rate (%)</label>
               <input
                 type="number"
-                id="interest-rate"
+                id="interest-rate" aria-required="true"
                 placeholder="e.g. 6.5"
                 min="0"
                 step="any"
@@ -58,14 +58,14 @@
               <label for="loan-term">Loan Term (Years)</label>
               <input
                 type="number"
-                id="loan-term"
+                id="loan-term" aria-required="true"
                 placeholder="e.g. 30"
                 min="1"
                 step="1"
               />
             </div>
 
-            <button id="calculate-btn" class="btn-primary">
+            <button id="calculate-btn" class="btn-primary" aria-label="Calculate loan payment">
               Calculate
             </button>
           </div>
@@ -99,7 +99,7 @@
               >
             </div>
             <div class="canvas-chart">
-              <canvas id="loan-line-canvas"></canvas>
+              <canvas id="loan-line-canvas" role="img" aria-label="Cumulative interest vs principal chart over loan term"></canvas>
             </div>
           </div>
         </div>
@@ -108,7 +108,7 @@
         <div id="item-chart">
           <div id="chart-section" class="chart-panel hidden">
             <div class="canvas-chart">
-              <canvas id="loan-bar-canvas"></canvas>
+              <canvas id="loan-bar-canvas" role="img" aria-label="Yearly principal and interest breakdown bar chart"></canvas>
             </div>
             <div class="chart-legend">
               <span class="legend-item"
@@ -151,10 +151,10 @@
         <div id="item-table">
           <div id="amortization-section" class="table-panel hidden">
             <div class="table-controls">
-              <button id="view-monthly" class="btn-toggle active">
+              <button id="view-monthly" class="btn-toggle active" aria-label="Show monthly amortization table">
                 Monthly
               </button>
-              <button id="view-yearly" class="btn-toggle">Yearly</button>
+              <button id="view-yearly" class="btn-toggle" aria-label="Show yearly amortization table">Yearly</button>
             </div>
             <div class="table-wrapper">
               <table id="amortization-table">

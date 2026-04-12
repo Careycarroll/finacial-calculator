@@ -39,7 +39,7 @@
               <label for="adv-loan-amount">Loan Amount ($)</label>
               <input
                 type="number"
-                id="adv-loan-amount"
+                id="adv-loan-amount" aria-required="true"
                 placeholder="e.g. 250000"
                 min="0"
                 step="any"
@@ -49,7 +49,7 @@
               <label for="adv-interest-rate">Annual Interest Rate (%)</label>
               <input
                 type="number"
-                id="adv-interest-rate"
+                id="adv-interest-rate" aria-required="true"
                 placeholder="e.g. 6.5"
                 min="0"
                 step="any"
@@ -62,7 +62,7 @@
               <label for="adv-loan-term">Loan Term</label>
               <input
                 type="number"
-                id="adv-loan-term"
+                id="adv-loan-term" aria-required="true"
                 placeholder="e.g. 30"
                 min="1"
                 step="1"
@@ -212,7 +212,7 @@
                 step="any"
                 class="input-amount"
               />
-              <button id="add-range-btn" class="btn-add">+ Add</button>
+              <button id="add-range-btn" class="btn-add" aria-label="Add recurring extra payment range">+ Add</button>
             </div>
             <ul id="range-list" class="onetime-list"></ul>
           </div>
@@ -247,19 +247,19 @@
                 step="any"
                 class="input-amount"
               />
-              <button id="add-onetime-btn" class="btn-add">+ Add</button>
+              <button id="add-onetime-btn" class="btn-add" aria-label="Add one-time extra payment">+ Add</button>
             </div>
             <ul id="onetime-list" class="onetime-list"></ul>
           </div>
         </div>
 
         <!-- Calculate Button -->
-        <button id="adv-calculate-btn" class="btn-primary">
+        <button id="adv-calculate-btn" class="btn-primary" aria-label="Calculate advanced loan schedule">
           Calculate & Compare
         </button>
 
         <!-- Savings Summary -->
-        <div id="adv-results" class="results-panel hidden">
+        <div id="adv-results" aria-live="polite" class="results-panel hidden">
           <h2>Summary & Savings</h2>
           <div class="results-grid results-grid-3">
             <div class="result-item">
@@ -339,7 +339,7 @@
             <button id="chart-adjusted" class="btn-toggle">With Extras</button>
           </div>
           <div class="canvas-chart">
-            <canvas id="adv-bar-canvas"></canvas>
+            <canvas id="adv-bar-canvas" role="img" aria-label="Yearly principal and interest breakdown bar chart"></canvas>
           </div>
           <div class="chart-legend">
             <span class="legend-item"
@@ -378,7 +378,7 @@
             >
           </div>
           <div class="canvas-chart">
-            <canvas id="adv-line-canvas"></canvas>
+            <canvas id="adv-line-canvas" role="img" aria-label="Cumulative interest vs principal chart with extra payments"></canvas>
           </div>
         </div>
 

@@ -38,7 +38,7 @@
               <label for="fire-current-age">Current Age</label>
               <input
                 type="number"
-                id="fire-current-age"
+                id="fire-current-age" aria-required="true"
                 placeholder="e.g. 32"
                 min="18"
                 max="80"
@@ -49,7 +49,7 @@
               <label for="fire-retire-age">Target Retirement Age</label>
               <input
                 type="number"
-                id="fire-retire-age"
+                id="fire-retire-age" aria-required="true"
                 placeholder="e.g. 55"
                 min="25"
                 max="90"
@@ -104,7 +104,7 @@
               <label for="fire-annual-return">Expected Annual Return (%)</label>
               <input
                 type="number"
-                id="fire-annual-return"
+                id="fire-annual-return" aria-required="true"
                 placeholder="e.g. 7"
                 min="0"
                 max="20"
@@ -116,7 +116,7 @@
               <label for="fire-inflation">Expected Inflation Rate (%)</label>
               <input
                 type="number"
-                id="fire-inflation"
+                id="fire-inflation" aria-required="true"
                 placeholder="e.g. 3"
                 min="0"
                 max="10"
@@ -166,10 +166,10 @@
 
         <!-- Tab Navigation -->
         <div class="fire-tabs">
-          <button id="tab-fire-number" class="fire-tab active">
+          <button id="tab-fire-number" class="fire-tab active" aria-label="FIRE Number calculator tab">
             🎯 FIRE Number
           </button>
-          <button id="tab-coast-fire" class="fire-tab">🏖️ Coast FIRE</button>
+          <button id="tab-coast-fire" class="fire-tab" aria-label="Coast FIRE calculator tab">🏖️ Coast FIRE</button>
         </div>
 
         <!-- ==================== TAB 1: FIRE NUMBER ==================== -->
@@ -183,7 +183,7 @@
                 >
                 <input
                   type="number"
-                  id="fire-annual-expenses"
+                  id="fire-annual-expenses" aria-required="true"
                   placeholder="e.g. 60000"
                   min="0"
                   step="any"
@@ -199,7 +199,7 @@
                 >
                 <input
                   type="number"
-                  id="fire-withdrawal-rate"
+                  id="fire-withdrawal-rate" aria-required="true"
                   placeholder="e.g. 4"
                   min="1"
                   max="10"
@@ -265,13 +265,13 @@
             </div>
             
 
-            <button id="fire-calculate-btn" class="btn-primary">
+            <button id="fire-calculate-btn" class="btn-primary" aria-label="Calculate FIRE Number">
               Calculate FIRE Number
             </button>
           </div>
 
           <!-- FIRE Results -->
-          <div id="fire-number-results" class="results-panel hidden">
+          <div id="fire-number-results" class="results-panel hidden" aria-live="polite" aria-label="FIRE calculation results">
             <h2>Your FIRE Number</h2>
             <div class="results-grid results-grid-3">
               <div class="result-item">
@@ -337,7 +337,7 @@
           <div id="fire-chart-section" class="chart-panel hidden">
             <h2>Portfolio Projection</h2>
             <div class="canvas-chart">
-              <canvas id="fire-chart-canvas"></canvas>
+              <canvas id="fire-chart-canvas" role="img" aria-label="FIRE portfolio projection chart showing accumulation and drawdown phases"></canvas>
             </div>
             <div class="chart-legend" id="fire-chart-legend">
               <span class="legend-item"
@@ -362,7 +362,7 @@
               Accumulation to retirement, then drawdown at multiple withdrawal rates to life expectancy.
             </p>
             <div class="canvas-chart">
-              <canvas id="fire-lifecycle-canvas"></canvas>
+              <canvas id="fire-lifecycle-canvas" role="img" aria-label="Retirement lifecycle chart showing portfolio growth and drawdown at multiple withdrawal rates"></canvas>
             </div>
             <div class="chart-legend" id="fire-lifecycle-legend">
               <span class="legend-item"><span class="legend-color" style="background:#2dd4bf"></span> Accumulation</span>
@@ -396,13 +396,13 @@
               <div class="form-group"></div>
             </div>
 
-            <button id="coast-calculate-btn" class="btn-primary">
+            <button id="coast-calculate-btn" class="btn-primary" aria-label="Calculate Coast FIRE Number">
               Calculate Coast FIRE
             </button>
           </div>
 
           <!-- Coast FIRE Results -->
-          <div id="coast-fire-results" class="results-panel hidden">
+          <div id="coast-fire-results" class="results-panel hidden" aria-live="polite" aria-label="Coast FIRE calculation results">
             <h2>Coast FIRE Analysis</h2>
             <div class="results-grid results-grid-3">
               <div class="result-item">
@@ -458,7 +458,7 @@
           <div id="coast-chart-section" class="chart-panel hidden">
             <h2>Coast FIRE Projection</h2>
             <div class="canvas-chart">
-              <canvas id="coast-chart-canvas"></canvas>
+              <canvas id="coast-chart-canvas" role="img" aria-label="Coast FIRE projection chart showing portfolio growth toward Coast FIRE threshold"></canvas>
             </div>
             <div class="chart-legend" id="coast-chart-legend">
               <span class="legend-item"

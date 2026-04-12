@@ -1,4 +1,38 @@
 
+/* ===== CHART LOADING SPINNER ===== */
+.canvas-chart {
+  position: relative;
+}
+
+.chart-loading {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.chart-loading.active {
+  display: flex;
+}
+
+.chart-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(45, 212, 191, 0.2);
+  border-top-color: #2dd4bf;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
 /* ===== INLINE FIELD VALIDATION ===== */
 .input-error,
 input.input-error,

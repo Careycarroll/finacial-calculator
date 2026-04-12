@@ -437,13 +437,19 @@ function handleCalculate() {
     .getElementById("adv-amortization-section")
     .classList.remove("hidden");
 
+  showChartLoading("adv-bar-canvas");
+  showChartLoading("adv-line-canvas");
   // Display chart and table (default views)
   currentChartView = "original";
   currentTableView = "original";
   currentTablePeriod = "monthly";
   resetToggleStates();
-  displayChart(originalYearly);
-  displayCumulativeChart(originalMonthly);
+  requestAnimationFrame(() => {
+    displayChart(originalYearly);
+    hideChartLoading("adv-bar-canvas");
+    displayCumulativeChart(originalMonthly);
+    hideChartLoading("adv-line-canvas");
+  });
   displayTable(originalMonthly, "monthly");
 
   document.getElementById("adv-results").scrollIntoView({ behavior: "smooth" });

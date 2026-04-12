@@ -56,8 +56,14 @@ function handleCalculate() {
 
   // Display results
   displaySummary(monthlyPayment, principal, totalInterest, totalCost);
-  displayChart(yearlySchedule);
-  displayCumulativeChart(monthlySchedule);
+  showChartLoading("loan-bar-canvas");
+  showChartLoading("loan-line-canvas");
+  requestAnimationFrame(() => {
+    displayChart(yearlySchedule);
+    hideChartLoading("loan-bar-canvas");
+    displayCumulativeChart(monthlySchedule);
+    hideChartLoading("loan-line-canvas");
+  });
   displayTable(monthlySchedule, "monthly");
 
   // Show all sections

@@ -1,2 +1,71 @@
-15:const CONFIG = {
-17:  SP500_NOMINAL_RETURN: 10.5,    // Historical S&P 500 nominal annual return (%)
+      70
+pages/projections.html:81:                id="proj-horizon" aria-required="true"
+pages/projections.html:94:                id="proj-return" aria-required="true"
+pages/projections.html:174:          <button id="proj-calculate-btn" class="btn-primary" aria-label="Calculate portfolio projection">
+pages/projections.html:180:        <div id="proj-results" aria-live="polite" class="table-panel hidden">
+pages/projections.html:203:            <button id="proj-nominal-btn" class="btn-toggle active" aria-label="Show nominal returns">
+pages/projections.html:206:            <button id="proj-real-btn" class="btn-toggle" aria-label="Show inflation-adjusted real returns">
+pages/projections.html:211:            <canvas id="proj-chart-canvas" role="img" aria-label="Portfolio projection chart showing growth scenarios over time"></canvas>
+pages/loan-advanced.html:42:                id="adv-loan-amount" aria-required="true"
+pages/loan-advanced.html:52:                id="adv-interest-rate" aria-required="true"
+pages/loan-advanced.html:65:                id="adv-loan-term" aria-required="true"
+pages/loan-advanced.html:215:              <button id="add-range-btn" class="btn-add" aria-label="Add recurring extra payment range">+ Add</button>
+pages/loan-advanced.html:250:              <button id="add-onetime-btn" class="btn-add" aria-label="Add one-time extra payment">+ Add</button>
+pages/loan-advanced.html:257:        <button id="adv-calculate-btn" class="btn-primary" aria-label="Calculate advanced loan schedule">
+pages/loan-advanced.html:262:        <div id="adv-results" aria-live="polite" class="results-panel hidden">
+pages/loan-advanced.html:342:            <canvas id="adv-bar-canvas" role="img" aria-label="Yearly principal and interest breakdown bar chart"></canvas>
+pages/loan-advanced.html:381:            <canvas id="adv-line-canvas" role="img" aria-label="Cumulative interest vs principal chart with extra payments"></canvas>
+pages/pv.html:36:            <button id="mode-lump" class="btn-toggle active" aria-label="Lump sum present value mode">
+pages/pv.html:39:            <button id="mode-annuity" class="btn-toggle" aria-label="Annuity present value mode">Annuity</button>
+pages/pv.html:40:            <button id="mode-compare" class="btn-toggle" aria-label="Compare lump sum vs annuity mode">
+pages/pv.html:214:                  id="pv-rate" aria-required="true"
+pages/pv.html:240:                  id="pv-periods" aria-required="true"
+pages/pv.html:250:          <button id="pv-calculate-btn" class="btn-primary" aria-label="Calculate present value">
+pages/pv.html:256:        <div id="pv-results" aria-live="polite" class="results-panel hidden">
+pages/pv.html:366:            <canvas id="pv-bar-canvas" role="img" aria-label="Present value breakdown chart"></canvas>
+pages/loan.html:39:                id="loan-amount" aria-required="true"
+pages/loan.html:50:                id="interest-rate" aria-required="true"
+pages/loan.html:61:                id="loan-term" aria-required="true"
+pages/loan.html:68:            <button id="calculate-btn" class="btn-primary" aria-label="Calculate loan payment">
+pages/loan.html:102:              <canvas id="loan-line-canvas" role="img" aria-label="Cumulative interest vs principal chart over loan term"></canvas>
+pages/loan.html:111:              <canvas id="loan-bar-canvas" role="img" aria-label="Yearly principal and interest breakdown bar chart"></canvas>
+pages/loan.html:154:              <button id="view-monthly" class="btn-toggle active" aria-label="Show monthly amortization table">
+pages/loan.html:157:              <button id="view-yearly" class="btn-toggle" aria-label="Show yearly amortization table">Yearly</button>
+pages/options.html:44:          <button id="tab-payoff" class="options-tab active" aria-label="Payoff diagram tab">
+pages/options.html:47:          <button id="tab-blackscholes" class="options-tab" aria-label="Black-Scholes pricing tab">
+pages/options.html:50:          <button id="tab-greeks" class="options-tab" aria-label="Greeks sensitivity tab">Δ Greeks</button>
+pages/options.html:51:          <button id="tab-pnl" class="options-tab" aria-label="P&L calculator tab">💰 P&L Calculator</button>
+pages/options.html:173:            <button id="suggest-premiums-btn" class="btn-secondary" aria-label="Suggest option premiums based on Black-Scholes">
+pages/options.html:180:            <button id="payoff-calculate-btn" class="btn-primary" aria-label="Calculate options payoff diagram">
+pages/options.html:224:              <canvas id="payoff-chart-canvas" role="img" aria-label="Options payoff diagram showing profit and loss at expiration"></canvas>
+pages/options.html:326:            <button id="bs-calculate-btn" class="btn-primary" aria-label="Calculate Black-Scholes option price">
+pages/options.html:442:            <button id="gk-calculate-btn" class="btn-primary" aria-label="Calculate option Greeks">
+pages/options.html:462:              <canvas id="gk-chart-canvas" role="img" aria-label="Greeks sensitivity chart showing option greek vs stock price"></canvas>
+pages/options.html:548:            <button id="pnl-calculate-btn" class="btn-primary" aria-label="Calculate option P&L">
+pages/options.html:563:              <canvas id="pnl-chart-canvas" role="img" aria-label="Options P&L chart showing profit and loss vs stock price"></canvas>
+pages/fire.html:41:                id="fire-current-age" aria-required="true"
+pages/fire.html:52:                id="fire-retire-age" aria-required="true"
+pages/fire.html:107:                id="fire-annual-return" aria-required="true"
+pages/fire.html:119:                id="fire-inflation" aria-required="true"
+pages/fire.html:169:          <button id="tab-fire-number" class="fire-tab active" aria-label="FIRE Number calculator tab">
+pages/fire.html:172:          <button id="tab-coast-fire" class="fire-tab" aria-label="Coast FIRE calculator tab">🏖️ Coast FIRE</button>
+pages/fire.html:186:                  id="fire-annual-expenses" aria-required="true"
+pages/fire.html:202:                  id="fire-withdrawal-rate" aria-required="true"
+pages/fire.html:268:            <button id="fire-calculate-btn" class="btn-primary" aria-label="Calculate FIRE Number">
+pages/fire.html:274:          <div id="fire-number-results" class="results-panel hidden" aria-live="polite" aria-label="FIRE calculation results">
+pages/fire.html:340:              <canvas id="fire-chart-canvas" role="img" aria-label="FIRE portfolio projection chart showing accumulation and drawdown phases"></canvas>
+pages/fire.html:365:              <canvas id="fire-lifecycle-canvas" role="img" aria-label="Retirement lifecycle chart showing portfolio growth and drawdown at multiple withdrawal rates"></canvas>
+pages/fire.html:399:            <button id="coast-calculate-btn" class="btn-primary" aria-label="Calculate Coast FIRE Number">
+pages/fire.html:405:          <div id="coast-fire-results" class="results-panel hidden" aria-live="polite" aria-label="Coast FIRE calculation results">
+pages/fire.html:461:              <canvas id="coast-chart-canvas" role="img" aria-label="Coast FIRE projection chart showing portfolio growth toward Coast FIRE threshold"></canvas>
+pages/npv-irr.html:37:            <button id="mode-single" class="btn-toggle active" aria-label="Single investment NPV mode">
+pages/npv-irr.html:40:            <button id="mode-compare" class="btn-toggle" aria-label="Compare two investments mode">
+pages/npv-irr.html:55:                  id="npv-initial" aria-required="true"
+pages/npv-irr.html:68:                  id="npv-rate" aria-required="true"
+pages/npv-irr.html:139:            <button id="add-period-btn" class="btn-secondary" aria-label="Add cash flow period">
+pages/npv-irr.html:144:          <button id="npv-calculate-btn" class="btn-primary" aria-label="Calculate NPV and IRR">
+pages/npv-irr.html:235:            <button id="add-period-a-btn" class="btn-secondary" aria-label="Add cash flow period to Investment A">
+pages/npv-irr.html:324:            <button id="add-period-b-btn" class="btn-secondary" aria-label="Add cash flow period to Investment B">
+pages/npv-irr.html:329:          <button id="npv-compare-btn" class="btn-primary" aria-label="Compare two investments">
+pages/npv-irr.html:335:        <div id="npv-results" aria-live="polite" class="results-panel hidden">
+pages/npv-irr.html:447:            <canvas id="npv-bar-canvas" role="img" aria-label="NPV cash flow breakdown chart"></canvas>

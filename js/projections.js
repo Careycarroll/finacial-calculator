@@ -280,6 +280,7 @@ function displayResults(projections) {
 
 // ===== DISPLAY: CHART =====
 function displayChart(projections, inputs, view) {
+  showChartLoading("proj-chart-canvas");
   const canvas = document.getElementById("proj-chart-canvas");
 
   const container = canvas.parentElement;
@@ -583,6 +584,7 @@ function displayChart(projections, inputs, view) {
   // Initial draw
   ctx.clearRect(0, 0, chart.width, chart.height);
   ctx.drawImage(offscreenProj, 0, 0);
+  hideChartLoading("proj-chart-canvas");
 
   if (projectionChartController) projectionChartController.abort();
   projectionChartController = new AbortController();

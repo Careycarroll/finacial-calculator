@@ -34,10 +34,10 @@
         <div class="calc-form">
           <h2 class="form-section-title">Analysis Mode</h2>
           <div class="mode-toggle">
-            <button id="mode-single" class="btn-toggle active">
+            <button id="mode-single" class="btn-toggle active" aria-label="Single investment NPV mode">
               Single Investment
             </button>
-            <button id="mode-compare" class="btn-toggle">
+            <button id="mode-compare" class="btn-toggle" aria-label="Compare two investments mode">
               Compare Two Investments
             </button>
           </div>
@@ -52,7 +52,7 @@
                 <label for="npv-initial">Initial Investment ($)</label>
                 <input
                   type="number"
-                  id="npv-initial"
+                  id="npv-initial" aria-required="true"
                   placeholder="e.g. 200000"
                   min="0"
                   step="any"
@@ -65,7 +65,7 @@
                 <label for="npv-rate">Discount Rate (%)</label>
                 <input
                   type="number"
-                  id="npv-rate"
+                  id="npv-rate" aria-required="true"
                   placeholder="e.g. 8"
                   min="0"
                   step="any"
@@ -136,12 +136,12 @@
             <div class="cashflow-list" id="cashflow-list">
               <!-- Dynamically populated -->
             </div>
-            <button id="add-period-btn" class="btn-secondary">
+            <button id="add-period-btn" class="btn-secondary" aria-label="Add cash flow period">
               + Add Period
             </button>
           </div>
 
-          <button id="npv-calculate-btn" class="btn-primary">
+          <button id="npv-calculate-btn" class="btn-primary" aria-label="Calculate NPV and IRR">
             Calculate NPV & IRR
           </button>
         </div>
@@ -232,7 +232,7 @@
               </div>
             </div>
             <div class="cashflow-list" id="cashflow-list-a"></div>
-            <button id="add-period-a-btn" class="btn-secondary">
+            <button id="add-period-a-btn" class="btn-secondary" aria-label="Add cash flow period to Investment A">
               + Add Period
             </button>
           </div>
@@ -321,18 +321,18 @@
               </div>
             </div>
             <div class="cashflow-list" id="cashflow-list-b"></div>
-            <button id="add-period-b-btn" class="btn-secondary">
+            <button id="add-period-b-btn" class="btn-secondary" aria-label="Add cash flow period to Investment B">
               + Add Period
             </button>
           </div>
 
-          <button id="npv-compare-btn" class="btn-primary">
+          <button id="npv-compare-btn" class="btn-primary" aria-label="Compare two investments">
             Compare Investments
           </button>
         </div>
 
         <!-- Results: Single -->
-        <div id="npv-results" class="results-panel hidden">
+        <div id="npv-results" aria-live="polite" class="results-panel hidden">
           <h2>Results</h2>
           <div class="results-grid results-grid-3">
             <div class="result-item">
@@ -444,7 +444,7 @@
         <div id="npv-chart-section" class="chart-panel hidden">
           <h2 id="npv-chart-title">Cash Flows by Period</h2>
           <div class="canvas-chart">
-            <canvas id="npv-bar-canvas"></canvas>
+            <canvas id="npv-bar-canvas" role="img" aria-label="NPV cash flow breakdown chart"></canvas>
           </div>
           <div class="chart-legend" id="npv-chart-legend">
             <span class="legend-item"

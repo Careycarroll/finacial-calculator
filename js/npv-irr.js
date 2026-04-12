@@ -442,7 +442,11 @@ function handleSingleCalculate() {
 
   // Display sections
   displaySensitivity(sensitivity);
-  displayChart(breakdown, periodType);
+  showChartLoading("npv-bar-canvas");
+  requestAnimationFrame(() => {
+    displayChart(breakdown, periodType);
+    hideChartLoading("npv-bar-canvas");
+  });
   displayTable(breakdown);
 
   document.getElementById("npv-results").classList.remove("hidden");
@@ -588,7 +592,11 @@ function handleCompareCalculate() {
   );
   displayCompareSensitivity(sensitivityA, sensitivityB, nameA, nameB);
 
-  displayCompareChart(breakdownA, breakdownB, nameA, nameB);
+  showChartLoading("npv-bar-canvas");
+  requestAnimationFrame(() => {
+    displayCompareChart(breakdownA, breakdownB, nameA, nameB);
+    hideChartLoading("npv-bar-canvas");
+  });
 
   tableShowA.textContent = nameA;
   tableShowB.textContent = nameB;

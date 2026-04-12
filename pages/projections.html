@@ -78,7 +78,7 @@
               <label for="proj-horizon">Time Horizon (years)</label>
               <input
                 type="number"
-                id="proj-horizon"
+                id="proj-horizon" aria-required="true"
                 placeholder="e.g. 30"
                 min="1"
                 max="60"
@@ -91,7 +91,7 @@
               <label for="proj-return">Expected Annual Return (%)</label>
               <input
                 type="number"
-                id="proj-return"
+                id="proj-return" aria-required="true"
                 placeholder="e.g. 7"
                 min="0"
                 max="30"
@@ -171,13 +171,13 @@
             </div>
           </div>
 
-          <button id="proj-calculate-btn" class="btn-primary">
+          <button id="proj-calculate-btn" class="btn-primary" aria-label="Calculate portfolio projection">
             Calculate Projections
           </button>
         </div>
 
         <!-- Results Summary -->
-        <div id="proj-results" class="table-panel hidden">
+        <div id="proj-results" aria-live="polite" class="table-panel hidden">
           <h2>Scenario Summary</h2>
           <div class="table-wrapper">
             <table>
@@ -200,15 +200,15 @@
         <div id="proj-chart-section" class="chart-panel hidden">
           <h2>Portfolio Projection</h2>
           <div class="proj-chart-controls">
-            <button id="proj-nominal-btn" class="btn-toggle active">
+            <button id="proj-nominal-btn" class="btn-toggle active" aria-label="Show nominal returns">
               Nominal
             </button>
-            <button id="proj-real-btn" class="btn-toggle">
+            <button id="proj-real-btn" class="btn-toggle" aria-label="Show inflation-adjusted real returns">
               Inflation-Adjusted
             </button>
           </div>
           <div class="canvas-chart">
-            <canvas id="proj-chart-canvas"></canvas>
+            <canvas id="proj-chart-canvas" role="img" aria-label="Portfolio projection chart showing growth scenarios over time"></canvas>
           </div>
           <div class="chart-legend" id="proj-chart-legend"></div>
         </div>

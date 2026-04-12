@@ -33,11 +33,11 @@
         <div class="calc-form">
           <h2 class="form-section-title">Calculation Type</h2>
           <div class="mode-toggle">
-            <button id="mode-lump" class="btn-toggle active">
+            <button id="mode-lump" class="btn-toggle active" aria-label="Lump sum present value mode">
               Single Future Sum
             </button>
-            <button id="mode-annuity" class="btn-toggle">Annuity</button>
-            <button id="mode-compare" class="btn-toggle">
+            <button id="mode-annuity" class="btn-toggle" aria-label="Annuity present value mode">Annuity</button>
+            <button id="mode-compare" class="btn-toggle" aria-label="Compare lump sum vs annuity mode">
               Lump Sum vs. Annuity
             </button>
           </div>
@@ -211,7 +211,7 @@
                 <label for="pv-rate">Discount Rate (%)</label>
                 <input
                   type="number"
-                  id="pv-rate"
+                  id="pv-rate" aria-required="true"
                   placeholder="e.g. 7"
                   min="0"
                   step="any"
@@ -237,7 +237,7 @@
                 <label for="pv-periods">Number of Years</label>
                 <input
                   type="number"
-                  id="pv-periods"
+                  id="pv-periods" aria-required="true"
                   placeholder="e.g. 10"
                   min="1"
                   step="1"
@@ -247,13 +247,13 @@
             </div>
           </div>
 
-          <button id="pv-calculate-btn" class="btn-primary">
+          <button id="pv-calculate-btn" class="btn-primary" aria-label="Calculate present value">
             Calculate Present Value
           </button>
         </div>
 
         <!-- Results -->
-        <div id="pv-results" class="results-panel hidden">
+        <div id="pv-results" aria-live="polite" class="results-panel hidden">
           <h2>Results</h2>
           <div id="pv-standard-results" class="results-grid">
             <div class="result-item">
@@ -363,7 +363,7 @@
         <div id="pv-chart-section" class="chart-panel hidden">
           <h2>Value Over Time</h2>
           <div class="canvas-chart">
-            <canvas id="pv-bar-canvas"></canvas>
+            <canvas id="pv-bar-canvas" role="img" aria-label="Present value breakdown chart"></canvas>
           </div>
           <
           <div class="chart-legend" id="pv-chart-legend">

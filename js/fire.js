@@ -272,7 +272,12 @@ function handleFireCalculate() {
     fireNumberFuture / Math.pow(1 + profile.annualReturn, yearsToRetire);
 
   // Projection chart
-  displayFireChart(profile, fireNumberFuture, yearsToRetire, coastFireForChart);
+  showChartLoading("fire-chart-canvas");
+  showChartLoading("fire-lifecycle-canvas");
+  requestAnimationFrame(() => {
+    displayFireChart(profile, fireNumberFuture, yearsToRetire, coastFireForChart);
+    hideChartLoading("fire-chart-canvas");
+  });
 
   // Lifecycle chart
   const retirementPortfolio = futureValue(
@@ -281,7 +286,10 @@ function handleFireCalculate() {
     profile.annualReturn,
     yearsToRetire,
   );
-  displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireNumberFuture);
+  requestAnimationFrame(() => {
+    displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireNumberFuture);
+    hideChartLoading("fire-lifecycle-canvas");
+  });
 
   document
     .getElementById("fire-number-results")
@@ -479,7 +487,11 @@ function handleCoastCalculate() {
   document.getElementById("fire-progress-section").classList.remove("hidden");
 
   // Coast FIRE chart
-  displayCoastChart(profile, fireTarget, coastFireNumber, yearsToRetire);
+  showChartLoading("coast-chart-canvas");
+  requestAnimationFrame(() => {
+    displayCoastChart(profile, fireTarget, coastFireNumber, yearsToRetire);
+    hideChartLoading("coast-chart-canvas");
+  });
 
   document
     .getElementById("coast-fire-results")

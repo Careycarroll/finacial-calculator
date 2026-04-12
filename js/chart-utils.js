@@ -553,6 +553,36 @@ function drawLineChart(canvas, data, options) {
   }, { signal });
 }
 
+// ===== CHART LOADING SPINNER =====
+// showChartLoading: shows a spinner overlay on the canvas-chart container of a given canvas.
+// hideChartLoading: removes the spinner.
+// The spinner div is created once and reused on subsequent calls.
+
+function showChartLoading(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const container = canvas.closest(".canvas-chart");
+  if (!container) return;
+
+  let spinner = container.querySelector(".chart-loading");
+  if (!spinner) {
+    spinner = document.createElement("div");
+    spinner.className = "chart-loading";
+    spinner.innerHTML = '<div class="chart-spinner"></div>';
+    container.appendChild(spinner);
+  }
+  spinner.classList.add("active");
+}
+
+function hideChartLoading(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const container = canvas.closest(".canvas-chart");
+  if (!container) return;
+  const spinner = container.querySelector(".chart-loading");
+  if (spinner) spinner.classList.remove("active");
+}
+
 // ===== RAF THROTTLE =====
 // Wraps a mousemove callback so it only fires once per animation frame.
 // Prevents redraws faster than the screen refresh rate (60/120/144hz).
