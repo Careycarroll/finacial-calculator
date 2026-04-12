@@ -138,24 +138,31 @@ function drawBarChart(canvas, data, options) {
     return padding.top + chartHeight - (value / maxValue) * chartHeight;
   }
 
-  function drawChart(highlightIndex) {
-    ctx.clearRect(0, 0, chart.width, chart.height);
+  // ── Offscreen static layer ──
+  const offscreen = document.createElement("canvas");
+  offscreen.width = chart.width;
+  offscreen.height = chart.height;
+  const offCtx = offscreen.getContext("2d");
+  offCtx.scale(1, 1);
+
+  function drawStatic() {
+    offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
 
     // Y-axis grid + labels
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "right";
+    offCtx.font = "11px sans-serif";
+    offCtx.textAlign = "right";
     const ySteps = 5;
     for (let i = 0; i <= ySteps; i++) {
       const value = (maxValue / ySteps) * i;
       const y = toY(value);
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(chart.width - padding.right, y);
-      ctx.stroke();
-      ctx.fillStyle = "#94a3b8";
-      ctx.fillText(
+      offCtx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+      offCtx.lineWidth = 1;
+      offCtx.beginPath();
+      offCtx.moveTo(padding.left, y);
+      offCtx.lineTo(offscreen.width - padding.right, y);
+      offCtx.stroke();
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.fillText(
         value >= 1000000 ? `$${(value/1000000).toFixed(1)}M` :
         value >= 1000 ? `$${(value/1000).toFixed(0)}k` :
         `$${value.toFixed(0)}`,
@@ -170,25 +177,21 @@ function drawBarChart(canvas, data, options) {
       const bx = x + (barWidth - bw) / 2;
       let yOffset = padding.top + chartHeight;
 
-      const isHighlighted = highlightIndex === i;
-
       series.forEach((s) => {
         const val = Math.abs(d[s.key] || 0);
         const bh = (val / maxValue) * chartHeight;
         yOffset -= bh;
-        ctx.fillStyle = isHighlighted
-          ? s.color
-          : s.color + "cc";
-        ctx.beginPath();
-        ctx.roundRect(bx, yOffset, bw, bh, [3, 3, 0, 0]);
-        ctx.fill();
+        offCtx.fillStyle = s.color + "cc";
+        offCtx.beginPath();
+        offCtx.roundRect(bx, yOffset, bw, bh, [3, 3, 0, 0]);
+        offCtx.fill();
       });
 
       // X-axis label
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "10px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.font = "10px sans-serif";
+      offCtx.textAlign = "center";
+      offCtx.fillText(
         options.xLabel ? options.xLabel(d) : String(i),
         x + barWidth / 2,
         padding.top + chartHeight + 16
@@ -196,62 +199,84 @@ function drawBarChart(canvas, data, options) {
     });
 
     // Axes
+    offCtx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+    offCtx.lineWidth = 1;
+    offCtx.beginPath();
+    offCtx.moveTo(padding.left, padding.top);
+    offCtx.lineTo(padding.left, padding.top + chartHeight);
+    offCtx.lineTo(offscreen.width - padding.right, padding.top + chartHeight);
+    offCtx.stroke();
+  }
+
+  drawStatic();
+
+  function drawChart(highlightIndex) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+    ctx.drawImage(offscreen, 0, 0);
+
+    if (highlightIndex === null || highlightIndex < 0 || highlightIndex >= data.length) return;
+
+    const d = data[highlightIndex];
+    const x = padding.left + highlightIndex * barWidth + barWidth / 2;
+
+    // Highlight active bar
+    const bw = barWidth * 0.7;
+    const bx = x - bw / 2;
+    let yOffset = padding.top + chartHeight;
+    series.forEach((s) => {
+      const val = Math.abs(d[s.key] || 0);
+      const bh = (val / maxValue) * chartHeight;
+      yOffset -= bh;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.roundRect(bx, yOffset, bw, bh, [3, 3, 0, 0]);
+      ctx.fill();
+    });
+
+    // Crosshair
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x, padding.top);
+    ctx.lineTo(x, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Tooltip
+    const lines = options.tooltip ? options.tooltip(d) : [];
+    ctx.font = "12px sans-serif";
+    const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
+    const tooltipHeight = lines.length * 20 + 16;
+    let tx = x + 15;
+    let ty = padding.top + 10;
+    if (tx + tooltipWidth > chart.width - padding.right) tx = x - tooltipWidth - 15;
+    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
+
+    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
     ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
     ctx.lineWidth = 1;
+    const r = 6;
     ctx.beginPath();
-    ctx.moveTo(padding.left, padding.top);
-    ctx.lineTo(padding.left, padding.top + chartHeight);
-    ctx.lineTo(chart.width - padding.right, padding.top + chartHeight);
+    ctx.moveTo(tx + r, ty);
+    ctx.lineTo(tx + tooltipWidth - r, ty);
+    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
+    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
+    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
+    ctx.lineTo(tx + r, ty + tooltipHeight);
+    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
+    ctx.lineTo(tx, ty + r);
+    ctx.arcTo(tx, ty, tx + r, ty, r);
+    ctx.closePath();
+    ctx.fill();
     ctx.stroke();
 
-    // Crosshair + tooltip
-    if (highlightIndex !== null && highlightIndex >= 0 && highlightIndex < data.length) {
-      const d = data[highlightIndex];
-      const x = padding.left + highlightIndex * barWidth + barWidth / 2;
-
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath();
-      ctx.moveTo(x, padding.top);
-      ctx.lineTo(x, padding.top + chartHeight);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      const lines = options.tooltip ? options.tooltip(d) : [];
-      ctx.font = "12px sans-serif";
-      const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
-      const tooltipHeight = lines.length * 20 + 16;
-      let tx = x + 15;
-      let ty = padding.top + 10;
-      if (tx + tooltipWidth > chart.width - padding.right) tx = x - tooltipWidth - 15;
-      if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
-
-      ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-      ctx.lineWidth = 1;
-      const r = 6;
-      ctx.beginPath();
-      ctx.moveTo(tx + r, ty);
-      ctx.lineTo(tx + tooltipWidth - r, ty);
-      ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
-      ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
-      ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
-      ctx.lineTo(tx + r, ty + tooltipHeight);
-      ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
-      ctx.lineTo(tx, ty + r);
-      ctx.arcTo(tx, ty, tx + r, ty, r);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.textAlign = "left";
-      lines.forEach((line, li) => {
-        ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
-        ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
-        ctx.fillText(line, tx + 12, ty + 18 + li * 20);
-      });
-    }
+    ctx.textAlign = "left";
+    lines.forEach((line, li) => {
+      ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
+      ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
+      ctx.fillText(line, tx + 12, ty + 18 + li * 20);
+    });
   }
 
   drawChart(null);
@@ -260,7 +285,7 @@ function drawBarChart(canvas, data, options) {
   options.controller = new AbortController();
   const { signal } = options.controller;
 
-  canvas.addEventListener("mousemove", (e) => {
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const scaleX = chart.width / r.width;
@@ -273,7 +298,7 @@ function drawBarChart(canvas, data, options) {
       canvas.style.cursor = "default";
       drawChart(null);
     }
-  }, { signal });
+  }), { signal });
 
   canvas.addEventListener("mouseleave", () => {
     canvas.style.cursor = "default";
@@ -321,24 +346,30 @@ function drawLineChart(canvas, data, options) {
     return ((x - padding.left) / chartWidth) * (data.length - 1);
   }
 
-  function drawChart(highlightIndex) {
-    ctx.clearRect(0, 0, chart.width, chart.height);
+  // ── Offscreen static layer ──
+  const offscreen = document.createElement("canvas");
+  offscreen.width = chart.width;
+  offscreen.height = chart.height;
+  const offCtx = offscreen.getContext("2d");
+
+  function drawStatic() {
+    offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
 
     // Y-axis grid + labels
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "right";
+    offCtx.font = "11px sans-serif";
+    offCtx.textAlign = "right";
     const ySteps = 5;
     for (let i = 0; i <= ySteps; i++) {
       const value = (maxValue / ySteps) * i;
       const y = toY(value);
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(chart.width - padding.right, y);
-      ctx.stroke();
-      ctx.fillStyle = "#94a3b8";
-      ctx.fillText(
+      offCtx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+      offCtx.lineWidth = 1;
+      offCtx.beginPath();
+      offCtx.moveTo(padding.left, y);
+      offCtx.lineTo(offscreen.width - padding.right, y);
+      offCtx.stroke();
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.fillText(
         value >= 1000000 ? `$${(value/1000000).toFixed(1)}M` :
         value >= 1000 ? `$${(value/1000).toFixed(0)}k` :
         `$${value.toFixed(0)}`,
@@ -347,114 +378,123 @@ function drawLineChart(canvas, data, options) {
     }
 
     // X-axis ticks
-    ctx.textAlign = "center";
+    offCtx.textAlign = "center";
     const step = Math.ceil(data.length / xTicks);
     for (let i = 0; i < data.length; i += step) {
       const x = toX(i);
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "10px sans-serif";
-      ctx.fillText(
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.font = "10px sans-serif";
+      offCtx.fillText(
         options.xLabel ? options.xLabel(data[i], i) : String(i),
         x, padding.top + chartHeight + 16
       );
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(x, padding.top);
-      ctx.lineTo(x, padding.top + chartHeight);
-      ctx.stroke();
+      offCtx.strokeStyle = "rgba(148, 163, 184, 0.1)";
+      offCtx.lineWidth = 1;
+      offCtx.beginPath();
+      offCtx.moveTo(x, padding.top);
+      offCtx.lineTo(x, padding.top + chartHeight);
+      offCtx.stroke();
     }
 
     // Axes
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(padding.left, padding.top);
-    ctx.lineTo(padding.left, padding.top + chartHeight);
-    ctx.lineTo(chart.width - padding.right, padding.top + chartHeight);
-    ctx.stroke();
+    offCtx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+    offCtx.lineWidth = 1;
+    offCtx.beginPath();
+    offCtx.moveTo(padding.left, padding.top);
+    offCtx.lineTo(padding.left, padding.top + chartHeight);
+    offCtx.lineTo(offscreen.width - padding.right, padding.top + chartHeight);
+    offCtx.stroke();
 
     // Series lines + fills
     series.forEach((s) => {
-      ctx.strokeStyle = s.color;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
+      offCtx.strokeStyle = s.color;
+      offCtx.lineWidth = 2;
+      offCtx.beginPath();
       data.forEach((d, i) => {
         const x = toX(i);
         const y = toY(d[s.key] || 0);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        if (i === 0) offCtx.moveTo(x, y);
+        else offCtx.lineTo(x, y);
       });
-      ctx.stroke();
+      offCtx.stroke();
 
       if (s.fill) {
-        ctx.lineTo(toX(data.length - 1), toY(0));
-        ctx.lineTo(toX(0), toY(0));
-        ctx.closePath();
-        ctx.fillStyle = s.color + "1a";
-        ctx.fill();
+        offCtx.lineTo(toX(data.length - 1), toY(0));
+        offCtx.lineTo(toX(0), toY(0));
+        offCtx.closePath();
+        offCtx.fillStyle = s.color + "1a";
+        offCtx.fill();
       }
     });
+  }
 
-    // Crosshair + tooltip
-    if (highlightIndex !== null && highlightIndex >= 0 && highlightIndex < data.length) {
-      const d = data[highlightIndex];
-      const hx = toX(highlightIndex);
+  drawStatic();
 
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
+  function drawChart(highlightIndex) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+    ctx.drawImage(offscreen, 0, 0);
+
+    if (highlightIndex === null || highlightIndex < 0 || highlightIndex >= data.length) return;
+
+    const d = data[highlightIndex];
+    const hx = toX(highlightIndex);
+
+    // Crosshair
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(hx, padding.top);
+    ctx.lineTo(hx, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Dots on series
+    series.forEach((s) => {
+      const hy = toY(d[s.key] || 0);
       ctx.beginPath();
-      ctx.moveTo(hx, padding.top);
-      ctx.lineTo(hx, padding.top + chartHeight);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      series.forEach((s) => {
-        const hy = toY(d[s.key] || 0);
-        ctx.beginPath();
-        ctx.arc(hx, hy, 4, 0, Math.PI * 2);
-        ctx.fillStyle = s.color;
-        ctx.fill();
-        ctx.strokeStyle = "#0f172a";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      });
-
-      const lines = options.tooltip ? options.tooltip(d) : [];
-      ctx.font = "12px sans-serif";
-      const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
-      const tooltipHeight = lines.length * 20 + 16;
-      let tx = hx + 15;
-      let ty = padding.top + 10;
-      if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
-      if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
-
-      ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-      ctx.lineWidth = 1;
-      const r = 6;
-      ctx.beginPath();
-      ctx.moveTo(tx + r, ty);
-      ctx.lineTo(tx + tooltipWidth - r, ty);
-      ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
-      ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
-      ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
-      ctx.lineTo(tx + r, ty + tooltipHeight);
-      ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
-      ctx.lineTo(tx, ty + r);
-      ctx.arcTo(tx, ty, tx + r, ty, r);
-      ctx.closePath();
+      ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = s.color;
       ctx.fill();
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 2;
       ctx.stroke();
+    });
 
-      ctx.textAlign = "left";
-      lines.forEach((line, li) => {
-        ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
-        ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
-        ctx.fillText(line, tx + 12, ty + 18 + li * 20);
-      });
-    }
+    // Tooltip
+    const lines = options.tooltip ? options.tooltip(d) : [];
+    ctx.font = "12px sans-serif";
+    const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
+    const tooltipHeight = lines.length * 20 + 16;
+    let tx = hx + 15;
+    let ty = padding.top + 10;
+    if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
+    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
+
+    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+    ctx.lineWidth = 1;
+    const r = 6;
+    ctx.beginPath();
+    ctx.moveTo(tx + r, ty);
+    ctx.lineTo(tx + tooltipWidth - r, ty);
+    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
+    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
+    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
+    ctx.lineTo(tx + r, ty + tooltipHeight);
+    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
+    ctx.lineTo(tx, ty + r);
+    ctx.arcTo(tx, ty, tx + r, ty, r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = "left";
+    lines.forEach((line, li) => {
+      ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
+      ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
+      ctx.fillText(line, tx + 12, ty + 18 + li * 20);
+    });
   }
 
   drawChart(null);
@@ -463,7 +503,7 @@ function drawLineChart(canvas, data, options) {
   options.controller = new AbortController();
   const { signal } = options.controller;
 
-  canvas.addEventListener("mousemove", (e) => {
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const scaleX = chart.width / r.width;
@@ -475,12 +515,28 @@ function drawLineChart(canvas, data, options) {
       canvas.style.cursor = "default";
       drawChart(null);
     }
-  }, { signal });
+  }), { signal });
 
   canvas.addEventListener("mouseleave", () => {
     canvas.style.cursor = "default";
     drawChart(null);
   }, { signal });
+}
+
+// ===== RAF THROTTLE =====
+// Wraps a mousemove callback so it only fires once per animation frame.
+// Prevents redraws faster than the screen refresh rate (60/120/144hz).
+
+function rafThrottle(fn) {
+  let pending = false;
+  return function(...args) {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      fn.apply(this, args);
+    });
+  };
 }
 
 // ===== INPUT VALIDATION UTILITY =====

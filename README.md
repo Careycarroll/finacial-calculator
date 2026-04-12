@@ -1,9 +1,5 @@
 You can access the github pages through: https://careycarroll.github.io/financial-calculator/
 
-Copy/paste into Terminal to compress and share. Sharing is caring!
-cd ~/path-to-project
-zip -r financial-calculator.zip. -x "_.git_" "node_modules/\*" ".DS_Store"
-
 To-Do:
 Roi calculator
 Fix stock analyzer
@@ -11,6 +7,10 @@ Fix stock analyzer
 ===========================================================================
 
 # Common code to pull information from shell
+
+Copy/paste into Terminal to compress and share. Sharing is caring!
+cd ~/path-to-project
+zip -r financial-calculator.zip. -x "_.git_" "node_modules/\*" ".DS_Store"
 
 Use this in zsh to dump all js,css,html files into codbase.txt file
 
@@ -38,40 +38,6 @@ Kill and restart local python server in vscode
 pkill -f "python.\*http" && python3 -m http.server 8000
 
 ```
-
-===========================================================================
-
----
-
-## Phase 1 Completion Notes
-
-Phase 1 is fully complete as of this session. Additional work completed beyond the original plan:
-
-### Chart Standardization
-
-- Converted all DOM bar charts (`loan.js`, `loan-advanced.js`, `pv.js`, `npv-irr.js`) to canvas using shared `drawBarChart()` utility in `chart-utils.js`
-- Converted all SVG line charts (`loan.js`, `loan-advanced.js`) to canvas using shared `drawLineChart()` utility
-- All charts now use `createChartContext()` for DPI scaling and crosshair hover with tooltips
-- Removed hardcoded SVG `width=700` — all charts are now fully responsive
-
-### FIRE Calculator Enhancements
-
-- Added life expectancy input to profile section
-- Added Retirement Lifecycle Chart showing full accumulation + multi-rate drawdown (3%, 4%, 5%, 6%) to life expectancy
-- Fixed FIRE projection chart to stop contributions at retirement age and show drawdown phase in orange
-- Added "Portfolio at Life Expectancy" column to withdrawal rate sensitivity table
-- Fixed FIRE number calculation to always show gross number regardless of other income
-- Added `fire-income-start-age` and `fire-fv-options` HTML elements that were missing from the page
-- Fixed withdrawal rate sensitivity table math (FIRE number, monthly withdrawal, years to FIRE)
-
-### Loan Advanced
-
-- Added paginated amortization table (30 rows per page) with Prev/Next navigation
-
-### Bug Fixes
-
-- Removed `defer` mismatch on `loan.js`, `loan-advanced.js`, `pv.js`, `npv-irr.js`, `fire.js` — `chart-utils.js` must load before dependent scripts
-- Fixed `safeParseFloat` validation logic in `handleFireCalculate` (`!annualExpenses` → `annualExpenses <= 0`)
 
 ===========================================================================
 
@@ -129,13 +95,11 @@ Phase 1 is fully complete as of this session. Additional work completed beyond t
 
 > **Goal:** Ensure smooth interaction on all devices, including low-end mobile.
 
-- [ ] **3a. Throttle `mousemove` handlers with `requestAnimationFrame`**
-  - Every `mousemove` event triggers a full chart redraw including all calculations. Combined with listener accumulation (Phase 1b), this can freeze low-end devices.
-  - **Fix:** Wrap all chart `mousemove` handlers in a `requestAnimationFrame` gate — only schedule a new frame if the previous one has completed.
+- [x] **3a. Throttle `mousemove` handlers with `requestAnimationFrame`**
+  - **Fix:** Added `rafThrottle(fn)` utility to `chart-utils.js`. Wraps any callback so it only fires once per animation frame, synced to the screen refresh rate (60/120/144hz). Applied to all 9 canvas `mousemove` handlers across `chart-utils.js`, `fire.js`, `projections.js`, and `options.js`. Also added `AbortController` to FIRE projection and Coast charts which were missing it.
 
-- [ ] **3b. Cache static chart layers on an offscreen canvas**
-  - Grid lines, axes, data series, and labels are redrawn on every mouse interaction even though they don't change.
-  - **Fix:** Draw static elements once to an offscreen canvas. On `mousemove`, composite the cached layer and only redraw the tooltip/crosshair overlay.
+- [x] **3b. Cache static chart layers on an offscreen canvas**
+  - **Fix:** Added offscreen canvas caching to `drawBarChart`, `drawLineChart` (chart-utils.js), FIRE projection chart, Coast FIRE chart (fire.js), and Projections chart (projections.js). Static elements (grid, axes, series, labels, annotations, crossing points) are drawn once to an offscreen canvas. On `mousemove`, `ctx.drawImage(offscreen, 0, 0)` composites the cached layer then only the crosshair/tooltip is drawn on top. Removed dead `displayChartDirect` function from projections.js. Options charts left with rafThrottle only — full offscreen refactor deferred given complexity vs marginal gain.
 
 ---
 

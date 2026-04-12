@@ -500,32 +500,180 @@ function displayChart(projections, inputs, view) {
     }
   }
 
-  // Remove old listeners by replacing canvas
+  // Build offscreen static cache
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 30, right: 30, bottom: 50, left: 80 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+  const maxValue = Math.max(...adjustedProjections.flatMap((p) => p.adjustedData.map((d) => d.balance)),
+  );
+
+  function toXProj(year) {
+    return padding.left + (year / horizon) * chartWidth;
+  }
+  function toYProj(value) {
+    return padding.top + chartHeight - (value / (maxValue * 1.1)) * chartHeight;
+  }
+  function fromXProj(x) {
+    return ((x - padding.left) / chartWidth) * horizon;
+  }
+
+  const offscreenProj = document.createElement("canvas");
+  offscreenProj.width = chart.width;
+  offscreenProj.height = chart.height;
+  const offCtxProj = offscreenProj.getContext("2d");
+
+  // Draw static layer once
+  offCtxProj.clearRect(0, 0, offscreenProj.width, offscreenProj.height);
+
+  const ySteps = 5;
+  for (let i = 0; i <= ySteps; i++) {
+    const value = ((maxValue * 1.1) / ySteps) * i;
+    const y = toYProj(value);
+    offCtxProj.strokeStyle = "rgba(148, 163, 184, 0.15)";
+    offCtxProj.lineWidth = 1;
+    offCtxProj.beginPath();
+    offCtxProj.moveTo(padding.left, y);
+    offCtxProj.lineTo(offscreenProj.width - padding.right, y);
+    offCtxProj.stroke();
+    offCtxProj.fillStyle = "#94a3b8";
+    offCtxProj.font = "11px sans-serif";
+    offCtxProj.textAlign = "right";
+    offCtxProj.fillText(formatCurrency(value), padding.left - 10, y + 4);
+  }
+
+  offCtxProj.textAlign = "center";
+  const xStepProj = Math.max(1, Math.ceil(horizon / 10));
+  for (let year = 0; year <= horizon; year += xStepProj) {
+    const x = toXProj(year);
+    offCtxProj.fillStyle = "#94a3b8";
+    offCtxProj.fillText(`Yr ${year}`, x, chart.height - padding.bottom + 20);
+    offCtxProj.strokeStyle = "rgba(148, 163, 184, 0.1)";
+    offCtxProj.lineWidth = 1;
+    offCtxProj.beginPath();
+    offCtxProj.moveTo(x, padding.top);
+    offCtxProj.lineTo(x, padding.top + chartHeight);
+    offCtxProj.stroke();
+  }
+
+  offCtxProj.fillStyle = "#94a3b8";
+  offCtxProj.font = "12px sans-serif";
+  offCtxProj.fillText(
+    view === "real" ? "Years (Inflation-Adjusted)" : "Years",
+    chart.width / 2, chart.height - 5,
+  );
+
+  adjustedProjections.forEach((proj) => {
+    offCtxProj.strokeStyle = proj.color;
+    offCtxProj.lineWidth = proj.bold ? 3 : 2;
+    offCtxProj.setLineDash(proj.dash || []);
+    offCtxProj.beginPath();
+    proj.adjustedData.forEach((point, i) => {
+      const x = toXProj(point.year);
+      const y = toYProj(point.balance);
+      if (i === 0) offCtxProj.moveTo(x, y);
+      else offCtxProj.lineTo(x, y);
+    });
+    offCtxProj.stroke();
+    offCtxProj.setLineDash([]);
+  });
+
+  // Initial draw
+  ctx.clearRect(0, 0, chart.width, chart.height);
+  ctx.drawImage(offscreenProj, 0, 0);
+
   if (projectionChartController) projectionChartController.abort();
   projectionChartController = new AbortController();
   const { signal } = projectionChartController;
 
-  // Initial draw on the new canvas
-  displayChartDirect(canvas, adjustedProjections, inputs, view, null);
+  function drawProjOverlay(highlightYear) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+    ctx.drawImage(offscreenProj, 0, 0);
 
-  // Bind mouse events on new canvas
-  canvas.addEventListener("mousemove", (e) => {
+    if (highlightYear === null || highlightYear < 0 || highlightYear > horizon) return;
+
+    const yearIndex = Math.round(highlightYear);
+    const hx = toXProj(yearIndex);
+
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(hx, padding.top);
+    ctx.lineTo(hx, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const tooltipLines = [`Year ${yearIndex}`];
+    adjustedProjections.forEach((proj) => {
+      if (yearIndex < proj.adjustedData.length) {
+        const point = proj.adjustedData[yearIndex];
+        const hy = toYProj(point.balance);
+        ctx.beginPath();
+        ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+        ctx.fillStyle = proj.color;
+        ctx.fill();
+        ctx.strokeStyle = "#0f172a";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        tooltipLines.push(`${proj.name}: ${formatCurrency(point.balance)}`);
+      }
+    });
+
+    ctx.font = "12px sans-serif";
+    const tooltipWidth = Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
+    const tooltipHeight = tooltipLines.length * 20 + 12;
+    let tx = hx + 15;
+    let ty = padding.top + 10;
+    if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
+
+    const radius = 6;
+    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tx + radius, ty);
+    ctx.lineTo(tx + tooltipWidth - radius, ty);
+    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + radius, radius);
+    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - radius);
+    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - radius, ty + tooltipHeight, radius);
+    ctx.lineTo(tx + radius, ty + tooltipHeight);
+    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - radius, r);
+    ctx.lineTo(tx, ty + radius);
+    ctx.arcTo(tx, ty, tx + radius, ty, radius);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#e2e8f0";
+    ctx.font = "bold 12px sans-serif";
+    ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
+    for (let i = 1; i < tooltipLines.length; i++) {
+      const proj = adjustedProjections[i - 1];
+      ctx.fillStyle = proj ? proj.color : "#e2e8f0";
+      ctx.font = "12px sans-serif";
+      ctx.fillText(tooltipLines[i], tx + 12, ty + 18 + i * 20);
+    }
+  }
+
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const r = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - r.left;
-    const year = fromX(mouseX);
-
+    const scaleX = chart.width / r.width;
+    const year = fromXProj((e.clientX - r.left) * scaleX);
     if (year >= 0 && year <= horizon) {
       canvas.style.cursor = "crosshair";
-      displayChartDirect(canvas, adjustedProjections, inputs, view, year);
+      drawProjOverlay(year);
     } else {
       canvas.style.cursor = "default";
-      displayChartDirect(canvas, adjustedProjections, inputs, view, null);
+      drawProjOverlay(null);
     }
-  }, { signal });
+  }), { signal });
 
   canvas.addEventListener("mouseleave", () => {
     canvas.style.cursor = "default";
-    displayChartDirect(canvas, adjustedProjections, inputs, view, null);
+    drawProjOverlay(null);
   }, { signal });
 
   // Build legend
@@ -540,187 +688,6 @@ function displayChart(projections, inputs, view) {
       return `<span class="legend-item"><span class="legend-color" style="${style}"></span> ${proj.name} (${rateLabel}%)</span>`;
     })
     .join("");
-}
-
-// ===== DIRECT DRAW (for mouse events after canvas replacement) =====
-function displayChartDirect(
-  canvas,
-  adjustedProjections,
-  inputs,
-  view,
-  highlightYear,
-) {
-  const chart = createChartContext(
-    canvas,
-    canvas.clientWidth,
-    canvas.clientHeight,
-  );
-  const ctx = chart.ctx;
-  const horizon = inputs.horizon;
-
-  const padding = { top: 30, right: 30, bottom: 50, left: 80 };
-  const chartWidth = chart.width - padding.left - padding.right;
-  const chartHeight = chart.height - padding.top - padding.bottom;
-
-  const maxValue = Math.max(
-    ...adjustedProjections.flatMap((p) => p.adjustedData.map((d) => d.balance)),
-  );
-
-  function toX(year) {
-    return padding.left + (year / horizon) * chartWidth;
-  }
-
-  function toY(value) {
-    return padding.top + chartHeight - (value / (maxValue * 1.1)) * chartHeight;
-  }
-
-  ctx.clearRect(0, 0, chart.width, chart.height);
-
-  // Grid
-  ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-  ctx.lineWidth = 1;
-
-  const ySteps = 5;
-  for (let i = 0; i <= ySteps; i++) {
-    const value = ((maxValue * 1.1) / ySteps) * i;
-    const y = toY(value);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, y);
-    ctx.lineTo(chart.width - padding.right, y);
-    ctx.stroke();
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
-  }
-
-  // X-axis
-  ctx.textAlign = "center";
-  const xStep = Math.max(1, Math.ceil(horizon / 10));
-  for (let year = 0; year <= horizon; year += xStep) {
-    const x = toX(year);
-    ctx.fillStyle = "#94a3b8";
-    ctx.fillText(`Yr ${year}`, x, chart.height - padding.bottom + 20);
-
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
-    ctx.beginPath();
-    ctx.moveTo(x, padding.top);
-    ctx.lineTo(x, padding.top + chartHeight);
-    ctx.stroke();
-  }
-
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
-  ctx.fillText(
-    view === "real" ? "Years (Inflation-Adjusted)" : "Years",
-    chart.width / 2,
-    chart.height - 5,
-  );
-
-  // Lines
-  adjustedProjections.forEach((proj) => {
-    ctx.strokeStyle = proj.color;
-    ctx.lineWidth = proj.bold ? 3 : 2;
-    ctx.setLineDash(proj.dash || []);
-
-    ctx.beginPath();
-    proj.adjustedData.forEach((point, i) => {
-      const x = toX(point.year);
-      const y = toY(point.balance);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-    ctx.setLineDash([]);
-  });
-
-  // Hover
-  if (
-    highlightYear !== null &&
-    highlightYear >= 0 &&
-    highlightYear <= horizon
-  ) {
-    const yearIndex = Math.round(highlightYear);
-    const hx = toX(yearIndex);
-
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]);
-    ctx.beginPath();
-    ctx.moveTo(hx, padding.top);
-    ctx.lineTo(hx, padding.top + chartHeight);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    const tooltipLines = [`Year ${yearIndex}`];
-
-    adjustedProjections.forEach((proj) => {
-      if (yearIndex < proj.adjustedData.length) {
-        const point = proj.adjustedData[yearIndex];
-        const hy = toY(point.balance);
-
-        ctx.beginPath();
-        ctx.arc(hx, hy, 4, 0, Math.PI * 2);
-        ctx.fillStyle = proj.color;
-        ctx.fill();
-        ctx.strokeStyle = "#0f172a";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        tooltipLines.push(`${proj.name}: ${formatCurrency(point.balance)}`);
-      }
-    });
-
-    ctx.font = "12px sans-serif";
-    const tooltipWidth =
-      Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
-    const tooltipHeight = tooltipLines.length * 20 + 12;
-
-    let tx = hx + 15;
-    let ty = padding.top + 10;
-
-    if (tx + tooltipWidth > chart.width - padding.right) {
-      tx = hx - tooltipWidth - 15;
-    }
-
-    const radius = 6;
-    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-    ctx.lineWidth = 1;
-
-    ctx.beginPath();
-    ctx.moveTo(tx + radius, ty);
-    ctx.lineTo(tx + tooltipWidth - radius, ty);
-    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + radius, radius);
-    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - radius);
-    ctx.arcTo(
-      tx + tooltipWidth,
-      ty + tooltipHeight,
-      tx + tooltipWidth - radius,
-      ty + tooltipHeight,
-      radius,
-    );
-    ctx.lineTo(tx + radius, ty + tooltipHeight);
-    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - radius, radius);
-    ctx.lineTo(tx, ty + radius);
-    ctx.arcTo(tx, ty, tx + radius, ty, radius);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#e2e8f0";
-    ctx.font = "bold 12px sans-serif";
-    ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
-
-    ctx.font = "12px sans-serif";
-    for (let i = 1; i < tooltipLines.length; i++) {
-      const proj = adjustedProjections[i - 1];
-      ctx.fillStyle = proj ? proj.color : "#e2e8f0";
-      ctx.fillText(tooltipLines[i], tx + 12, ty + 18 + i * 20);
-    }
-  }
 }
 
 // ===== DISPLAY: MILESTONES =====

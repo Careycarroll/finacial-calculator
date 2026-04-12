@@ -903,7 +903,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
   canvas._lifecycleController = new AbortController();
   const { signal } = canvas._lifecycleController;
 
-  canvas.addEventListener("mousemove", (e) => {
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const r = canvas.getBoundingClientRect();
     const scaleX = chart.width / r.width;
     const age = fromX((e.clientX - r.left) * scaleX);
@@ -914,7 +914,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
       canvas.style.cursor = "default";
       drawChart(null);
     }
-  }, { signal });
+  }), { signal });
 
   canvas.addEventListener("mouseleave", () => {
     canvas.style.cursor = "default";
@@ -995,62 +995,68 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     return ((x - padding.left) / chartWidth) * totalYears;
   }
 
-  function drawChart(highlightYear) {
-    ctx.clearRect(0, 0, chart.width, chart.height);
+  // ── Offscreen static layer ──
+  const offscreen = document.createElement("canvas");
+  offscreen.width = chart.width;
+  offscreen.height = chart.height;
+  const offCtx = offscreen.getContext("2d");
+
+  function drawStatic() {
+    offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
 
     // Grid
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-    ctx.lineWidth = 1;
+    offCtx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+    offCtx.lineWidth = 1;
 
     const ySteps = 5;
     for (let i = 0; i <= ySteps; i++) {
       const value = (maxValue / ySteps) * i;
       const y = toY(value);
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(chart.width - padding.right, y);
-      ctx.stroke();
+      offCtx.beginPath();
+      offCtx.moveTo(padding.left, y);
+      offCtx.lineTo(offscreen.width - padding.right, y);
+      offCtx.stroke();
 
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.font = "11px sans-serif";
+      offCtx.textAlign = "right";
+      offCtx.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
 
     // X-axis labels
-    ctx.textAlign = "center";
+    offCtx.textAlign = "center";
     const xStep = Math.ceil(totalYears / 10);
     for (let year = 0; year <= totalYears; year += xStep) {
       const x = toX(year);
       const age = profile.currentAge + year;
-      ctx.fillStyle = "#94a3b8";
-      ctx.fillText(`${age}`, x, chart.height - padding.bottom + 20);
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.fillText(`${age}`, x, chart.height - padding.bottom + 20);
 
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
-      ctx.beginPath();
-      ctx.moveTo(x, padding.top);
-      ctx.lineTo(x, padding.top + chartHeight);
-      ctx.stroke();
+      offCtx.strokeStyle = "rgba(148, 163, 184, 0.1)";
+      offCtx.beginPath();
+      offCtx.moveTo(x, padding.top);
+      offCtx.lineTo(x, padding.top + chartHeight);
+      offCtx.stroke();
     }
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
-    ctx.fillText("Age", chart.width / 2, chart.height - 5);
+    offCtx.fillStyle = "#94a3b8";
+    offCtx.font = "12px sans-serif";
+    offCtx.fillText("Age", chart.width / 2, chart.height - 5);
 
     // FIRE target line
-    ctx.strokeStyle = "#ef4444";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([8, 4]);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, toY(fireTarget));
-    ctx.lineTo(chart.width - padding.right, toY(fireTarget));
-    ctx.stroke();
-    ctx.setLineDash([]);
+    offCtx.strokeStyle = "#ef4444";
+    offCtx.lineWidth = 2;
+    offCtx.setLineDash([8, 4]);
+    offCtx.beginPath();
+    offCtx.moveTo(padding.left, toY(fireTarget));
+    offCtx.lineTo(offscreen.width - padding.right, toY(fireTarget));
+    offCtx.stroke();
+    offCtx.setLineDash([]);
 
-    ctx.fillStyle = "#ef4444";
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText(
+    offCtx.fillStyle = "#ef4444";
+    offCtx.font = "11px sans-serif";
+    offCtx.textAlign = "left";
+    offCtx.fillText(
       `FIRE: ${formatCurrency(fireTarget)}`,
       padding.left + 5,
       toY(fireTarget) - 8,
@@ -1058,11 +1064,10 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
 
     // Coast FIRE threshold curve
     if (coastFireNumber) {
-      // Draw the coast threshold as a declining curve
-      ctx.strokeStyle = "#f59e0b";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 3]);
-      ctx.beginPath();
+      offCtx.strokeStyle = "#f59e0b";
+      offCtx.lineWidth = 2;
+      offCtx.setLineDash([6, 3]);
+      offCtx.beginPath();
       for (let year = 0; year <= totalYears; year++) {
         const remainingYears = profile.retireAge - profile.currentAge - year;
         if (remainingYears <= 0) break;
@@ -1070,23 +1075,21 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
           fireTarget / Math.pow(1 + profile.annualReturn, remainingYears);
         const x = toX(year);
         const y = toY(threshold);
-        if (year === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        if (year === 0) offCtx.moveTo(x, y);
+        else offCtx.lineTo(x, y);
       }
-      ctx.stroke();
-      ctx.setLineDash([]);
+      offCtx.stroke();
+      offCtx.setLineDash([]);
 
-      // Label
-      ctx.fillStyle = "#f59e0b";
-      ctx.font = "11px sans-serif";
-      ctx.textAlign = "left";
-      ctx.fillText(
+      offCtx.fillStyle = "#f59e0b";
+      offCtx.font = "11px sans-serif";
+      offCtx.textAlign = "left";
+      offCtx.fillText(
         `Coast: ${formatCurrency(coastFireNumber)}`,
         padding.left + 5,
         toY(coastFireNumber) - 8,
       );
 
-      // Find and mark the Coast FIRE crossing point
       const coastCrossing = dataPoints.find((d) => {
         const remainingYears = profile.retireAge - d.age;
         if (remainingYears <= 0) return false;
@@ -1102,76 +1105,75 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
         const cx = toX(coastCrossing.year);
         const cy = toY(threshold);
 
-        ctx.beginPath();
-        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-        ctx.fillStyle = "#f59e0b";
-        ctx.fill();
-        ctx.strokeStyle = "#0f172a";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        offCtx.beginPath();
+        offCtx.arc(cx, cy, 6, 0, Math.PI * 2);
+        offCtx.fillStyle = "#f59e0b";
+        offCtx.fill();
+        offCtx.strokeStyle = "#0f172a";
+        offCtx.lineWidth = 2;
+        offCtx.stroke();
 
-        ctx.fillStyle = "#f59e0b";
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(`Coast Age ${coastCrossing.age}`, cx, cy - 12);
+        offCtx.fillStyle = "#f59e0b";
+        offCtx.font = "bold 11px sans-serif";
+        offCtx.textAlign = "center";
+        offCtx.fillText(`Coast Age ${coastCrossing.age}`, cx, cy - 12);
       }
     }
 
     // Retirement age line
     const retireX = toX(yearsToRetire);
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(retireX, padding.top);
-    ctx.lineTo(retireX, padding.top + chartHeight);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    offCtx.strokeStyle = "rgba(148, 163, 184, 0.4)";
+    offCtx.lineWidth = 1;
+    offCtx.setLineDash([4, 4]);
+    offCtx.beginPath();
+    offCtx.moveTo(retireX, padding.top);
+    offCtx.lineTo(retireX, padding.top + chartHeight);
+    offCtx.stroke();
+    offCtx.setLineDash([]);
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.textAlign = "center";
-    ctx.fillText(`Retire: ${profile.retireAge}`, retireX, padding.top - 10);
+    offCtx.fillStyle = "#94a3b8";
+    offCtx.textAlign = "center";
+    offCtx.fillText(`Retire: ${profile.retireAge}`, retireX, padding.top - 10);
 
     // Accumulation line
     const accumPoints = dataPoints.filter((d) => !d.retired);
     const retirePoints = dataPoints.filter((d) => d.retired);
 
-    ctx.strokeStyle = "#2dd4bf";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
+    offCtx.strokeStyle = "#2dd4bf";
+    offCtx.lineWidth = 3;
+    offCtx.beginPath();
     accumPoints.forEach((point, i) => {
       const x = toX(point.year);
       const y = toY(point.value);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      if (i === 0) offCtx.moveTo(x, y);
+      else offCtx.lineTo(x, y);
     });
-    ctx.stroke();
+    offCtx.stroke();
 
     // Fill under accumulation
-    ctx.lineTo(toX(yearsToRetire), toY(0));
-    ctx.lineTo(toX(0), toY(0));
-    ctx.closePath();
-    ctx.fillStyle = "rgba(45, 212, 191, 0.1)";
-    ctx.fill();
+    offCtx.lineTo(toX(yearsToRetire), toY(0));
+    offCtx.lineTo(toX(0), toY(0));
+    offCtx.closePath();
+    offCtx.fillStyle = "rgba(45, 212, 191, 0.1)";
+    offCtx.fill();
 
     // Post-retirement drawdown line
     if (retirePoints.length > 0) {
-      ctx.strokeStyle = "#f59e0b";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(toX(yearsToRetire), toY(retirementPortfolioValue));
+      offCtx.strokeStyle = "#f59e0b";
+      offCtx.lineWidth = 3;
+      offCtx.beginPath();
+      offCtx.moveTo(toX(yearsToRetire), toY(retirementPortfolioValue));
       retirePoints.forEach((point) => {
-        ctx.lineTo(toX(point.year), toY(point.value));
+        offCtx.lineTo(toX(point.year), toY(point.value));
       });
-      ctx.stroke();
+      offCtx.stroke();
 
-      // Fill under drawdown
       const lastRetire = retirePoints[retirePoints.length - 1];
-      ctx.lineTo(toX(lastRetire.year), toY(0));
-      ctx.lineTo(toX(yearsToRetire), toY(0));
-      ctx.closePath();
-      ctx.fillStyle = "rgba(245, 158, 11, 0.1)";
-      ctx.fill();
+      offCtx.lineTo(toX(lastRetire.year), toY(0));
+      offCtx.lineTo(toX(yearsToRetire), toY(0));
+      offCtx.closePath();
+      offCtx.fillStyle = "rgba(245, 158, 11, 0.1)";
+      offCtx.fill();
     }
 
     // FIRE crossing point
@@ -1180,19 +1182,26 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       const cx = toX(crossingPoint.year);
       const cy = toY(crossingPoint.value);
 
-      ctx.beginPath();
-      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-      ctx.fillStyle = "#2dd4bf";
-      ctx.fill();
-      ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      offCtx.beginPath();
+      offCtx.arc(cx, cy, 6, 0, Math.PI * 2);
+      offCtx.fillStyle = "#2dd4bf";
+      offCtx.fill();
+      offCtx.strokeStyle = "#0f172a";
+      offCtx.lineWidth = 2;
+      offCtx.stroke();
 
-      ctx.fillStyle = "#2dd4bf";
-      ctx.font = "bold 11px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(`Age ${crossingPoint.age}`, cx, cy - 12);
+      offCtx.fillStyle = "#2dd4bf";
+      offCtx.font = "bold 11px sans-serif";
+      offCtx.textAlign = "center";
+      offCtx.fillText(`Age ${crossingPoint.age}`, cx, cy - 12);
     }
+  }
+
+  drawStatic();
+
+  function drawChart(highlightYear) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+    ctx.drawImage(offscreen, 0, 0);
 
     // Hover crosshair and tooltip
     if (
@@ -1312,7 +1321,11 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
   drawChart(null);
 
   // Mouse interaction
-  canvas.addEventListener("mousemove", (e) => {
+  if (canvas._fireController) canvas._fireController.abort();
+  canvas._fireController = new AbortController();
+  const { signal: fireSignal } = canvas._fireController;
+
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const year = fromX(mouseX);
@@ -1324,12 +1337,12 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       canvas.style.cursor = "default";
       drawChart(null);
     }
-  });
+  }), { signal: fireSignal });
 
   canvas.addEventListener("mouseleave", () => {
     canvas.style.cursor = "default";
     drawChart(null);
-  });
+  }, { signal: fireSignal });
 }
 
 // ===== COAST FIRE CHART (Canvas) =====
@@ -1406,162 +1419,155 @@ function displayCoastChart(
     return ((x - padding.left) / chartWidth) * totalYears;
   }
 
-  function drawChart(highlightYear) {
-    ctx.clearRect(0, 0, chart.width, chart.height);
-    // Grid
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-    ctx.lineWidth = 1;
+  // ── Offscreen static layer ──
+  const offscreenCoast = document.createElement("canvas");
+  offscreenCoast.width = chart.width;
+  offscreenCoast.height = chart.height;
+  const offCtxCoast = offscreenCoast.getContext("2d");
 
+  function drawStaticCoast() {
+    offCtxCoast.clearRect(0, 0, offscreenCoast.width, offscreenCoast.height);
+
+    // Grid
+    offCtxCoast.strokeStyle = "rgba(148, 163, 184, 0.15)";
+    offCtxCoast.lineWidth = 1;
     const ySteps = 5;
     for (let i = 0; i <= ySteps; i++) {
       const value = (maxValue / ySteps) * i;
       const y = toY(value);
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(chart.width - padding.right, y);
-      ctx.stroke();
-
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
+      offCtxCoast.beginPath();
+      offCtxCoast.moveTo(padding.left, y);
+      offCtxCoast.lineTo(offscreenCoast.width - padding.right, y);
+      offCtxCoast.stroke();
+      offCtxCoast.fillStyle = "#94a3b8";
+      offCtxCoast.font = "11px sans-serif";
+      offCtxCoast.textAlign = "right";
+      offCtxCoast.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
 
     // X-axis
-    ctx.textAlign = "center";
+    offCtxCoast.textAlign = "center";
     const xStep = Math.ceil(totalYears / 10);
     for (let year = 0; year <= totalYears; year += xStep) {
       const x = toX(year);
       const age = profile.currentAge + year;
-      ctx.fillStyle = "#94a3b8";
-      ctx.fillText(`${age}`, x, chart.height - padding.bottom + 20);
+      offCtxCoast.fillStyle = "#94a3b8";
+      offCtxCoast.fillText(`${age}`, x, chart.height - padding.bottom + 20);
     }
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
-    ctx.fillText("Age", chart.width / 2, chart.height - 5);
+    offCtxCoast.fillStyle = "#94a3b8";
+    offCtxCoast.font = "12px sans-serif";
+    offCtxCoast.fillText("Age", chart.width / 2, chart.height - 5);
 
     // FIRE target line
-    ctx.strokeStyle = "#ef4444";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([8, 4]);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, toY(fireTarget));
-    ctx.lineTo(chart.width - padding.right, toY(fireTarget));
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "#ef4444";
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText(
-      `FIRE: ${formatCurrency(fireTarget)}`,
-      padding.left + 5,
-      toY(fireTarget) - 8,
-    );
+    offCtxCoast.strokeStyle = "#ef4444";
+    offCtxCoast.lineWidth = 2;
+    offCtxCoast.setLineDash([8, 4]);
+    offCtxCoast.beginPath();
+    offCtxCoast.moveTo(padding.left, toY(fireTarget));
+    offCtxCoast.lineTo(offscreenCoast.width - padding.right, toY(fireTarget));
+    offCtxCoast.stroke();
+    offCtxCoast.setLineDash([]);
+    offCtxCoast.fillStyle = "#ef4444";
+    offCtxCoast.font = "11px sans-serif";
+    offCtxCoast.textAlign = "left";
+    offCtxCoast.fillText(`FIRE: ${formatCurrency(fireTarget)}`, padding.left + 5, toY(fireTarget) - 8);
 
     // Retirement age line
     const retireX = toX(yearsToRetire);
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(retireX, padding.top);
-    ctx.lineTo(retireX, padding.top + chartHeight);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.textAlign = "center";
-    ctx.fillText(`Retire: ${profile.retireAge}`, retireX, padding.top - 10);
+    offCtxCoast.strokeStyle = "rgba(148, 163, 184, 0.4)";
+    offCtxCoast.lineWidth = 1;
+    offCtxCoast.setLineDash([4, 4]);
+    offCtxCoast.beginPath();
+    offCtxCoast.moveTo(retireX, padding.top);
+    offCtxCoast.lineTo(retireX, padding.top + chartHeight);
+    offCtxCoast.stroke();
+    offCtxCoast.setLineDash([]);
+    offCtxCoast.fillStyle = "#94a3b8";
+    offCtxCoast.textAlign = "center";
+    offCtxCoast.fillText(`Retire: ${profile.retireAge}`, retireX, padding.top - 10);
 
     // Coast threshold curve
-    ctx.strokeStyle = "#f59e0b";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 3]);
-    ctx.beginPath();
+    offCtxCoast.strokeStyle = "#f59e0b";
+    offCtxCoast.lineWidth = 2;
+    offCtxCoast.setLineDash([6, 3]);
+    offCtxCoast.beginPath();
     coastData.forEach((point, i) => {
       const x = toX(point.year);
       const y = toY(point.value);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      if (i === 0) offCtxCoast.moveTo(x, y);
+      else offCtxCoast.lineTo(x, y);
     });
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "#f59e0b";
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText("Coast Threshold", toX(0) + 5, toY(coastData[0].value) - 8);
+    offCtxCoast.stroke();
+    offCtxCoast.setLineDash([]);
+    offCtxCoast.fillStyle = "#f59e0b";
+    offCtxCoast.font = "11px sans-serif";
+    offCtxCoast.textAlign = "left";
+    offCtxCoast.fillText("Coast Threshold", toX(0) + 5, toY(coastData[0].value) - 8);
 
     // Portfolio line
-    ctx.strokeStyle = "#2dd4bf";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
+    offCtxCoast.strokeStyle = "#2dd4bf";
+    offCtxCoast.lineWidth = 3;
+    offCtxCoast.beginPath();
     portfolioData.forEach((point, i) => {
       const x = toX(point.year);
       const y = toY(point.value);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      if (i === 0) offCtxCoast.moveTo(x, y);
+      else offCtxCoast.lineTo(x, y);
     });
-    ctx.stroke();
-
-    // Fill under portfolio
-    ctx.lineTo(toX(totalYears), toY(0));
-    ctx.lineTo(toX(0), toY(0));
-    ctx.closePath();
-    ctx.fillStyle = "rgba(45, 212, 191, 0.1)";
-    ctx.fill();
+    offCtxCoast.stroke();
+    offCtxCoast.lineTo(toX(totalYears), toY(0));
+    offCtxCoast.lineTo(toX(0), toY(0));
+    offCtxCoast.closePath();
+    offCtxCoast.fillStyle = "rgba(45, 212, 191, 0.1)";
+    offCtxCoast.fill();
 
     // Coast crossing point
     for (let i = 1; i < portfolioData.length && i < coastData.length; i++) {
-      if (
-        portfolioData[i].value >= coastData[i].value &&
-        portfolioData[i - 1].value < coastData[i - 1].value
-      ) {
+      if (portfolioData[i].value >= coastData[i].value && portfolioData[i-1].value < coastData[i-1].value) {
         const cx = toX(portfolioData[i].year);
         const cy = toY(portfolioData[i].value);
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-        ctx.fillStyle = "#f59e0b";
-        ctx.fill();
-        ctx.strokeStyle = "#0f172a";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.fillStyle = "#f59e0b";
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(`Coast: Age ${portfolioData[i].age}`, cx, cy - 12);
+        offCtxCoast.beginPath();
+        offCtxCoast.arc(cx, cy, 6, 0, Math.PI * 2);
+        offCtxCoast.fillStyle = "#f59e0b";
+        offCtxCoast.fill();
+        offCtxCoast.strokeStyle = "#0f172a";
+        offCtxCoast.lineWidth = 2;
+        offCtxCoast.stroke();
+        offCtxCoast.fillStyle = "#f59e0b";
+        offCtxCoast.font = "bold 11px sans-serif";
+        offCtxCoast.textAlign = "center";
+        offCtxCoast.fillText(`Coast: Age ${portfolioData[i].age}`, cx, cy - 12);
         break;
       }
     }
 
     // FIRE crossing point
     for (let i = 1; i < portfolioData.length; i++) {
-      if (
-        portfolioData[i].value >= fireTarget &&
-        portfolioData[i - 1].value < fireTarget
-      ) {
+      if (portfolioData[i].value >= fireTarget && portfolioData[i-1].value < fireTarget) {
         const cx = toX(portfolioData[i].year);
         const cy = toY(portfolioData[i].value);
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-        ctx.fillStyle = "#2dd4bf";
-        ctx.fill();
-        ctx.strokeStyle = "#0f172a";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.fillStyle = "#2dd4bf";
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(`FIRE: Age ${portfolioData[i].age}`, cx, cy - 12);
+        offCtxCoast.beginPath();
+        offCtxCoast.arc(cx, cy, 6, 0, Math.PI * 2);
+        offCtxCoast.fillStyle = "#2dd4bf";
+        offCtxCoast.fill();
+        offCtxCoast.strokeStyle = "#0f172a";
+        offCtxCoast.lineWidth = 2;
+        offCtxCoast.stroke();
+        offCtxCoast.fillStyle = "#2dd4bf";
+        offCtxCoast.font = "bold 11px sans-serif";
+        offCtxCoast.textAlign = "center";
+        offCtxCoast.fillText(`FIRE: Age ${portfolioData[i].age}`, cx, cy - 12);
         break;
       }
     }
+  }
+
+  drawStaticCoast();
+
+  function drawChart(highlightYear) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+    ctx.drawImage(offscreenCoast, 0, 0);
 
     // Hover crosshair and tooltip
     if (
@@ -1714,7 +1720,11 @@ function displayCoastChart(
   drawChart(null);
 
   // Mouse interaction
-  canvas.addEventListener("mousemove", (e) => {
+  if (canvas._coastController) canvas._coastController.abort();
+  canvas._coastController = new AbortController();
+  const { signal: coastSignal } = canvas._coastController;
+
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const year = fromX(mouseX);
@@ -1726,12 +1736,12 @@ function displayCoastChart(
       canvas.style.cursor = "default";
       drawChart(null);
     }
-  });
+  }), { signal: coastSignal });
 
   canvas.addEventListener("mouseleave", () => {
     canvas.style.cursor = "default";
     drawChart(null);
-  });
+  }, { signal: coastSignal });
 }
 
 // ===================================================================

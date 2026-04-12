@@ -1291,7 +1291,7 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
     null,
   );
 
-  canvas.addEventListener("mousemove", (e) => {
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
@@ -1325,7 +1325,7 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
         null,
       );
     }
-  }, { signal });
+  }), { signal });
 
   canvas.addEventListener("mouseleave", () => {
     canvas.style.cursor = "default";
@@ -1380,7 +1380,7 @@ function bindMultiCurveMouse(
     null,
   );
 
-  canvas.addEventListener("mousemove", (e) => {
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
@@ -1414,7 +1414,7 @@ function bindMultiCurveMouse(
         null,
       );
     }
-  }, { signal });
+  }), { signal });
 
   canvas.addEventListener("mouseleave", () => {
     canvas.style.cursor = "default";
@@ -1911,7 +1911,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
   payoffMouseController = new AbortController();
   const { signal } = payoffMouseController;
 
-  canvas.addEventListener("mousemove", (e) => {
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
@@ -1945,7 +1945,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
         null,
       );
     }
-  }, { signal });
+  }), { signal });
 
   canvas.addEventListener("mouseleave", () => {
     canvas.style.cursor = "default";
