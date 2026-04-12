@@ -22,7 +22,7 @@ A collection of interactive financial calculators built with vanilla JavaScript 
 
 ## Running Locally
 
-\`\`\`bash
+```bash
 # Clone
 git clone https://github.com/careycarroll/financial-calculator.git
 cd financial-calculator
@@ -30,7 +30,7 @@ cd financial-calculator
 # Serve (any static server works)
 python3 -m http.server 8000
 # then open http://localhost:8000
-\`\`\`
+```
 
 No npm, no build step, no dependencies.
 
@@ -38,7 +38,7 @@ No npm, no build step, no dependencies.
 
 ## Project Structure
 
-\`\`\`
+```
 financial-calculator/
 ├── index.html              # Calculator index / landing page
 ├── pages/                  # One HTML file per tool
@@ -62,7 +62,7 @@ financial-calculator/
     ├── base.css             # Global reset and variables
     ├── common-calculator.css # Shared form, result, chart, table styles
     └── fire.css             # Tool-specific overrides
-\`\`\`
+```
 
 ---
 
@@ -81,9 +81,9 @@ financial-calculator/
 
 This project went through a structured 5-phase development process covering bug fixes, input safety, performance optimization, architecture refactoring, and UX polish. Full detail is in the git log:
 
-\`\`\`bash
+```bash
 git log --oneline
-\`\`\`
+```
 
 Key phases:
 - **Phase 1** — Critical bug fixes: \`formatCurrency\` unification, AbortController pattern, \`safeParseFloat\`, canvas standardization
@@ -96,7 +96,7 @@ Key phases:
 
 ## Utilities Quick Reference
 
-\`\`\`javascript
+```javascript
 // Formatting
 formatCurrency(value)                          // $1.25M, $450,000, -$3.45
 
@@ -121,13 +121,13 @@ rafThrottle(fn)                                // throttle to screen refresh rat
 // Loading
 showChartLoading(canvasId)
 hideChartLoading(canvasId)
-\`\`\`
+```
 
 ---
 
 ## Useful Dev Commands
 
-\`\`\`bash
+``` bash
 # Kill and restart local server
 pkill -f "python.*http" && python3 -m http.server 8000
 
@@ -137,7 +137,7 @@ for f in **/*.(js|css|html); do
   echo "========== $f =========="
   cat "$f"
 done > audit.txt
-\`\`\`
+```
 
 ---
 
