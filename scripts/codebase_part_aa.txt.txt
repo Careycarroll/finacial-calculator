@@ -1,6 +1,6 @@
 ============================================================
  CODEBASE EXPORT
- Generated: Sat Apr 11 11:43:10 EDT 2026
+ Generated: Sat Apr 11 21:53:48 EDT 2026
  Directory: /Users/careycarroll/Github Projects/financial-calculator
 ============================================================
 
@@ -1061,6 +1061,24 @@ footer {
 ============================================================
  FILE: /Users/careycarroll/Github Projects/financial-calculator/css/common-calculator.css
 ============================================================
+
+
+/* ===== INLINE FIELD VALIDATION ===== */
+.input-error,
+input.input-error,
+select.input-error,.form-group input.input-error,.form-group select.input-error {
+  border-color: #f472b6 !important;
+  box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.2) !important;
+  outline: none !important;
+}
+
+.field-error-msg {
+  display: none;
+  color: #f472b6;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
 
 /* ===================================================================
    COMMON CALCULATOR — Forms, Results, Charts, Tables
@@ -8414,6 +8432,23 @@ function normalizeIEXCashflow(data) {
 //   $1B+            → 2 decimal + B  → $1.25B
 // Handles negatives: -$1,250, -$3.45M
 
+
+// ===== INPUT PARSING UTILITIES =====
+// safeParseFloat: parses a DOM input value, returns fallback if NaN/infinite
+// safeParseInt:   same for integer inputs
+// Usage: safeParseFloat(document.getElementById('my-input').value)
+//        safeParseFloat(document.getElementById('my-input').value, 1)
+
+function safeParseFloat(value, fallback = 0) {
+  const n = parseFloat(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function safeParseInt(value, fallback = 0) {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 function formatCurrency(value) {
   if (!Number.isFinite(value)) return '$0.00';
 
@@ -8444,6 +8479,9 @@ function formatCurrency(value) {
 
 // ===== CHART CONTEXT (DPI-aware) =====
 
+// createChartContext: sets canvas dimensions accounting for device pixel ratio (DPR).
+// Always call this instead of setting canvas.width/height directly.
+// Returns { ctx, width, height, clear } where width/height are DPR-scaled logical pixels.
 function createChartContext(canvas, width, height) {
   const dpr = window.devicePixelRatio || 1;
 
@@ -8468,6 +8506,8 @@ function createChartContext(canvas, width, height) {
 }
 
 // Get logical dimensions from a canvas already set up by createChartContext
+// getChartDimensions: returns the current rendered width/height of a canvas element.
+// Use when the canvas size is determined by CSS layout rather than explicit dimensions.
 function getChartDimensions(canvas) {
   return {
     width: parseInt(canvas.style.width) || canvas.width,
@@ -8492,10 +8532,645 @@ function autoScrollTables(maxRows = 25) {
   });
 }
 
+// ===== SHARED TOOLTIP RENDERER =====
+// Draws a rounded-rect tooltip with lines of text on a canvas context.
+// ctx:    CanvasRenderingContext2D
+// lines:  array of { text, color, bold } or plain strings
+// x, y:  anchor point (tip of crosshair or hover point)
+// bounds: { width, height, top, right } — chart bounds for edge clamping
+
+function drawTooltip(ctx, lines, x, y, bounds) {
+  if (!lines || lines.length === 0) return;
+
+  const normalized = lines.map((l) =>
+    typeof l === "string" ? { text: l, color: null, bold: false } : l
+  );
+
+  ctx.font = "12px sans-serif";
+  const tooltipWidth = Math.max(...normalized.map((l) => ctx.measureText(l.text).width)) + 24;
+  const tooltipHeight = normalized.length * 20 + 16;
+
+  let tx = x + 15;
+  let ty = y - tooltipHeight / 2;
+
+  if (bounds) {
+    if (tx + tooltipWidth > bounds.right) tx = x - tooltipWidth - 15;
+    if (ty < bounds.top) ty = bounds.top;
+    if (ty + tooltipHeight > bounds.top + bounds.height) ty = bounds.top + bounds.height - tooltipHeight;
+  }
+
+  // Background
+  ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+  ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+  ctx.lineWidth = 1;
+  const r = 6;
+  ctx.beginPath();
+  ctx.moveTo(tx + r, ty);
+  ctx.lineTo(tx + tooltipWidth - r, ty);
+  ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
+  ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
+  ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
+  ctx.lineTo(tx + r, ty + tooltipHeight);
+  ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
+  ctx.lineTo(tx, ty + r);
+  ctx.arcTo(tx, ty, tx + r, ty, r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Text
+  ctx.textAlign = "left";
+  normalized.forEach((line, i) => {
+    ctx.fillStyle = line.color || (i === 0 ? "#e2e8f0" : "#94a3b8");
+    ctx.font = (line.bold || i === 0) ? "bold 12px sans-serif" : "12px sans-serif";
+    ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
+  });
+}
+
+// ===== SHARED TOOLTIP RENDERER =====
+// Draws a rounded-rect tooltip with lines of text on a canvas context.
+// ctx:    CanvasRenderingContext2D
+// lines:  array of { text, color, bold } or plain strings
+// x, y:  anchor point (tip of crosshair or hover point)
+// bounds: { width, height, top, right } — chart bounds for edge clamping
+
+function drawTooltip(ctx, lines, x, y, bounds) {
+  if (!lines || lines.length === 0) return;
+
+  const normalized = lines.map((l) =>
+    typeof l === "string" ? { text: l, color: null, bold: false } : l
+  );
+
+  ctx.font = "12px sans-serif";
+  const tooltipWidth = Math.max(...normalized.map((l) => ctx.measureText(l.text).width)) + 24;
+  const tooltipHeight = normalized.length * 20 + 16;
+
+  let tx = x + 15;
+  let ty = y - tooltipHeight / 2;
+
+  if (bounds) {
+    if (tx + tooltipWidth > bounds.right) tx = x - tooltipWidth - 15;
+    if (ty < bounds.top) ty = bounds.top;
+    if (ty + tooltipHeight > bounds.top + bounds.height) ty = bounds.top + bounds.height - tooltipHeight;
+  }
+
+  // Background
+  ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+  ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+  ctx.lineWidth = 1;
+  const r = 6;
+  ctx.beginPath();
+  ctx.moveTo(tx + r, ty);
+  ctx.lineTo(tx + tooltipWidth - r, ty);
+  ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
+  ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
+  ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
+  ctx.lineTo(tx + r, ty + tooltipHeight);
+  ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
+  ctx.lineTo(tx, ty + r);
+  ctx.arcTo(tx, ty, tx + r, ty, r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Text
+  ctx.textAlign = "left";
+  normalized.forEach((line, i) => {
+    ctx.fillStyle = line.color || (i === 0 ? "#e2e8f0" : "#94a3b8");
+    ctx.font = (line.bold || i === 0) ? "bold 12px sans-serif" : "12px sans-serif";
+    ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
+  });
+}
+
+// ===== BAR CHART UTILITY =====
+// data: array of objects
+// options.series: [{ key, color, label }]
+// options.xLabel: (d) => string
+// options.tooltip: (d) => [line1, line2,...]
+// options.controller: AbortController (optional, managed externally)
+function drawBarChart(canvas, data, options) {
+  if (!canvas || !data || data.length === 0) return;
+
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() => drawBarChart(canvas, data, options));
+    return;
+  }
+
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 30, right: 20, bottom: 50, left: 70 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+  const series = options.series || [];
+
+  const maxValue = Math.max(...data.map((d) =>
+    series.reduce((sum, s) => sum + Math.abs(d[s.key] || 0), 0)
+  ));
+
+  const barWidth = chartWidth / data.length;
+
+  function toY(value) {
+    return padding.top + chartHeight - (value / maxValue) * chartHeight;
+  }
+
+  // ── Offscreen static layer ──
+  const offscreen = document.createElement("canvas");
+  offscreen.width = chart.width;
+  offscreen.height = chart.height;
+  const offCtx = offscreen.getContext("2d");
+  offCtx.scale(1, 1);
+
+  function drawStatic() {
+    offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
+
+    // Y-axis grid + labels
+    offCtx.font = "11px sans-serif";
+    offCtx.textAlign = "right";
+    const ySteps = 5;
+    for (let i = 0; i <= ySteps; i++) {
+      const value = (maxValue / ySteps) * i;
+      const y = toY(value);
+      offCtx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+      offCtx.lineWidth = 1;
+      offCtx.beginPath();
+      offCtx.moveTo(padding.left, y);
+      offCtx.lineTo(offscreen.width - padding.right, y);
+      offCtx.stroke();
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.fillText(
+        value >= 1000000 ? `$${(value/1000000).toFixed(1)}M` :
+        value >= 1000 ? `$${(value/1000).toFixed(0)}k` :
+        `$${value.toFixed(0)}`,
+        padding.left - 8, y + 4
+      );
+    }
+
+    // Bars
+    data.forEach((d, i) => {
+      const x = padding.left + i * barWidth;
+      const bw = barWidth * 0.7;
+      const bx = x + (barWidth - bw) / 2;
+      let yOffset = padding.top + chartHeight;
+
+      series.forEach((s) => {
+        const val = Math.abs(d[s.key] || 0);
+        const bh = (val / maxValue) * chartHeight;
+        yOffset -= bh;
+        offCtx.fillStyle = s.color + "cc";
+        offCtx.beginPath();
+        offCtx.roundRect(bx, yOffset, bw, bh, [3, 3, 0, 0]);
+        offCtx.fill();
+      });
+
+      // X-axis label
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.font = "10px sans-serif";
+      offCtx.textAlign = "center";
+      offCtx.fillText(
+        options.xLabel ? options.xLabel(d) : String(i),
+        x + barWidth / 2,
+        padding.top + chartHeight + 16
+      );
+    });
+
+    // Axes
+    offCtx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+    offCtx.lineWidth = 1;
+    offCtx.beginPath();
+    offCtx.moveTo(padding.left, padding.top);
+    offCtx.lineTo(padding.left, padding.top + chartHeight);
+    offCtx.lineTo(offscreen.width - padding.right, padding.top + chartHeight);
+    offCtx.stroke();
+  }
+
+  drawStatic();
+
+  function drawChart(highlightIndex) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+    ctx.drawImage(offscreen, 0, 0);
+
+    if (highlightIndex === null || highlightIndex < 0 || highlightIndex >= data.length) return;
+
+    const d = data[highlightIndex];
+    const x = padding.left + highlightIndex * barWidth + barWidth / 2;
+
+    // Highlight active bar
+    const bw = barWidth * 0.7;
+    const bx = x - bw / 2;
+    let yOffset = padding.top + chartHeight;
+    series.forEach((s) => {
+      const val = Math.abs(d[s.key] || 0);
+      const bh = (val / maxValue) * chartHeight;
+      yOffset -= bh;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.roundRect(bx, yOffset, bw, bh, [3, 3, 0, 0]);
+      ctx.fill();
+    });
+
+    // Crosshair
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x, padding.top);
+    ctx.lineTo(x, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Tooltip
+    const lines = options.tooltip ? options.tooltip(d) : [];
+    ctx.font = "12px sans-serif";
+    const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
+    const tooltipHeight = lines.length * 20 + 16;
+    let tx = x + 15;
+    let ty = padding.top + 10;
+    if (tx + tooltipWidth > chart.width - padding.right) tx = x - tooltipWidth - 15;
+    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
+
+    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+    ctx.lineWidth = 1;
+    const r = 6;
+    ctx.beginPath();
+    ctx.moveTo(tx + r, ty);
+    ctx.lineTo(tx + tooltipWidth - r, ty);
+    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
+    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
+    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
+    ctx.lineTo(tx + r, ty + tooltipHeight);
+    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
+    ctx.lineTo(tx, ty + r);
+    ctx.arcTo(tx, ty, tx + r, ty, r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = "left";
+    lines.forEach((line, li) => {
+      ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
+      ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
+      ctx.fillText(line, tx + 12, ty + 18 + li * 20);
+    });
+  }
+
+  drawChart(null);
+
+  if (options.controller) options.controller.abort();
+  options.controller = new AbortController();
+  const { signal } = options.controller;
+
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
+    const r = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - r.left;
+    const scaleX = chart.width / r.width;
+    const scaledX = mouseX * scaleX;
+    const index = Math.floor((scaledX - padding.left) / barWidth);
+    if (index >= 0 && index < data.length) {
+      canvas.style.cursor = "crosshair";
+      drawChart(index);
+    } else {
+      canvas.style.cursor = "default";
+      drawChart(null);
+    }
+  }), { signal });
+
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
+    drawChart(null);
+  }, { signal });
+}
+
+// ===== LINE CHART UTILITY =====
+// data: array of objects
+// options.series: [{ key, color, label }]
+// options.xLabel: (d, i) => string  — for x-axis tick labels
+// options.xTicks: number            — how many x-axis ticks to show (default 10)
+// options.tooltip: (d) => [line1, line2,...]
+// options.controller: AbortController (optional, managed externally)
+function drawLineChart(canvas, data, options) {
+  if (!canvas || !data || data.length === 0) return;
+
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() => drawLineChart(canvas, data, options));
+    return;
+  }
+
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 30, right: 30, bottom: 50, left: 70 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+  const series = options.series || [];
+  const xTicks = options.xTicks || 10;
+
+  const allValues = series.flatMap((s) => data.map((d) => d[s.key] || 0));
+  const maxValue = Math.max(...allValues) || 1;
+
+  function toX(i) {
+    return padding.left + (i / (data.length - 1)) * chartWidth;
+  }
+
+  function toY(value) {
+    return padding.top + chartHeight - (value / maxValue) * chartHeight;
+  }
+
+  function fromX(x) {
+    return ((x - padding.left) / chartWidth) * (data.length - 1);
+  }
+
+  // ── Offscreen static layer ──
+  const offscreen = document.createElement("canvas");
+  offscreen.width = chart.width;
+  offscreen.height = chart.height;
+  const offCtx = offscreen.getContext("2d");
+
+  function drawStatic() {
+    offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
+
+    // Y-axis grid + labels
+    offCtx.font = "11px sans-serif";
+    offCtx.textAlign = "right";
+    const ySteps = 5;
+    for (let i = 0; i <= ySteps; i++) {
+      const value = (maxValue / ySteps) * i;
+      const y = toY(value);
+      offCtx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+      offCtx.lineWidth = 1;
+      offCtx.beginPath();
+      offCtx.moveTo(padding.left, y);
+      offCtx.lineTo(offscreen.width - padding.right, y);
+      offCtx.stroke();
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.fillText(
+        value >= 1000000 ? `$${(value/1000000).toFixed(1)}M` :
+        value >= 1000 ? `$${(value/1000).toFixed(0)}k` :
+        `$${value.toFixed(0)}`,
+        padding.left - 8, y + 4
+      );
+    }
+
+    // X-axis ticks
+    offCtx.textAlign = "center";
+    const step = Math.ceil(data.length / xTicks);
+    for (let i = 0; i < data.length; i += step) {
+      const x = toX(i);
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.font = "10px sans-serif";
+      offCtx.fillText(
+        options.xLabel ? options.xLabel(data[i], i) : String(i),
+        x, padding.top + chartHeight + 16
+      );
+      offCtx.strokeStyle = "rgba(148, 163, 184, 0.1)";
+      offCtx.lineWidth = 1;
+      offCtx.beginPath();
+      offCtx.moveTo(x, padding.top);
+      offCtx.lineTo(x, padding.top + chartHeight);
+      offCtx.stroke();
+    }
+
+    // Axes
+    offCtx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+    offCtx.lineWidth = 1;
+    offCtx.beginPath();
+    offCtx.moveTo(padding.left, padding.top);
+    offCtx.lineTo(padding.left, padding.top + chartHeight);
+    offCtx.lineTo(offscreen.width - padding.right, padding.top + chartHeight);
+    offCtx.stroke();
+
+    // Series lines + fills
+    series.forEach((s) => {
+      offCtx.strokeStyle = s.color;
+      offCtx.lineWidth = 2;
+      offCtx.beginPath();
+      data.forEach((d, i) => {
+        const x = toX(i);
+        const y = toY(d[s.key] || 0);
+        if (i === 0) offCtx.moveTo(x, y);
+        else offCtx.lineTo(x, y);
+      });
+      offCtx.stroke();
+
+      if (s.fill) {
+        offCtx.lineTo(toX(data.length - 1), toY(0));
+        offCtx.lineTo(toX(0), toY(0));
+        offCtx.closePath();
+        offCtx.fillStyle = s.color + "1a";
+        offCtx.fill();
+      }
+    });
+  }
+
+  drawStatic();
+
+  function drawChart(highlightIndex) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+    ctx.drawImage(offscreen, 0, 0);
+
+    if (highlightIndex === null || highlightIndex < 0 || highlightIndex >= data.length) return;
+
+    const d = data[highlightIndex];
+    const hx = toX(highlightIndex);
+
+    // Crosshair
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(hx, padding.top);
+    ctx.lineTo(hx, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Dots on series
+    series.forEach((s) => {
+      const hy = toY(d[s.key] || 0);
+      ctx.beginPath();
+      ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = s.color;
+      ctx.fill();
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+
+    // Tooltip
+    const lines = options.tooltip ? options.tooltip(d) : [];
+    ctx.font = "12px sans-serif";
+    const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
+    const tooltipHeight = lines.length * 20 + 16;
+    let tx = hx + 15;
+    let ty = padding.top + 10;
+    if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
+    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
+
+    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+    ctx.lineWidth = 1;
+    const r = 6;
+    ctx.beginPath();
+    ctx.moveTo(tx + r, ty);
+    ctx.lineTo(tx + tooltipWidth - r, ty);
+    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
+    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
+    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
+    ctx.lineTo(tx + r, ty + tooltipHeight);
+    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
+    ctx.lineTo(tx, ty + r);
+    ctx.arcTo(tx, ty, tx + r, ty, r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = "left";
+    lines.forEach((line, li) => {
+      ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
+      ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
+      ctx.fillText(line, tx + 12, ty + 18 + li * 20);
+    });
+  }
+
+  drawChart(null);
+
+  if (options.controller) options.controller.abort();
+  options.controller = new AbortController();
+  const { signal } = options.controller;
+
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
+    const r = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - r.left;
+    const scaleX = chart.width / r.width;
+    const index = Math.round(fromX(mouseX * scaleX));
+    if (index >= 0 && index < data.length) {
+      canvas.style.cursor = "crosshair";
+      drawChart(index);
+    } else {
+      canvas.style.cursor = "default";
+      drawChart(null);
+    }
+  }), { signal });
+
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
+    drawChart(null);
+  }, { signal });
+}
+
+// ===== RAF THROTTLE =====
+// Wraps a mousemove callback so it only fires once per animation frame.
+// Prevents redraws faster than the screen refresh rate (60/120/144hz).
+
+function rafThrottle(fn) {
+  let pending = false;
+  return function(...args) {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      fn.apply(this, args);
+    });
+  };
+}
+
+// ===== INPUT VALIDATION UTILITY =====
+// schema: array of { id, label, required, min, max, integer }
+// containerSelector: string or element — used to clear errors before validating
+// Returns true if all fields pass, false if any fail (errors shown inline)
+
+function validateInputs(schema, containerSelector) {
+  if (containerSelector) clearAllErrors(containerSelector);
+  let valid = true;
+
+  schema.forEach(({ id, label, required, min, max, integer }) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const raw = el.value.trim();
+    const num = integer ? parseInt(raw, 10) : parseFloat(raw);
+
+    if (required && raw === "") {
+      showFieldError(id, `${label} is required.`);
+      valid = false;
+      return;
+    }
+
+    if (raw === "") return;
+
+    if (isNaN(num)) {
+      showFieldError(id, `${label} must be a valid number.`);
+      valid = false;
+      return;
+    }
+
+    if (min !== undefined && num < min) {
+      showFieldError(id, `${label} must be at least ${min}.`);
+      valid = false;
+      return;
+    }
+
+    if (max !== undefined && num > max) {
+      showFieldError(id, `${label} must be no more than ${max}.`);
+      valid = false;
+      return;
+    }
+  });
+
+  return valid;
+}
+
+// ===== INLINE FIELD VALIDATION HELPERS =====
+// showFieldError: marks an input with a red border and shows a message below it
+// clearFieldError: removes error state from a single field
+// clearAllErrors: removes all error states within a container
+
+function showFieldError(fieldId, message) {
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  el.classList.add("input-error");
+  let msg = el.parentElement.querySelector(".field-error-msg");
+  if (!msg) {
+    msg = document.createElement("span");
+    msg.className = "field-error-msg";
+    el.parentElement.appendChild(msg);
+  }
+  msg.textContent = message;
+  msg.style.display = "block";
+}
+
+function clearFieldError(fieldId) {
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  el.classList.remove("input-error");
+  const msg = el.parentElement.querySelector(".field-error-msg");
+  if (msg) msg.style.display = "none";
+}
+
+function clearAllErrors(containerSelector) {
+  const container = typeof containerSelector === "string"
+    ? document.querySelector(containerSelector)
+    : containerSelector;
+  if (!container) return;
+  container.querySelectorAll(".input-error").forEach((el) => {
+    el.classList.remove("input-error");
+  });
+  container.querySelectorAll(".field-error-msg").forEach((el) => {
+    el.style.display = "none";
+  });
+}
+
 // ===== FORM ENTER-KEY DELEGATION =====
 // Single delegated listener on each.calc-form instead of per-input listeners
-function bindFormEnter(callback) {
-  document.querySelectorAll(".calc-form").forEach((form) => {
+function bindFormEnter(callback, containerSelector) {
+  const root = containerSelector
+    ? document.querySelector(containerSelector)
+    : document;
+  if (!root) return;
+  const forms = root.querySelectorAll(".calc-form");
+  forms.forEach((form) => {
     form.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")) {
         e.preventDefault();
@@ -9029,17 +9704,17 @@ bindFormEnter(() => {
 // ===== GET PROFILE VALUES =====
 function getProfile() {
   return {
-    currentAge: parseInt(document.getElementById("fire-current-age").value),
-    retireAge: parseInt(document.getElementById("fire-retire-age").value),
+    currentAge: safeParseInt(document.getElementById("fire-current-age").value),
+    retireAge: safeParseInt(document.getElementById("fire-retire-age").value),
+    lifeExpectancy: safeParseInt(document.getElementById("fire-life-expectancy").value, 90),
     portfolio:
-      parseFloat(document.getElementById("fire-current-portfolio").value) || 0,
+      safeParseFloat(document.getElementById("fire-current-portfolio").value, 0),
     monthlyContribution:
-      parseFloat(document.getElementById("fire-monthly-contribution").value) ||
-      0,
+      safeParseFloat(document.getElementById("fire-monthly-contribution").value, 0),
     annualReturn:
-      parseFloat(document.getElementById("fire-annual-return").value) / 100,
+      safeParseFloat(document.getElementById("fire-annual-return").value) / 100,
     inflation:
-      parseFloat(document.getElementById("fire-inflation").value) / 100,
+      safeParseFloat(document.getElementById("fire-inflation").value) / 100,
   };
 }
 
@@ -9057,13 +9732,15 @@ function futureValue(presentValue, monthlyContribution, annualRate, years) {
 }
 
 // ===== YEARS TO REACH TARGET =====
+const MAX_PROJECTION_MONTHS = 1200; // 100 years — effectively infinity for FIRE projections
+
 function yearsToTarget(currentValue, monthlyContribution, annualRate, target) {
   if (currentValue >= target) return 0;
 
   const monthlyRate = annualRate / 12;
   let balance = currentValue;
 
-  for (let month = 1; month <= 1200; month++) {
+  for (let month = 1; month <= MAX_PROJECTION_MONTHS; month++) {
     balance = balance * (1 + monthlyRate) + monthlyContribution;
     if (balance >= target) {
       return month / 12;
@@ -9093,80 +9770,87 @@ function monthlyNeeded(currentValue, annualRate, target, years) {
 // ===== FIRE NUMBER CALCULATION =====
 function handleFireCalculate() {
   const profile = getProfile();
-  const annualExpenses = parseFloat(
-    document.getElementById("fire-annual-expenses").value,
+  const annualExpenses = safeParseFloat(
+    document.getElementById("fire-annual-expenses").value, 0
   );
   const withdrawalRate =
-    parseFloat(document.getElementById("fire-withdrawal-rate").value) / 100;
+    safeParseFloat(document.getElementById("fire-withdrawal-rate").value, 0) / 100;
   const otherIncomeRaw =
-    parseFloat(document.getElementById("fire-other-income").value) || 0;
+    safeParseFloat(document.getElementById("fire-other-income").value, 0);
   const incomeType = document.getElementById("fire-income-type").value;
   let otherIncome = otherIncomeRaw;
 
   if (incomeType === "fv") {
     const startAge =
-      parseFloat(document.getElementById("fire-income-start-age").value) || 0;
+      safeParseFloat(document.getElementById("fire-income-start-age").value, 0);
     const inflation =
-      (parseFloat(document.getElementById("fire-inflation").value) || 3) / 100;
+      (safeParseFloat(document.getElementById("fire-inflation").value, 3)) / 100;
     const years = startAge - profile.currentAge;
     if (years > 0) {
       otherIncome = otherIncomeRaw / Math.pow(1 + inflation, years);
     }
   }
   // Validate
-  if (!profile.currentAge || !profile.retireAge) {
-    alert(
-      "Please fill in your current age and target retirement age in the Profile section.",
-    );
-    return;
-  }
-
-  if (!annualExpenses || !withdrawalRate) {
-    alert("Please enter your annual expenses and withdrawal rate.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "fire-current-age",        label: "Current Age",          required: true, min: 18,  max: 100, integer: true },
+    { id: "fire-retire-age",         label: "Retirement Age",       required: true, min: 19,  max: 100, integer: true },
+    { id: "fire-life-expectancy",    label: "Life Expectancy",      required: true, min: 20,  max: 120, integer: true },
+    { id: "fire-annual-return",      label: "Annual Return",        required: true, min: 0,   max: 50  },
+    { id: "fire-inflation",          label: "Inflation Rate",       required: true, min: 0,   max: 20  },
+    { id: "fire-annual-expenses",    label: "Annual Expenses",      required: true, min: 1            },
+    { id: "fire-withdrawal-rate",    label: "Withdrawal Rate",      required: true, min: 0.1, max: 20  },
+  ], ".calc-form");
+  if (!valid) return;
 
   if (profile.retireAge <= profile.currentAge) {
-    alert("Target retirement age must be greater than current age.");
+    showFieldError("fire-retire-age", "Retirement age must be greater than current age.");
+    return;
+  }
+  if (profile.lifeExpectancy <= profile.retireAge) {
+    showFieldError("fire-life-expectancy", "Life expectancy must be greater than retirement age.");
     return;
   }
 
   const yearsToRetire = profile.retireAge - profile.currentAge;
 
+  // Gross FIRE number always based on full expenses
+  const fireNumberToday = annualExpenses / withdrawalRate;
+
   // Portfolio must cover = expenses minus other income
   const portfolioMustCover = Math.max(0, annualExpenses - otherIncome);
+  const fireNumberAdjusted = portfolioMustCover / withdrawalRate;
 
-  // FIRE number in today's dollars
-  const fireNumberToday = portfolioMustCover / withdrawalRate;
-
-  // FIRE number in future dollars (inflation adjusted)
+  // FIRE number in future dollars (inflation adjusted) — gross, for display
   const fireNumberFuture =
     fireNumberToday * Math.pow(1 + profile.inflation, yearsToRetire);
 
-  // Store for Coast FIRE tab
+  // Adjusted future number — what portfolio actually needs to cover
+  const fireNumberAdjustedFuture =
+    fireNumberAdjusted * Math.pow(1 + profile.inflation, yearsToRetire);
+
+  // Store for Coast FIRE tab (use gross number)
   calculatedFireNumber = fireNumberToday;
   calculatedFireNumberFuture = fireNumberFuture;
 
-  // Auto-fill coast fire input
+  // Auto-fill coast fire input (use gross number)
   const coastInput = document.getElementById("coast-fire-number");
   coastInput.value = Math.round(fireNumberFuture);
 
-  // Years to FIRE at current rate (using real return)
-  const realReturn = (1 + profile.annualReturn) / (1 + profile.inflation) - 1;
+  // Years to FIRE at current rate — based on adjusted target
   const yearsAtCurrentRate = yearsToTarget(
     profile.portfolio,
     profile.monthlyContribution,
     profile.annualReturn,
-    fireNumberFuture,
+    fireNumberAdjustedFuture,
   );
 
   const retireAgeAtCurrentRate = profile.currentAge + yearsAtCurrentRate;
 
-  // Monthly needed to hit target by retirement age
+  // Monthly needed to hit adjusted target by retirement age
   const monthlyNeededAmount = monthlyNeeded(
     profile.portfolio,
     profile.annualReturn,
-    fireNumberFuture,
+    fireNumberAdjustedFuture,
     yearsToRetire,
   );
 
@@ -9224,7 +9908,7 @@ function handleFireCalculate() {
   updateProgressBars(profile, fireNumberFuture);
 
   // Sensitivity table
-  displayFireSensitivity(portfolioMustCover, profile, yearsToRetire);
+  displayFireSensitivity(annualExpenses, otherIncome, profile, yearsToRetire, profile.lifeExpectancy);
 
   // Show results
   document.getElementById("fire-number-results").classList.remove("hidden");
@@ -9232,6 +9916,7 @@ function handleFireCalculate() {
     .getElementById("fire-sensitivity-section")
     .classList.remove("hidden");
   document.getElementById("fire-chart-section").classList.remove("hidden");
+  document.getElementById("fire-lifecycle-section").classList.remove("hidden");
   document.getElementById("fire-progress-section").classList.remove("hidden");
 
   // Compute Coast FIRE number for chart overlay
@@ -9241,6 +9926,15 @@ function handleFireCalculate() {
   // Projection chart
   displayFireChart(profile, fireNumberFuture, yearsToRetire, coastFireForChart);
 
+  // Lifecycle chart
+  const retirementPortfolio = futureValue(
+    profile.portfolio,
+    profile.monthlyContribution,
+    profile.annualReturn,
+    yearsToRetire,
+  );
+  displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireNumberFuture);
+
   document
     .getElementById("fire-number-results")
     .scrollIntoView({ behavior: "smooth" });
@@ -9249,27 +9943,21 @@ function handleFireCalculate() {
 // ===== COAST FIRE CALCULATION =====
 function handleCoastCalculate() {
   const profile = getProfile();
-  const fireTarget = parseFloat(
-    document.getElementById("coast-fire-number").value,
-  );
+  const fireTarget = safeParseFloat(
+    document.getElementById("coast-fire-number").value
+    );
 
   // Validate
-  if (!profile.currentAge || !profile.retireAge) {
-    alert(
-      "Please fill in your current age and target retirement age in the Profile section.",
-    );
-    return;
-  }
-
-  if (!fireTarget || fireTarget <= 0) {
-    alert(
-      "Please enter a FIRE number target. Calculate your FIRE Number first, or enter one manually.",
-    );
-    return;
-  }
+  const valid = validateInputs([
+    { id: "fire-current-age",     label: "Current Age",      required: true, min: 18, max: 100, integer: true },
+    { id: "fire-retire-age",      label: "Retirement Age",   required: true, min: 19, max: 100, integer: true },
+    { id: "fire-annual-return",   label: "Annual Return",    required: true, min: 0,  max: 50  },
+    { id: "coast-fire-number",    label: "FIRE Number",      required: true, min: 1            },
+  ], "#coast-fire-tab");
+  if (!valid) return;
 
   if (profile.retireAge <= profile.currentAge) {
-    alert("Target retirement age must be greater than current age.");
+    showFieldError("fire-retire-age", "Retirement age must be greater than current age.");
     return;
   }
 
@@ -9481,13 +10169,13 @@ function updateProgressBars(profile, fireTarget, coastTarget) {
 }
 
 // ===== FIRE SENSITIVITY TABLE =====
-function displayFireSensitivity(portfolioMustCover, profile, yearsToRetire) {
+function displayFireSensitivity(annualExpenses, otherIncome, profile, yearsToRetire, lifeExpectancy) {
   const tbody = document.getElementById("fire-sensitivity-body");
   tbody.innerHTML = "";
 
   const rates = [3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 5, 5.5, 6];
-  const currentRate = parseFloat(
-    document.getElementById("fire-withdrawal-rate").value,
+  const currentRate = safeParseFloat(
+    document.getElementById("fire-withdrawal-rate").value
   );
 
   function getRiskLabel(rate) {
@@ -9498,30 +10186,393 @@ function displayFireSensitivity(portfolioMustCover, profile, yearsToRetire) {
   }
 
   rates.forEach((rate) => {
-    const fireNum = portfolioMustCover / (rate / 100);
-    const fireNumFuture =
-      fireNum * Math.pow(1 + profile.inflation, yearsToRetire);
-    const monthlyWithdrawal = (fireNumFuture * (rate / 100)) / 12;
+    const r = rate / 100;
+
+    // Gross FIRE number (full expenses, today's dollars)
+    const fireNumToday = annualExpenses / r;
+    const fireNumFuture = fireNumToday * Math.pow(1 + profile.inflation, yearsToRetire);
+
+    // Adjusted FIRE number (what portfolio must cover after other income)
+    const portfolioMustCover = Math.max(0, annualExpenses - otherIncome);
+    const adjFireNumToday = portfolioMustCover / r;
+    const adjFireNumFuture = adjFireNumToday * Math.pow(1 + profile.inflation, yearsToRetire);
+
+    // Monthly withdrawal from portfolio (today's dollars)
+    const monthlyWithdrawal = portfolioMustCover / 12;
+
+    // Years to reach adjusted target
     const years = yearsToTarget(
       profile.portfolio,
       profile.monthlyContribution,
       profile.annualReturn,
-      fireNumFuture,
+      adjFireNumFuture,
     );
 
     const risk = getRiskLabel(rate);
     const tr = document.createElement("tr");
     const isActive = Math.abs(rate - currentRate) < 0.01;
 
+    const retirementPortfolio = futureValue(
+      profile.portfolio,
+      profile.monthlyContribution,
+      profile.annualReturn,
+      yearsToRetire,
+    );
+    const rateWithdrawal = retirementPortfolio * r;
+    const drawdown = buildDrawdownData(
+      retirementPortfolio,
+      rateWithdrawal,
+      otherIncome,
+      profile.annualReturn,
+      profile.inflation,
+      profile.retireAge,
+      lifeExpectancy || 90,
+    );
+    const lastPoint = drawdown[drawdown.length - 1];
+    const portfolioAtDeath = lastPoint ? lastPoint.portfolio : 0;
+    const ranOut = drawdown.find((d) => d.ranOut);
+
     tr.innerHTML = `
       <td style="${isActive ? "color: var(--accent); font-weight: 700;" : ""}">${rate}%</td>
       <td>${formatCurrency(fireNumFuture)}</td>
       <td>${formatCurrency(monthlyWithdrawal)}</td>
       <td style="color: ${years <= yearsToRetire ? "var(--accent)" : "#f472b6"}">${years === Infinity ? "Not reachable" : years.toFixed(1) + " yrs"}</td>
+      <td style="color: ${portfolioAtDeath > 0 ? "var(--accent)" : "#f472b6"}">${ranOut ? "💀 Age " + ranOut.age : formatCurrency(portfolioAtDeath)}</td>
       <td style="color: ${risk.color}">${risk.label}</td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+
+// ===== DRAWDOWN SIMULATION =====
+function buildDrawdownData(startPortfolio, annualExpenses, otherIncome, annualReturn, inflation, retireAge, lifeExpectancy) {
+  const data = [];
+  let portfolio = startPortfolio;
+  const retirementYears = lifeExpectancy - retireAge;
+
+  for (let year = 0; year <= retirementYears; year++) {
+    const age = retireAge + year;
+    const inflationFactor = Math.pow(1 + inflation, year);
+    const expenses = annualExpenses * inflationFactor;
+    const income = otherIncome * inflationFactor;
+    const netWithdrawal = Math.max(0, expenses - income);
+
+    if (year > 0) {
+      portfolio = portfolio * (1 + annualReturn) - netWithdrawal;
+    }
+
+    const ranOut = portfolio <= 0;
+    if (ranOut) portfolio = 0;
+
+    data.push({
+      year,
+      age,
+      portfolio,
+      withdrawal: netWithdrawal,
+      ranOut: ranOut && year > 0,
+    });
+
+    if (ranOut && year > 0) break;
+  }
+
+  return data;
+}
+
+// ===== RETIREMENT LIFECYCLE CHART =====
+function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireTarget) {
+  const canvas = document.getElementById("fire-lifecycle-canvas");
+  if (!canvas) return;
+
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() => displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireTarget));
+    return;
+  }
+
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 40, right: 30, bottom: 50, left: 70 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+
+  const yearsToRetire = profile.retireAge - profile.currentAge;
+  const retirementYears = profile.lifeExpectancy - profile.retireAge;
+  const totalYears = yearsToRetire + retirementYears;
+
+  // Accumulation data
+  const accumData = [];
+  for (let year = 0; year <= yearsToRetire; year++) {
+    accumData.push({
+      year,
+      age: profile.currentAge + year,
+      portfolio: futureValue(profile.portfolio, profile.monthlyContribution, profile.annualReturn, year),
+    });
+  }
+
+  // Drawdown scenarios
+  const scenarios = [
+    { rate: 0.03, color: "#22c55e", label: "3%" },
+    { rate: 0.04, color: "#a78bfa", label: "4%" },
+    { rate: 0.05, color: "#f59e0b", label: "5%" },
+    { rate: 0.06, color: "#f472b6", label: "6%" },
+  ];
+
+  scenarios.forEach((s) => {
+    const yearlyWithdrawal = retirementPortfolio * s.rate;
+    const adjustedExpenses = Math.max(yearlyWithdrawal, annualExpenses);
+    s.data = buildDrawdownData(
+      retirementPortfolio,
+      adjustedExpenses,
+      otherIncome,
+      profile.annualReturn,
+      profile.inflation,
+      profile.retireAge,
+      profile.lifeExpectancy,
+    );
+  });
+
+  const maxPortfolio = Math.max(...accumData.map((d) => d.portfolio),...scenarios.flatMap((s) => s.data.map((d) => d.portfolio)),
+    fireTarget * 1.1,
+  );
+
+  function toX(age) {
+    return padding.left + ((age - profile.currentAge) / totalYears) * chartWidth;
+  }
+
+  function toY(value) {
+    return padding.top + chartHeight - (value / maxPortfolio) * chartHeight;
+  }
+
+  function fromX(x) {
+    return profile.currentAge + ((x - padding.left) / chartWidth) * totalYears;
+  }
+
+  function drawChart(highlightAge) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+
+    // Y-axis grid
+    const ySteps = 5;
+    for (let i = 0; i <= ySteps; i++) {
+      const value = (maxPortfolio / ySteps) * i;
+      const y = toY(value);
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padding.left, y);
+      ctx.lineTo(chart.width - padding.right, y);
+      ctx.stroke();
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "11px sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(formatCurrency(value), padding.left - 8, y + 4);
+    }
+
+    // X-axis labels
+    ctx.textAlign = "center";
+    const xStep = Math.ceil(totalYears / 10);
+    for (let yr = 0; yr <= totalYears; yr += xStep) {
+      const age = profile.currentAge + yr;
+      const x = toX(age);
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "10px sans-serif";
+      ctx.fillText(`${age}`, x, chart.height - padding.bottom + 16);
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, padding.top);
+      ctx.lineTo(x, padding.top + chartHeight);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Age", chart.width / 2, chart.height - 5);
+
+    // Retirement line
+    const retireX = toX(profile.retireAge);
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(retireX, padding.top);
+    ctx.lineTo(retireX, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("You retire here", retireX, padding.top - 10);
+
+    // Drawdown fills (back to front so 3% is on top)
+    [...scenarios].reverse().forEach((s) => {
+      ctx.beginPath();
+      ctx.moveTo(toX(profile.retireAge), toY(retirementPortfolio));
+      s.data.forEach((d) => {
+        ctx.lineTo(toX(d.age), toY(d.portfolio));
+      });
+      const lastD = s.data[s.data.length - 1];
+      ctx.lineTo(toX(lastD.age), toY(0));
+      ctx.lineTo(toX(profile.retireAge), toY(0));
+      ctx.closePath();
+      ctx.fillStyle = s.color + "55";
+      ctx.fill();
+    });
+
+    // Drawdown lines
+    scenarios.forEach((s) => {
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      s.data.forEach((d, i) => {
+        const x = toX(d.age);
+        const y = toY(d.portfolio);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+
+    // Accumulation fill
+    ctx.beginPath();
+    ctx.moveTo(toX(profile.currentAge), toY(0));
+    accumData.forEach((d) => ctx.lineTo(toX(d.age), toY(d.portfolio)));
+    ctx.lineTo(toX(profile.retireAge), toY(0));
+    ctx.closePath();
+    ctx.fillStyle = "rgba(45, 212, 191, 0.15)";
+    ctx.fill();
+
+    // Accumulation line
+    ctx.strokeStyle = "#2dd4bf";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    accumData.forEach((d, i) => {
+      if (i === 0) ctx.moveTo(toX(d.age), toY(d.portfolio));
+      else ctx.lineTo(toX(d.age), toY(d.portfolio));
+    });
+    ctx.stroke();
+
+    // FIRE target line
+    ctx.strokeStyle = "#ef4444";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 3]);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, toY(fireTarget));
+    ctx.lineTo(chart.width - padding.right, toY(fireTarget));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#ef4444";
+    ctx.font = "10px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(`FIRE: ${formatCurrency(fireTarget)}`, padding.left + 4, toY(fireTarget) - 6);
+
+    // Crosshair
+    if (highlightAge !== null) {
+      const hx = toX(highlightAge);
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(hx, padding.top);
+      ctx.lineTo(hx, padding.top + chartHeight);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const tooltipLines = [`Age ${Math.round(highlightAge)}`];
+
+      if (highlightAge <= profile.retireAge) {
+        const idx = Math.min(Math.round(highlightAge - profile.currentAge), accumData.length - 1);
+        if (idx >= 0) {
+          const d = accumData[idx];
+          const hy = toY(d.portfolio);
+          ctx.beginPath();
+          ctx.arc(hx, hy, 5, 0, Math.PI * 2);
+          ctx.fillStyle = "#2dd4bf";
+          ctx.fill();
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          tooltipLines.push(`Portfolio: ${formatCurrency(d.portfolio)}`);
+          tooltipLines.push(`Gap to FIRE: ${formatCurrency(fireTarget - d.portfolio)}`);
+        }
+      } else {
+        scenarios.forEach((s) => {
+          const idx = Math.round(highlightAge - profile.retireAge);
+          if (idx < s.data.length) {
+            const d = s.data[idx];
+            const hy = toY(d.portfolio);
+            ctx.beginPath();
+            ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+            ctx.fillStyle = s.color;
+            ctx.fill();
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            tooltipLines.push(`${s.label}: ${d.ranOut ? "💀 Ran out" : formatCurrency(d.portfolio)}`);
+          }
+        });
+      }
+
+      ctx.font = "12px sans-serif";
+      const tooltipWidth = Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
+      const tooltipHeight = tooltipLines.length * 20 + 16;
+      let tx = hx + 15;
+      let ty = padding.top + 10;
+      if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
+      if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
+
+      ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+      ctx.lineWidth = 1;
+      const r = 6;
+      ctx.beginPath();
+      ctx.moveTo(tx + r, ty);
+      ctx.lineTo(tx + tooltipWidth - r, ty);
+      ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
+      ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
+      ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
+      ctx.lineTo(tx + r, ty + tooltipHeight);
+      ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
+      ctx.lineTo(tx, ty + r);
+      ctx.arcTo(tx, ty, tx + r, ty, r);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = "left";
+      tooltipLines.forEach((line, li) => {
+        ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
+        ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
+        ctx.fillText(line, tx + 12, ty + 18 + li * 20);
+      });
+    }
+  }
+
+  drawChart(null);
+
+  if (canvas._lifecycleController) canvas._lifecycleController.abort();
+  canvas._lifecycleController = new AbortController();
+  const { signal } = canvas._lifecycleController;
+
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = chart.width / r.width;
+    const age = fromX((e.clientX - r.left) * scaleX);
+    if (age >= profile.currentAge && age <= profile.lifeExpectancy) {
+      canvas.style.cursor = "crosshair";
+      drawChart(age);
+    } else {
+      canvas.style.cursor = "default";
+      drawChart(null);
+    }
+  }), { signal });
+
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
+    drawChart(null);
+  }, { signal });
 }
 
 // ===== FIRE PROJECTION CHART (Canvas) =====
@@ -9546,7 +10597,8 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
   const totalYears = Math.max(yearsToRetire + 10, 40);
   const dataPoints = [];
 
-  for (let year = 0; year <= totalYears; year++) {
+  // Accumulation phase — with contributions up to retirement
+  for (let year = 0; year <= yearsToRetire; year++) {
     const value = futureValue(
       profile.portfolio,
       profile.monthlyContribution,
@@ -9554,9 +10606,28 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       year,
     );
     dataPoints.push({
-      year: year,
+      year,
       age: profile.currentAge + year,
-      value: value,
+      value,
+      retired: false,
+    });
+  }
+
+  // Post-retirement phase — no contributions, portfolio grows then draws down
+  const retirementPortfolioValue = dataPoints[yearsToRetire].value;
+  const annualWithdrawal = retirementPortfolioValue * (
+    safeParseFloat(document.getElementById("fire-withdrawal-rate").value, 4) / 100
+  );
+  let postRetirementValue = retirementPortfolioValue;
+
+  for (let year = 1; year <= totalYears - yearsToRetire; year++) {
+    postRetirementValue = postRetirementValue * (1 + profile.annualReturn) - annualWithdrawal;
+    if (postRetirementValue < 0) postRetirementValue = 0;
+    dataPoints.push({
+      year: yearsToRetire + year,
+      age: profile.currentAge + yearsToRetire + year,
+      value: postRetirementValue,
+      retired: true,
     });
   }
 
@@ -9577,62 +10648,68 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     return ((x - padding.left) / chartWidth) * totalYears;
   }
 
-  function drawChart(highlightYear) {
-    ctx.clearRect(0, 0, chart.width, chart.height);
+  // ── Offscreen static layer ──
+  const offscreen = document.createElement("canvas");
+  offscreen.width = chart.width;
+  offscreen.height = chart.height;
+  const offCtx = offscreen.getContext("2d");
+
+  function drawStatic() {
+    offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
 
     // Grid
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-    ctx.lineWidth = 1;
+    offCtx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+    offCtx.lineWidth = 1;
 
     const ySteps = 5;
     for (let i = 0; i <= ySteps; i++) {
       const value = (maxValue / ySteps) * i;
       const y = toY(value);
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(chart.width - padding.right, y);
-      ctx.stroke();
+      offCtx.beginPath();
+      offCtx.moveTo(padding.left, y);
+      offCtx.lineTo(offscreen.width - padding.right, y);
+      offCtx.stroke();
 
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.font = "11px sans-serif";
+      offCtx.textAlign = "right";
+      offCtx.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
 
     // X-axis labels
-    ctx.textAlign = "center";
+    offCtx.textAlign = "center";
     const xStep = Math.ceil(totalYears / 10);
     for (let year = 0; year <= totalYears; year += xStep) {
       const x = toX(year);
       const age = profile.currentAge + year;
-      ctx.fillStyle = "#94a3b8";
-      ctx.fillText(`${age}`, x, chart.height - padding.bottom + 20);
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.fillText(`${age}`, x, chart.height - padding.bottom + 20);
 
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
-      ctx.beginPath();
-      ctx.moveTo(x, padding.top);
-      ctx.lineTo(x, padding.top + chartHeight);
-      ctx.stroke();
+      offCtx.strokeStyle = "rgba(148, 163, 184, 0.1)";
+      offCtx.beginPath();
+      offCtx.moveTo(x, padding.top);
+      offCtx.lineTo(x, padding.top + chartHeight);
+      offCtx.stroke();
     }
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
-    ctx.fillText("Age", chart.width / 2, chart.height - 5);
+    offCtx.fillStyle = "#94a3b8";
+    offCtx.font = "12px sans-serif";
+    offCtx.fillText("Age", chart.width / 2, chart.height - 5);
 
     // FIRE target line
-    ctx.strokeStyle = "#ef4444";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([8, 4]);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, toY(fireTarget));
-    ctx.lineTo(chart.width - padding.right, toY(fireTarget));
-    ctx.stroke();
-    ctx.setLineDash([]);
+    offCtx.strokeStyle = "#ef4444";
+    offCtx.lineWidth = 2;
+    offCtx.setLineDash([8, 4]);
+    offCtx.beginPath();
+    offCtx.moveTo(padding.left, toY(fireTarget));
+    offCtx.lineTo(offscreen.width - padding.right, toY(fireTarget));
+    offCtx.stroke();
+    offCtx.setLineDash([]);
 
-    ctx.fillStyle = "#ef4444";
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText(
+    offCtx.fillStyle = "#ef4444";
+    offCtx.font = "11px sans-serif";
+    offCtx.textAlign = "left";
+    offCtx.fillText(
       `FIRE: ${formatCurrency(fireTarget)}`,
       padding.left + 5,
       toY(fireTarget) - 8,
@@ -9640,11 +10717,10 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
 
     // Coast FIRE threshold curve
     if (coastFireNumber) {
-      // Draw the coast threshold as a declining curve
-      ctx.strokeStyle = "#f59e0b";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 3]);
-      ctx.beginPath();
+      offCtx.strokeStyle = "#f59e0b";
+      offCtx.lineWidth = 2;
+      offCtx.setLineDash([6, 3]);
+      offCtx.beginPath();
       for (let year = 0; year <= totalYears; year++) {
         const remainingYears = profile.retireAge - profile.currentAge - year;
         if (remainingYears <= 0) break;
@@ -9652,23 +10728,21 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
           fireTarget / Math.pow(1 + profile.annualReturn, remainingYears);
         const x = toX(year);
         const y = toY(threshold);
-        if (year === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        if (year === 0) offCtx.moveTo(x, y);
+        else offCtx.lineTo(x, y);
       }
-      ctx.stroke();
-      ctx.setLineDash([]);
+      offCtx.stroke();
+      offCtx.setLineDash([]);
 
-      // Label
-      ctx.fillStyle = "#f59e0b";
-      ctx.font = "11px sans-serif";
-      ctx.textAlign = "left";
-      ctx.fillText(
+      offCtx.fillStyle = "#f59e0b";
+      offCtx.font = "11px sans-serif";
+      offCtx.textAlign = "left";
+      offCtx.fillText(
         `Coast: ${formatCurrency(coastFireNumber)}`,
         padding.left + 5,
         toY(coastFireNumber) - 8,
       );
 
-      // Find and mark the Coast FIRE crossing point
       const coastCrossing = dataPoints.find((d) => {
         const remainingYears = profile.retireAge - d.age;
         if (remainingYears <= 0) return false;
@@ -9684,54 +10758,76 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
         const cx = toX(coastCrossing.year);
         const cy = toY(threshold);
 
-        ctx.beginPath();
-        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-        ctx.fillStyle = "#f59e0b";
-        ctx.fill();
-        ctx.strokeStyle = "#0f172a";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        offCtx.beginPath();
+        offCtx.arc(cx, cy, 6, 0, Math.PI * 2);
+        offCtx.fillStyle = "#f59e0b";
+        offCtx.fill();
+        offCtx.strokeStyle = "#0f172a";
+        offCtx.lineWidth = 2;
+        offCtx.stroke();
 
-        ctx.fillStyle = "#f59e0b";
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(`Coast Age ${coastCrossing.age}`, cx, cy - 12);
+        offCtx.fillStyle = "#f59e0b";
+        offCtx.font = "bold 11px sans-serif";
+        offCtx.textAlign = "center";
+        offCtx.fillText(`Coast Age ${coastCrossing.age}`, cx, cy - 12);
       }
     }
 
     // Retirement age line
     const retireX = toX(yearsToRetire);
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(retireX, padding.top);
-    ctx.lineTo(retireX, padding.top + chartHeight);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    offCtx.strokeStyle = "rgba(148, 163, 184, 0.4)";
+    offCtx.lineWidth = 1;
+    offCtx.setLineDash([4, 4]);
+    offCtx.beginPath();
+    offCtx.moveTo(retireX, padding.top);
+    offCtx.lineTo(retireX, padding.top + chartHeight);
+    offCtx.stroke();
+    offCtx.setLineDash([]);
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.textAlign = "center";
-    ctx.fillText(`Retire: ${profile.retireAge}`, retireX, padding.top - 10);
+    offCtx.fillStyle = "#94a3b8";
+    offCtx.textAlign = "center";
+    offCtx.fillText(`Retire: ${profile.retireAge}`, retireX, padding.top - 10);
 
-    // Portfolio line
-    ctx.strokeStyle = "#2dd4bf";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    dataPoints.forEach((point, i) => {
+    // Accumulation line
+    const accumPoints = dataPoints.filter((d) => !d.retired);
+    const retirePoints = dataPoints.filter((d) => d.retired);
+
+    offCtx.strokeStyle = "#2dd4bf";
+    offCtx.lineWidth = 3;
+    offCtx.beginPath();
+    accumPoints.forEach((point, i) => {
       const x = toX(point.year);
       const y = toY(point.value);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      if (i === 0) offCtx.moveTo(x, y);
+      else offCtx.lineTo(x, y);
     });
-    ctx.stroke();
+    offCtx.stroke();
 
-    // Fill under curve
-    ctx.lineTo(toX(totalYears), toY(0));
-    ctx.lineTo(toX(0), toY(0));
-    ctx.closePath();
-    ctx.fillStyle = "rgba(45, 212, 191, 0.1)";
-    ctx.fill();
+    // Fill under accumulation
+    offCtx.lineTo(toX(yearsToRetire), toY(0));
+    offCtx.lineTo(toX(0), toY(0));
+    offCtx.closePath();
+    offCtx.fillStyle = "rgba(45, 212, 191, 0.1)";
+    offCtx.fill();
+
+    // Post-retirement drawdown line
+    if (retirePoints.length > 0) {
+      offCtx.strokeStyle = "#f59e0b";
+      offCtx.lineWidth = 3;
+      offCtx.beginPath();
+      offCtx.moveTo(toX(yearsToRetire), toY(retirementPortfolioValue));
+      retirePoints.forEach((point) => {
+        offCtx.lineTo(toX(point.year), toY(point.value));
+      });
+      offCtx.stroke();
+
+      const lastRetire = retirePoints[retirePoints.length - 1];
+      offCtx.lineTo(toX(lastRetire.year), toY(0));
+      offCtx.lineTo(toX(yearsToRetire), toY(0));
+      offCtx.closePath();
+      offCtx.fillStyle = "rgba(245, 158, 11, 0.1)";
+      offCtx.fill();
+    }
 
     // FIRE crossing point
     const crossingPoint = dataPoints.find((d) => d.value >= fireTarget);
@@ -9739,19 +10835,26 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       const cx = toX(crossingPoint.year);
       const cy = toY(crossingPoint.value);
 
-      ctx.beginPath();
-      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-      ctx.fillStyle = "#2dd4bf";
-      ctx.fill();
-      ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      offCtx.beginPath();
+      offCtx.arc(cx, cy, 6, 0, Math.PI * 2);
+      offCtx.fillStyle = "#2dd4bf";
+      offCtx.fill();
+      offCtx.strokeStyle = "#0f172a";
+      offCtx.lineWidth = 2;
+      offCtx.stroke();
 
-      ctx.fillStyle = "#2dd4bf";
-      ctx.font = "bold 11px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(`Age ${crossingPoint.age}`, cx, cy - 12);
+      offCtx.fillStyle = "#2dd4bf";
+      offCtx.font = "bold 11px sans-serif";
+      offCtx.textAlign = "center";
+      offCtx.fillText(`Age ${crossingPoint.age}`, cx, cy - 12);
     }
+  }
+
+  drawStatic();
+
+  function drawChart(highlightYear) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+    ctx.drawImage(offscreen, 0, 0);
 
     // Hover crosshair and tooltip
     if (
@@ -9871,7 +10974,11 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
   drawChart(null);
 
   // Mouse interaction
-  canvas.addEventListener("mousemove", (e) => {
+  if (canvas._fireController) canvas._fireController.abort();
+  canvas._fireController = new AbortController();
+  const { signal: fireSignal } = canvas._fireController;
+
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const year = fromX(mouseX);
@@ -9883,12 +10990,12 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       canvas.style.cursor = "default";
       drawChart(null);
     }
-  });
+  }), { signal: fireSignal });
 
   canvas.addEventListener("mouseleave", () => {
     canvas.style.cursor = "default";
     drawChart(null);
-  });
+  }, { signal: fireSignal });
 }
 
 // ===== COAST FIRE CHART (Canvas) =====
@@ -9965,162 +11072,155 @@ function displayCoastChart(
     return ((x - padding.left) / chartWidth) * totalYears;
   }
 
-  function drawChart(highlightYear) {
-    ctx.clearRect(0, 0, chart.width, chart.height);
-    // Grid
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-    ctx.lineWidth = 1;
+  // ── Offscreen static layer ──
+  const offscreenCoast = document.createElement("canvas");
+  offscreenCoast.width = chart.width;
+  offscreenCoast.height = chart.height;
+  const offCtxCoast = offscreenCoast.getContext("2d");
 
+  function drawStaticCoast() {
+    offCtxCoast.clearRect(0, 0, offscreenCoast.width, offscreenCoast.height);
+
+    // Grid
+    offCtxCoast.strokeStyle = "rgba(148, 163, 184, 0.15)";
+    offCtxCoast.lineWidth = 1;
     const ySteps = 5;
     for (let i = 0; i <= ySteps; i++) {
       const value = (maxValue / ySteps) * i;
       const y = toY(value);
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(chart.width - padding.right, y);
-      ctx.stroke();
-
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
+      offCtxCoast.beginPath();
+      offCtxCoast.moveTo(padding.left, y);
+      offCtxCoast.lineTo(offscreenCoast.width - padding.right, y);
+      offCtxCoast.stroke();
+      offCtxCoast.fillStyle = "#94a3b8";
+      offCtxCoast.font = "11px sans-serif";
+      offCtxCoast.textAlign = "right";
+      offCtxCoast.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
 
     // X-axis
-    ctx.textAlign = "center";
+    offCtxCoast.textAlign = "center";
     const xStep = Math.ceil(totalYears / 10);
     for (let year = 0; year <= totalYears; year += xStep) {
       const x = toX(year);
       const age = profile.currentAge + year;
-      ctx.fillStyle = "#94a3b8";
-      ctx.fillText(`${age}`, x, chart.height - padding.bottom + 20);
+      offCtxCoast.fillStyle = "#94a3b8";
+      offCtxCoast.fillText(`${age}`, x, chart.height - padding.bottom + 20);
     }
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
-    ctx.fillText("Age", chart.width / 2, chart.height - 5);
+    offCtxCoast.fillStyle = "#94a3b8";
+    offCtxCoast.font = "12px sans-serif";
+    offCtxCoast.fillText("Age", chart.width / 2, chart.height - 5);
 
     // FIRE target line
-    ctx.strokeStyle = "#ef4444";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([8, 4]);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, toY(fireTarget));
-    ctx.lineTo(chart.width - padding.right, toY(fireTarget));
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "#ef4444";
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText(
-      `FIRE: ${formatCurrency(fireTarget)}`,
-      padding.left + 5,
-      toY(fireTarget) - 8,
-    );
+    offCtxCoast.strokeStyle = "#ef4444";
+    offCtxCoast.lineWidth = 2;
+    offCtxCoast.setLineDash([8, 4]);
+    offCtxCoast.beginPath();
+    offCtxCoast.moveTo(padding.left, toY(fireTarget));
+    offCtxCoast.lineTo(offscreenCoast.width - padding.right, toY(fireTarget));
+    offCtxCoast.stroke();
+    offCtxCoast.setLineDash([]);
+    offCtxCoast.fillStyle = "#ef4444";
+    offCtxCoast.font = "11px sans-serif";
+    offCtxCoast.textAlign = "left";
+    offCtxCoast.fillText(`FIRE: ${formatCurrency(fireTarget)}`, padding.left + 5, toY(fireTarget) - 8);
 
     // Retirement age line
     const retireX = toX(yearsToRetire);
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(retireX, padding.top);
-    ctx.lineTo(retireX, padding.top + chartHeight);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.textAlign = "center";
-    ctx.fillText(`Retire: ${profile.retireAge}`, retireX, padding.top - 10);
+    offCtxCoast.strokeStyle = "rgba(148, 163, 184, 0.4)";
+    offCtxCoast.lineWidth = 1;
+    offCtxCoast.setLineDash([4, 4]);
+    offCtxCoast.beginPath();
+    offCtxCoast.moveTo(retireX, padding.top);
+    offCtxCoast.lineTo(retireX, padding.top + chartHeight);
+    offCtxCoast.stroke();
+    offCtxCoast.setLineDash([]);
+    offCtxCoast.fillStyle = "#94a3b8";
+    offCtxCoast.textAlign = "center";
+    offCtxCoast.fillText(`Retire: ${profile.retireAge}`, retireX, padding.top - 10);
 
     // Coast threshold curve
-    ctx.strokeStyle = "#f59e0b";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 3]);
-    ctx.beginPath();
+    offCtxCoast.strokeStyle = "#f59e0b";
+    offCtxCoast.lineWidth = 2;
+    offCtxCoast.setLineDash([6, 3]);
+    offCtxCoast.beginPath();
     coastData.forEach((point, i) => {
       const x = toX(point.year);
       const y = toY(point.value);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      if (i === 0) offCtxCoast.moveTo(x, y);
+      else offCtxCoast.lineTo(x, y);
     });
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "#f59e0b";
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText("Coast Threshold", toX(0) + 5, toY(coastData[0].value) - 8);
+    offCtxCoast.stroke();
+    offCtxCoast.setLineDash([]);
+    offCtxCoast.fillStyle = "#f59e0b";
+    offCtxCoast.font = "11px sans-serif";
+    offCtxCoast.textAlign = "left";
+    offCtxCoast.fillText("Coast Threshold", toX(0) + 5, toY(coastData[0].value) - 8);
 
     // Portfolio line
-    ctx.strokeStyle = "#2dd4bf";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
+    offCtxCoast.strokeStyle = "#2dd4bf";
+    offCtxCoast.lineWidth = 3;
+    offCtxCoast.beginPath();
     portfolioData.forEach((point, i) => {
       const x = toX(point.year);
       const y = toY(point.value);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      if (i === 0) offCtxCoast.moveTo(x, y);
+      else offCtxCoast.lineTo(x, y);
     });
-    ctx.stroke();
-
-    // Fill under portfolio
-    ctx.lineTo(toX(totalYears), toY(0));
-    ctx.lineTo(toX(0), toY(0));
-    ctx.closePath();
-    ctx.fillStyle = "rgba(45, 212, 191, 0.1)";
-    ctx.fill();
+    offCtxCoast.stroke();
+    offCtxCoast.lineTo(toX(totalYears), toY(0));
+    offCtxCoast.lineTo(toX(0), toY(0));
+    offCtxCoast.closePath();
+    offCtxCoast.fillStyle = "rgba(45, 212, 191, 0.1)";
+    offCtxCoast.fill();
 
     // Coast crossing point
     for (let i = 1; i < portfolioData.length && i < coastData.length; i++) {
-      if (
-        portfolioData[i].value >= coastData[i].value &&
-        portfolioData[i - 1].value < coastData[i - 1].value
-      ) {
+      if (portfolioData[i].value >= coastData[i].value && portfolioData[i-1].value < coastData[i-1].value) {
         const cx = toX(portfolioData[i].year);
         const cy = toY(portfolioData[i].value);
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-        ctx.fillStyle = "#f59e0b";
-        ctx.fill();
-        ctx.strokeStyle = "#0f172a";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.fillStyle = "#f59e0b";
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(`Coast: Age ${portfolioData[i].age}`, cx, cy - 12);
+        offCtxCoast.beginPath();
+        offCtxCoast.arc(cx, cy, 6, 0, Math.PI * 2);
+        offCtxCoast.fillStyle = "#f59e0b";
+        offCtxCoast.fill();
+        offCtxCoast.strokeStyle = "#0f172a";
+        offCtxCoast.lineWidth = 2;
+        offCtxCoast.stroke();
+        offCtxCoast.fillStyle = "#f59e0b";
+        offCtxCoast.font = "bold 11px sans-serif";
+        offCtxCoast.textAlign = "center";
+        offCtxCoast.fillText(`Coast: Age ${portfolioData[i].age}`, cx, cy - 12);
         break;
       }
     }
 
     // FIRE crossing point
     for (let i = 1; i < portfolioData.length; i++) {
-      if (
-        portfolioData[i].value >= fireTarget &&
-        portfolioData[i - 1].value < fireTarget
-      ) {
+      if (portfolioData[i].value >= fireTarget && portfolioData[i-1].value < fireTarget) {
         const cx = toX(portfolioData[i].year);
         const cy = toY(portfolioData[i].value);
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-        ctx.fillStyle = "#2dd4bf";
-        ctx.fill();
-        ctx.strokeStyle = "#0f172a";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.fillStyle = "#2dd4bf";
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(`FIRE: Age ${portfolioData[i].age}`, cx, cy - 12);
+        offCtxCoast.beginPath();
+        offCtxCoast.arc(cx, cy, 6, 0, Math.PI * 2);
+        offCtxCoast.fillStyle = "#2dd4bf";
+        offCtxCoast.fill();
+        offCtxCoast.strokeStyle = "#0f172a";
+        offCtxCoast.lineWidth = 2;
+        offCtxCoast.stroke();
+        offCtxCoast.fillStyle = "#2dd4bf";
+        offCtxCoast.font = "bold 11px sans-serif";
+        offCtxCoast.textAlign = "center";
+        offCtxCoast.fillText(`FIRE: Age ${portfolioData[i].age}`, cx, cy - 12);
         break;
       }
     }
+  }
+
+  drawStaticCoast();
+
+  function drawChart(highlightYear) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+    ctx.drawImage(offscreenCoast, 0, 0);
 
     // Hover crosshair and tooltip
     if (
@@ -10273,7 +11373,11 @@ function displayCoastChart(
   drawChart(null);
 
   // Mouse interaction
-  canvas.addEventListener("mousemove", (e) => {
+  if (canvas._coastController) canvas._coastController.abort();
+  canvas._coastController = new AbortController();
+  const { signal: coastSignal } = canvas._coastController;
+
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const year = fromX(mouseX);
@@ -10285,12 +11389,12 @@ function displayCoastChart(
       canvas.style.cursor = "default";
       drawChart(null);
     }
-  });
+  }), { signal: coastSignal });
 
   canvas.addEventListener("mouseleave", () => {
     canvas.style.cursor = "default";
     drawChart(null);
-  });
+  }, { signal: coastSignal });
 }
 
 // ===================================================================
@@ -10327,13 +11431,13 @@ function updateIncomePVDisplay() {
   if (type !== "fv") return;
 
   const fv =
-    parseFloat(document.getElementById("fire-other-income").value) || 0;
+    safeParseFloat(document.getElementById("fire-other-income").value, 0);
   const startAge =
-    parseFloat(document.getElementById("fire-income-start-age").value) || 0;
+    safeParseFloat(document.getElementById("fire-income-start-age").value, 0);
   const currentAge =
-    parseFloat(document.getElementById("fire-current-age").value) || 0;
+    safeParseFloat(document.getElementById("fire-current-age").value, 0);
   const inflation =
-    (parseFloat(document.getElementById("fire-inflation").value) || 3) / 100;
+    (safeParseFloat(document.getElementById("fire-inflation").value, 3)) / 100;
 
   const display = document.getElementById("fire-income-pv-display");
 
@@ -10357,6 +11461,7 @@ const FIRE_STORAGE_KEY = "fire_inputs";
 const FIRE_FIELDS = [
   "fire-current-age",
   "fire-retire-age",
+  "fire-life-expectancy",
   "fire-current-portfolio",
   "fire-monthly-contribution",
   "fire-annual-return",
@@ -10505,17 +11610,18 @@ function addExtraRange() {
   const endMonth = document.getElementById("adv-range-end-month").value;
   const endYear = document.getElementById("adv-range-end-year").value;
   const ongoing = document.getElementById("adv-range-ongoing").checked;
-  const amount = parseFloat(document.getElementById("adv-range-amount").value);
+  const amount = safeParseFloat(document.getElementById("adv-range-amount").value);
 
+  let valid = true;
   if (!startMonth || !startYear || !amount || amount <= 0) {
-    alert("Please enter a start date and amount.");
-    return;
+    showFieldError("adv-range-amount", "Please enter a start date and amount.");
+    valid = false;
   }
-
   if (!ongoing && (!endMonth || !endYear)) {
-    alert("Please enter an end date or check 'Ongoing'.");
-    return;
+    showFieldError("adv-range-amount", "Please enter an end date or check Ongoing.");
+    valid = false;
   }
+  if (!valid) return;
 
   const startDate = `${startYear}-${String(startMonth).padStart(2, "0")}`;
   let endDate = "9999-12"; // Ongoing = effectively forever
@@ -10523,7 +11629,7 @@ function addExtraRange() {
   if (!ongoing) {
     endDate = `${endYear}-${String(endMonth).padStart(2, "0")}`;
     if (endDate < startDate) {
-      alert("End date must be after start date.");
+      showFieldError("adv-range-amount", "End date must be after start date.");
       return;
     }
   }
@@ -10585,10 +11691,10 @@ function addOneTimePayment() {
 
   const month = monthSelect.value;
   const year = yearSelect.value;
-  const amount = parseFloat(amountInput.value);
+  const amount = safeParseFloat(amountInput.value);
 
   if (!month || !year || !amount || amount <= 0) {
-    alert("Please select a month, year, and enter a valid amount.");
+    showFieldError("adv-onetime-amount", "Please select a month, year, and enter a valid amount.");
     return;
   }
 
@@ -10675,29 +11781,27 @@ function getExtraRecurringForDate(dateKey) {
 // ===== MAIN CALCULATION =====
 function handleCalculate() {
   // Gather inputs
-  const principal = parseFloat(
-    document.getElementById("adv-loan-amount").value,
-  );
-  const annualRate = parseFloat(
-    document.getElementById("adv-interest-rate").value,
-  );
-  const termValue = parseInt(document.getElementById("adv-loan-term").value);
+  const principal = safeParseFloat(
+    document.getElementById("adv-loan-amount").value
+    );
+  const annualRate = safeParseFloat(
+    document.getElementById("adv-interest-rate").value
+    );
+  const termValue = safeParseInt(document.getElementById("adv-loan-term").value);
   const termUnit = document.getElementById("adv-term-unit").value;
-  const startMonth = parseInt(document.getElementById("adv-start-month").value);
-  const startYear = parseInt(document.getElementById("adv-start-year").value);
+  const startMonth = safeParseInt(document.getElementById("adv-start-month").value);
+  const startYear = safeParseInt(document.getElementById("adv-start-year").value);
   const frequency = document.getElementById("adv-frequency").value;
   const isExisting = existingToggle.checked;
 
   // Validate
-  if (!principal || !annualRate || !termValue || !startMonth || !startYear) {
-    alert("Please fill in all required fields in Loan Setup.");
-    return;
-  }
-
-  if (principal <= 0 || annualRate <= 0 || termValue <= 0) {
-    alert("Loan amount, interest rate, and term must be greater than zero.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "adv-loan-amount",   label: "Loan Amount",   required: true, min: 1              },
+    { id: "adv-interest-rate", label: "Interest Rate", required: true, min: 0.01, max: 30  },
+    { id: "adv-loan-term",     label: "Loan Term",     required: true, min: 1,    max: 50  },
+    { id: "adv-start-year",    label: "Start Year",    required: true, min: 2000, max: 2100, integer: true },
+  ], ".calc-form");
+  if (!valid) return;
 
   // Calculate total months from term
   const totalMonths = termUnit === "years" ? termValue * 12 : termValue;
@@ -10706,14 +11810,14 @@ function handleCalculate() {
   let currentBalance = principal;
   let paymentsMade = 0;
   if (isExisting) {
-    currentBalance = parseFloat(
-      document.getElementById("adv-current-balance").value,
-    );
+    currentBalance = safeParseFloat(
+      document.getElementById("adv-current-balance").value
+      );
     paymentsMade =
-      parseInt(document.getElementById("adv-payments-made").value) || 0;
+      safeParseInt(document.getElementById("adv-payments-made").value, 0);
 
     if (!currentBalance || currentBalance <= 0) {
-      alert("Please enter a valid current balance.");
+      showFieldError("adv-current-balance", "Please enter a valid current balance.");
       return;
     }
   }
@@ -10993,91 +12097,26 @@ function formatTimeSaved(periods, frequency) {
 }
 
 // ===== CHART =====
+let advBarController = null;
+let advLineController = null;
+
 function displayChart(yearly) {
-  const chartBars = document.getElementById("adv-chart-bars");
-  const chartYAxis = document.getElementById("adv-chart-y-axis");
-
-  const maxTotal = Math.max(...yearly.map((y) => y.principal + y.interest));
-
-  // Y-axis
-  chartYAxis.innerHTML = "";
-  const steps = 5;
-  for (let i = steps; i >= 0; i--) {
-    const label = document.createElement("span");
-    const value = (maxTotal / steps) * i;
-    label.textContent =
-      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
-    chartYAxis.appendChild(label);
-  }
-
-  // Bars
-  chartBars.innerHTML = "";
-  yearly.forEach((year) => {
-    const total = year.principal + year.interest;
-    const totalHeight = (total / maxTotal) * 100;
-    const principalHeight = (year.principal / total) * totalHeight;
-    const interestHeight = (year.interest / total) * totalHeight;
-
-    const group = document.createElement("div");
-    group.className = "bar-group";
-
-    const stack = document.createElement("div");
-    stack.className = "bar-stack";
-    stack.style.height = `${totalHeight}%`;
-
-    const interestBar = document.createElement("div");
-    interestBar.className = "bar-interest";
-    interestBar.style.height = `${interestHeight}%`;
-
-    const principalBar = document.createElement("div");
-    principalBar.className = "bar-principal";
-    principalBar.style.height = `${principalHeight}%`;
-
-    stack.appendChild(interestBar);
-    stack.appendChild(principalBar);
-
-    const label = document.createElement("div");
-    label.className = "bar-label";
-    label.textContent = year.period;
-
-    group.appendChild(stack);
-    group.appendChild(label);
-    chartBars.appendChild(group);
-
-    // Tooltip
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    tooltip.innerHTML = `<strong>${year.period}</strong><br>Principal: ${formatCurrency(year.principal)}<br>Interest: ${formatCurrency(year.interest)}${year.extra > 0 ? `<br>Extra: ${formatCurrency(year.extra)}` : ""}`;
-    group.appendChild(tooltip);
-
-    const positionYearTooltip = (event) => {
-      const tooltipRect = tooltip.getBoundingClientRect();
-      const margin = 8;
-      let left = event.clientX + 12;
-      let top = event.clientY - tooltipRect.height - 8;
-
-      if (left + tooltipRect.width > window.innerWidth - margin) {
-        left = window.innerWidth - tooltipRect.width - margin;
-      }
-      if (left < margin) {
-        left = margin;
-      }
-      if (top < margin) {
-        top = event.clientY + 12;
-      }
-
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${top}px`;
-    };
-
-    group.addEventListener("mouseenter", (event) => {
-      tooltip.style.display = "block";
-      positionYearTooltip(event);
-    });
-    group.addEventListener("mousemove", positionYearTooltip);
-    group.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  const canvas = document.getElementById("adv-bar-canvas");
+  if (!canvas) return;
+  drawBarChart(canvas, yearly, {
+    series: [
+      { key: "principal", color: "#2dd4bf", label: "Principal" },
+      { key: "interest", color: "#f472b6", label: "Interest" },
+      { key: "extra", color: "#a78bfa", label: "Extra Payment" },
+    ],
+    xLabel: (d) => `Yr ${d.period}`,
+    tooltip: (d) => [
+      `Year ${d.period}`,
+      `Principal: ${formatCurrency(d.principal)}`,
+      `Interest: ${formatCurrency(d.interest)}`,...(d.extra > 0 ? [`Extra: ${formatCurrency(d.extra)}`] : []),
+      `Balance: ${formatCurrency(d.balance)}`,
+    ],
+    controller: advBarController,
   });
 }
 
@@ -11089,18 +12128,62 @@ function displayTable(schedule, period) {
   periodHeader.textContent = period === "monthly" ? "Period" : "Year";
   tbody.innerHTML = "";
 
-  schedule.forEach((row) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${period === "monthly" ? row.dateLabel : row.period}</td>
-      <td>${formatCurrency(row.payment)}</td>
-      <td>${formatCurrency(row.extra)}</td>
-      <td>${formatCurrency(row.principal)}</td>
-      <td>${formatCurrency(row.interest)}</td>
-      <td>${formatCurrency(row.balance)}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+  const pageSize = 30;
+  let currentPage = 0;
+
+  function renderPage() {
+    tbody.innerHTML = "";
+    const start = currentPage * pageSize;
+    const end = Math.min(start + pageSize, schedule.length);
+    const slice = schedule.slice(start, end);
+
+    slice.forEach((row) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${period === "monthly" ? row.dateLabel : row.period}</td>
+        <td>${formatCurrency(row.payment)}</td>
+        <td>${formatCurrency(row.extra)}</td>
+        <td>${formatCurrency(row.principal)}</td>
+        <td>${formatCurrency(row.interest)}</td>
+        <td>${formatCurrency(row.balance)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    let pager = document.getElementById("adv-table-pager");
+    if (!pager) {
+      pager = document.createElement("div");
+      pager.id = "adv-table-pager";
+      pager.style.cssText = "display:flex;gap:0.5rem;align-items:center;margin-top:0.75rem;font-size:0.85rem;color:#94a3b8;";
+      tbody.closest("table").after(pager);
+    }
+
+    const totalPages = Math.ceil(schedule.length / pageSize);
+    pager.innerHTML = "";
+
+    if (totalPages <= 1) return;
+
+    const prev = document.createElement("button");
+    prev.textContent = "← Prev";
+    prev.className = "btn-toggle";
+    prev.disabled = currentPage === 0;
+    prev.addEventListener("click", () => { currentPage--; renderPage(); });
+
+    const info = document.createElement("span");
+    info.textContent = `Page ${currentPage + 1} of ${totalPages} (${schedule.length} rows)`;
+
+    const next = document.createElement("button");
+    next.textContent = "Next →";
+    next.className = "btn-toggle";
+    next.disabled = currentPage >= totalPages - 1;
+    next.addEventListener("click", () => { currentPage++; renderPage(); });
+
+    pager.appendChild(prev);
+    pager.appendChild(info);
+    pager.appendChild(next);
+  }
+
+  renderPage();
 }
 
 // ===== VIEW SWITCHING =====
@@ -11115,14 +12198,8 @@ function switchChart(view) {
 }
 
 function displayCumulativeChart(schedule) {
-  const svg = document.getElementById("adv-cumulative-chart-svg");
-  const tooltip = document.getElementById("adv-cumulative-chart-tooltip");
-  if (!svg || !tooltip || schedule.length === 0) return;
-
-  const width = 700;
-  const height = 240;
-  const padding = 40;
-  const points = schedule.length;
+  const canvas = document.getElementById("adv-line-canvas");
+  if (!canvas || schedule.length === 0) return;
 
   const cumulative = schedule.reduce((acc, row) => {
     const previous = acc.length
@@ -11140,101 +12217,23 @@ function displayCumulativeChart(schedule) {
     return acc;
   }, []);
 
-  const maxValue =
-    Math.max(
-      cumulative[cumulative.length - 1].total || 0,
-      cumulative[0]?.balance || 0,
-    ) || 1;
-  const xStep = points > 1 ? (width - padding * 2) / (points - 1) : 0;
-
-  const getX = (index) => padding + index * xStep;
-  const getY = (value) =>
-    height - padding - (value / maxValue) * (height - padding * 2);
-
-  const buildPath = (key) =>
-    cumulative
-      .map((point, index) =>
-        index === 0
-          ? `M ${getX(index)} ${getY(point[key])}`
-          : `L ${getX(index)} ${getY(point[key])}`,
-      )
-      .join(" ");
-
-  let svgContent = `
-    <g class="line-chart-grid">
-      <line x1="${padding}" y1="${padding}" x2="${width - padding}" y2="${padding}" class="line-axis-line" />
-      <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" class="line-axis-line" />
-    </g>
-  `;
-
-  for (let i = 0; i <= 5; i += 1) {
-    const y = padding + ((height - padding * 2) / 5) * i;
-    svgContent += `
-      <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" class="line-chart-grid" />
-      <text x="${padding - 10}" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--text-secondary)">$${((maxValue * (5 - i)) / 5 / 1000).toFixed(0)}k</text>
-    `;
-  }
-
-  svgContent += `
-    <path d="${buildPath("total")}" class="line-series line-total" />
-    <path d="${buildPath("principal")}" class="line-series line-principal" />
-    <path d="${buildPath("interest")}" class="line-series line-interest" />
-    <path d="${buildPath("balance")}" class="line-series line-balance" />
-  `;
-
-  cumulative.forEach((point, index) => {
-    [
-      { key: "total", label: "Total Paid" },
-      { key: "principal", label: "Principal" },
-      { key: "interest", label: "Interest" },
-      { key: "balance", label: "Balance" },
-    ].forEach((series) => {
-      const x = getX(index);
-      const y = getY(point[series.key]);
-      svgContent += `
-        <circle cx="${x}" cy="${y}" r="10" fill="transparent" class="line-point" data-series="${series.key}" data-index="${index}" />
-      `;
-    });
-  });
-
-  svg.innerHTML = svgContent;
-
-  svg.querySelectorAll("circle").forEach((circle) => {
-    circle.addEventListener("mouseenter", (event) => {
-      const index = Number(event.target.dataset.index);
-      const series = event.target.dataset.series;
-      const point = cumulative[index];
-      const label =
-        series === "total"
-          ? "Total Paid"
-          : series.charAt(0).toUpperCase() + series.slice(1);
-      tooltip.innerHTML = `
-        <strong>Payment ${point.period}</strong>
-        ${label}: ${formatCurrency(point[series])}
-      `;
-      tooltip.style.display = "block";
-      const rect = svg.getBoundingClientRect();
-      const tooltipRect = tooltip.getBoundingClientRect();
-      const margin = 8;
-      let left = event.clientX - rect.left + 14;
-      let top = event.clientY - rect.top - tooltipRect.height - 8;
-
-      if (left + tooltipRect.width > rect.width - margin) {
-        left = rect.width - tooltipRect.width - margin;
-      }
-      if (left < margin) {
-        left = margin;
-      }
-      if (top < margin) {
-        top = event.clientY - rect.top + 12;
-      }
-
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${top}px`;
-    });
-    circle.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  drawLineChart(canvas, cumulative, {
+    series: [
+      { key: "total", color: "#2dd4bf", label: "Total Paid", fill: true },
+      { key: "principal", color: "#60a5fa", label: "Principal" },
+      { key: "interest", color: "#f472b6", label: "Interest" },
+      { key: "balance", color: "#f59e0b", label: "Balance" },
+    ],
+    xLabel: (d) => `Mo ${d.period}`,
+    xTicks: 12,
+    tooltip: (d) => [
+      `Month ${d.period}`,
+      `Total Paid: ${formatCurrency(d.total)}`,
+      `Principal: ${formatCurrency(d.principal)}`,
+      `Interest: ${formatCurrency(d.interest)}`,
+      `Balance: ${formatCurrency(d.balance)}`,
+    ],
+    controller: advLineController,
   });
 }
 
@@ -11301,20 +12300,17 @@ bindFormEnter(() => handleCalculate());
 // ===== MAIN CALCULATION =====
 function handleCalculate() {
   // Grab inputs
-  const principal = parseFloat(document.getElementById("loan-amount").value);
-  const annualRate = parseFloat(document.getElementById("interest-rate").value);
-  const termYears = parseInt(document.getElementById("loan-term").value);
+  const principal = safeParseFloat(document.getElementById("loan-amount").value);
+  const annualRate = safeParseFloat(document.getElementById("interest-rate").value);
+  const termYears = safeParseInt(document.getElementById("loan-term").value);
 
   // Validate
-  if (!principal || !annualRate || !termYears) {
-    alert("Please fill in all fields with valid numbers.");
-    return;
-  }
-
-  if (principal <= 0 || annualRate <= 0 || termYears <= 0) {
-    alert("All values must be greater than zero.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "loan-amount",   label: "Loan Amount",    required: true, min: 1              },
+    { id: "interest-rate", label: "Interest Rate",  required: true, min: 0.01, max: 30  },
+    { id: "loan-term",     label: "Loan Term",      required: true, min: 1,    max: 50, integer: true },
+  ], ".calc-form");
+  if (!valid) return;
 
   // Calculate
   const monthlyRate = annualRate / 100 / 12;
@@ -11426,104 +12422,31 @@ function displaySummary(monthlyPayment, principal, totalInterest, totalCost) {
   document.getElementById("total-cost").textContent = formatCurrency(totalCost);
 }
 
+let loanBarController = null;
+let loanLineController = null;
+
 function displayChart(yearly) {
-  const chartBars = document.getElementById("chart-bars");
-  const chartYAxis = document.getElementById("chart-y-axis");
-
-  // Find the max total (principal + interest) for scaling
-  const maxTotal = Math.max(...yearly.map((y) => y.principal + y.interest));
-
-  // Build Y-axis labels
-  chartYAxis.innerHTML = "";
-  const steps = 5;
-  for (let i = steps; i >= 0; i--) {
-    const label = document.createElement("span");
-    const value = (maxTotal / steps) * i;
-    label.textContent =
-      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
-    chartYAxis.appendChild(label);
-  }
-
-  // Build bars
-  chartBars.innerHTML = "";
-  yearly.forEach((year) => {
-    const total = year.principal + year.interest;
-    const totalHeight = (total / maxTotal) * 100;
-    const principalHeight = (year.principal / total) * totalHeight;
-    const interestHeight = (year.interest / total) * totalHeight;
-
-    const group = document.createElement("div");
-    group.className = "bar-group";
-
-    const stack = document.createElement("div");
-    stack.className = "bar-stack";
-    stack.style.height = `${totalHeight}%`;
-
-    const interestBar = document.createElement("div");
-    interestBar.className = "bar-interest";
-    interestBar.style.height = `${interestHeight}%`;
-
-    const principalBar = document.createElement("div");
-    principalBar.className = "bar-principal";
-    principalBar.style.height = `${principalHeight}%`;
-
-    stack.appendChild(interestBar);
-    stack.appendChild(principalBar);
-
-    const label = document.createElement("div");
-    label.className = "bar-label";
-    label.textContent = year.period;
-
-    group.appendChild(stack);
-    group.appendChild(label);
-    chartBars.appendChild(group);
-
-    // Add tooltip via mouse events instead of CSS
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    tooltip.innerHTML = `<strong>Year ${year.period}</strong><br>Principal: ${formatCurrency(year.principal)}<br>Interest: ${formatCurrency(year.interest)}`;
-    group.appendChild(tooltip);
-
-    const positionYearTooltip = (event) => {
-      const tooltipRect = tooltip.getBoundingClientRect();
-      const margin = 8;
-      let left = event.clientX + 12;
-      let top = event.clientY - tooltipRect.height - 8;
-
-      if (left + tooltipRect.width > window.innerWidth - margin) {
-        left = window.innerWidth - tooltipRect.width - margin;
-      }
-      if (left < margin) {
-        left = margin;
-      }
-      if (top < margin) {
-        top = event.clientY + 12;
-      }
-
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${top}px`;
-    };
-
-    group.addEventListener("mouseenter", (event) => {
-      tooltip.style.display = "block";
-      positionYearTooltip(event);
-    });
-    group.addEventListener("mousemove", positionYearTooltip);
-    group.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  const canvas = document.getElementById("loan-bar-canvas");
+  if (!canvas) return;
+  drawBarChart(canvas, yearly, {
+    series: [
+      { key: "principal", color: "#2dd4bf", label: "Principal" },
+      { key: "interest", color: "#f472b6", label: "Interest" },
+    ],
+    xLabel: (d) => `Yr ${d.period}`,
+    tooltip: (d) => [
+      `Year ${d.period}`,
+      `Principal: ${formatCurrency(d.principal)}`,
+      `Interest: ${formatCurrency(d.interest)}`,
+      `Balance: ${formatCurrency(d.balance)}`,
+    ],
+    controller: loanBarController,
   });
 }
 
 function displayCumulativeChart(schedule) {
-  const svg = document.getElementById("cumulative-chart-svg");
-  const tooltip = document.getElementById("cumulative-chart-tooltip");
-  if (!svg || !tooltip || schedule.length === 0) return;
-
-  const width = 700;
-  const height = 240;
-  const padding = 40;
-  const points = schedule.length;
+  const canvas = document.getElementById("loan-line-canvas");
+  if (!canvas || schedule.length === 0) return;
 
   const cumulative = schedule.reduce((acc, row) => {
     const previous = acc.length
@@ -11541,101 +12464,23 @@ function displayCumulativeChart(schedule) {
     return acc;
   }, []);
 
-  const maxValue =
-    Math.max(
-      cumulative[cumulative.length - 1].total || 0,
-      cumulative[0]?.balance || 0,
-    ) || 1;
-  const xStep = points > 1 ? (width - padding * 2) / (points - 1) : 0;
-
-  const getX = (index) => padding + index * xStep;
-  const getY = (value) =>
-    height - padding - (value / maxValue) * (height - padding * 2);
-
-  const buildPath = (key) =>
-    cumulative
-      .map((point, index) =>
-        index === 0
-          ? `M ${getX(index)} ${getY(point[key])}`
-          : `L ${getX(index)} ${getY(point[key])}`,
-      )
-      .join(" ");
-
-  let svgContent = `
-    <g class="line-chart-grid">
-      <line x1="${padding}" y1="${padding}" x2="${width - padding}" y2="${padding}" class="line-axis-line" />
-      <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" class="line-axis-line" />
-    </g>
-  `;
-
-  for (let i = 0; i <= 5; i += 1) {
-    const y = padding + ((height - padding * 2) / 5) * i;
-    svgContent += `
-      <line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" class="line-chart-grid" />
-      <text x="${padding - 10}" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--text-secondary)">$${((maxValue * (5 - i)) / 5 / 1000).toFixed(0)}k</text>
-    `;
-  }
-
-  svgContent += `
-    <path d="${buildPath("total")}" class="line-series line-total" />
-    <path d="${buildPath("principal")}" class="line-series line-principal" />
-    <path d="${buildPath("interest")}" class="line-series line-interest" />
-    <path d="${buildPath("balance")}" class="line-series line-balance" />
-  `;
-
-  cumulative.forEach((point, index) => {
-    [
-      { key: "total", label: "Total Paid" },
-      { key: "principal", label: "Principal" },
-      { key: "interest", label: "Interest" },
-      { key: "balance", label: "Balance" },
-    ].forEach((series) => {
-      const x = getX(index);
-      const y = getY(point[series.key]);
-      svgContent += `
-        <circle cx="${x}" cy="${y}" r="10" fill="transparent" class="line-point" data-series="${series.key}" data-index="${index}" />
-      `;
-    });
-  });
-
-  svg.innerHTML = svgContent;
-
-  svg.querySelectorAll("circle").forEach((circle) => {
-    circle.addEventListener("mouseenter", (event) => {
-      const index = Number(event.target.dataset.index);
-      const series = event.target.dataset.series;
-      const point = cumulative[index];
-      const label =
-        series === "total"
-          ? "Total Paid"
-          : series.charAt(0).toUpperCase() + series.slice(1);
-      tooltip.innerHTML = `
-        <strong>Payment ${point.period}</strong>
-        ${label}: ${formatCurrency(point[series])}
-      `;
-      tooltip.style.display = "block";
-      const rect = svg.getBoundingClientRect();
-      const tooltipRect = tooltip.getBoundingClientRect();
-      const margin = 8;
-      let left = event.clientX - rect.left + 14;
-      let top = event.clientY - rect.top - tooltipRect.height - 8;
-
-      if (left + tooltipRect.width > rect.width - margin) {
-        left = rect.width - tooltipRect.width - margin;
-      }
-      if (left < margin) {
-        left = margin;
-      }
-      if (top < margin) {
-        top = event.clientY - rect.top + 12;
-      }
-
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${top}px`;
-    });
-    circle.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  drawLineChart(canvas, cumulative, {
+    series: [
+      { key: "total", color: "#2dd4bf", label: "Total Paid", fill: true },
+      { key: "principal", color: "#60a5fa", label: "Principal" },
+      { key: "interest", color: "#f472b6", label: "Interest" },
+      { key: "balance", color: "#f59e0b", label: "Balance" },
+    ],
+    xLabel: (d) => `Mo ${d.period}`,
+    xTicks: 12,
+    tooltip: (d) => [
+      `Month ${d.period}`,
+      `Total Paid: ${formatCurrency(d.total)}`,
+      `Principal: ${formatCurrency(d.principal)}`,
+      `Interest: ${formatCurrency(d.interest)}`,
+      `Balance: ${formatCurrency(d.balance)}`,
+    ],
+    controller: loanLineController,
   });
 }
 
@@ -13119,17 +13964,17 @@ function getPeriodTypeForList(listElement) {
 
 function getCashflows(listElement) {
   const rows = listElement.querySelectorAll(".cashflow-row input");
-  return Array.from(rows).map((input) => parseFloat(input.value) || 0);
+  return Array.from(rows).map((input) => safeParseFloat(input.value, 0));
 }
 
 // ===== QUICK FILL =====
 function quickFill(amountId, fromId, toId, listElement) {
-  const amount = parseFloat(document.getElementById(amountId).value);
-  const from = parseInt(document.getElementById(fromId).value);
-  const to = parseInt(document.getElementById(toId).value);
+  const amount = safeParseFloat(document.getElementById(amountId).value);
+  const from = safeParseInt(document.getElementById(fromId).value);
+  const to = safeParseInt(document.getElementById(toId).value);
 
   if (!amount || !from || !to || from > to || from < 1) {
-    alert("Please enter a valid amount and period range (From must be ≤ To).");
+    showFieldError(amountId, "Please enter a valid amount and period range (From ≤ To).");
     return;
   }
 
@@ -13353,23 +14198,23 @@ function buildSensitivity(
 
 // ===== SINGLE INVESTMENT HANDLER =====
 function handleSingleCalculate() {
-  const initialInvestment = parseFloat(
-    document.getElementById("npv-initial").value,
-  );
-  const annualRate = parseFloat(document.getElementById("npv-rate").value);
-  const compounding = parseInt(
-    document.getElementById("npv-compounding").value,
-  );
+  const initialInvestment = safeParseFloat(
+    document.getElementById("npv-initial").value
+    );
+  const annualRate = safeParseFloat(document.getElementById("npv-rate").value);
+  const compounding = safeParseInt(
+    document.getElementById("npv-compounding").value
+    );
   const periodType = document.getElementById("npv-period-type").value;
   const cashflows = getCashflows(cashflowList);
 
-  if (!initialInvestment || !annualRate) {
-    alert("Please enter the initial investment and discount rate.");
-    return;
-  }
-
+  const valid = validateInputs([
+    { id: "npv-initial", label: "Initial Investment", required: true, min: 1    },
+    { id: "npv-rate",    label: "Discount Rate",       required: true, min: 0.01, max: 100 },
+  ], ".calc-form");
+  if (!valid) return;
   if (cashflows.length === 0) {
-    alert("Please add at least one cash flow period.");
+    showFieldError("npv-initial", "Please add at least one cash flow period.");
     return;
   }
 
@@ -13455,27 +14300,33 @@ function handleSingleCalculate() {
 
 // ===== COMPARE HANDLER =====
 function handleCompareCalculate() {
-  const initialA = parseFloat(document.getElementById("npv-a-initial").value);
-  const rateA = parseFloat(document.getElementById("npv-a-rate").value);
-  const compA = parseInt(document.getElementById("npv-a-compounding").value);
+  const initialA = safeParseFloat(document.getElementById("npv-a-initial").value);
+  const rateA = safeParseFloat(document.getElementById("npv-a-rate").value);
+  const compA = safeParseInt(document.getElementById("npv-a-compounding").value);
   const periodA = document.getElementById("npv-a-period-type").value;
   const nameA = document.getElementById("npv-a-name").value || "Investment A";
   const cashflowsA = getCashflows(cashflowListA);
 
-  const initialB = parseFloat(document.getElementById("npv-b-initial").value);
-  const rateB = parseFloat(document.getElementById("npv-b-rate").value);
-  const compB = parseInt(document.getElementById("npv-b-compounding").value);
+  const initialB = safeParseFloat(document.getElementById("npv-b-initial").value);
+  const rateB = safeParseFloat(document.getElementById("npv-b-rate").value);
+  const compB = safeParseInt(document.getElementById("npv-b-compounding").value);
   const periodB = document.getElementById("npv-b-period-type").value;
   const nameB = document.getElementById("npv-b-name").value || "Investment B";
   const cashflowsB = getCashflows(cashflowListB);
 
-  if (!initialA || !rateA || cashflowsA.length === 0) {
-    alert("Please complete all fields for Investment A.");
+  const valid = validateInputs([
+    { id: "npv-a-initial", label: "Investment A Initial", required: true, min: 1              },
+    { id: "npv-a-rate",    label: "Investment A Rate",    required: true, min: 0.01, max: 100 },
+    { id: "npv-b-initial", label: "Investment B Initial", required: true, min: 1              },
+    { id: "npv-b-rate",    label: "Investment B Rate",    required: true, min: 0.01, max: 100 },
+  ], ".calc-form");
+  if (!valid) return;
+  if (cashflowsA.length === 0) {
+    showFieldError("npv-a-initial", "Please add cash flows for Investment A.");
     return;
   }
-
-  if (!initialB || !rateB || cashflowsB.length === 0) {
-    alert("Please complete all fields for Investment B.");
+  if (cashflowsB.length === 0) {
+    showFieldError("npv-b-initial", "Please add cash flows for Investment B.");
     return;
   }
 
@@ -13700,11 +14551,13 @@ function displayCompareSensitivity(sensA, sensB, nameA, nameB) {
 }
 
 // ===== DISPLAY: CHART =====
+let npvBarController = null;
+
 function displayChart(breakdown, periodType) {
-  const chartBars = document.getElementById("npv-chart-bars");
-  const chartYAxis = document.getElementById("npv-chart-y-axis");
+  const canvas = document.getElementById("npv-bar-canvas");
   const legend = document.getElementById("npv-chart-legend");
   const title = document.getElementById("npv-chart-title");
+  if (!canvas) return;
 
   title.textContent = "Cash Flows by Period";
   legend.innerHTML = `
@@ -13712,67 +14565,27 @@ function displayChart(breakdown, periodType) {
     <span class="legend-item"><span class="legend-color legend-interest"></span> Cash Outflow</span>
   `;
 
-  const maxAbs = Math.max(...breakdown.map((d) => Math.abs(d.cashflow)));
-
-  chartYAxis.innerHTML = "";
-  const steps = 5;
-  for (let i = steps; i >= 0; i--) {
-    const label = document.createElement("span");
-    const value = (maxAbs / steps) * i;
-    label.textContent =
-      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
-    chartYAxis.appendChild(label);
-  }
-
-  chartBars.innerHTML = "";
-  breakdown.forEach((d) => {
-    const group = document.createElement("div");
-    group.className = "bar-group";
-
-    const stack = document.createElement("div");
-    stack.className = "bar-stack";
-    stack.style.height = `${(Math.abs(d.cashflow) / maxAbs) * 100}%`;
-
-    const bar = document.createElement("div");
-    bar.className = d.cashflow >= 0 ? "bar-principal" : "bar-interest";
-    bar.style.height = "100%";
-
-    stack.appendChild(bar);
-
-    const label = document.createElement("div");
-    label.className = "bar-label";
-    const pLabel = periodType === "months" ? "M" : "Yr";
-    label.textContent = d.period === 0 ? "Init" : `${pLabel}${d.period}`;
-
-    group.appendChild(stack);
-    group.appendChild(label);
-    chartBars.appendChild(group);
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    tooltip.innerHTML = `<strong>${d.period === 0 ? "Initial Investment" : `Period ${d.period}`}</strong><br>Cash Flow: ${formatCurrency(d.cashflow)}<br>Discounted: ${formatCurrency(d.discountedValue)}<br>Cumulative NPV: ${formatCurrency(d.cumulativeNPV)}`;
-    group.appendChild(tooltip);
-
-    group.addEventListener("mouseenter", (e) => {
-      tooltip.style.display = "block";
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mousemove", (e) => {
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  const pLabel = periodType === "months" ? "M" : "Yr";
+  drawBarChart(canvas, breakdown, {
+    series: [
+      { key: "cashflow", color: "#2dd4bf", label: "Cash Flow" },
+    ],
+    xLabel: (d) => d.period === 0 ? "Init" : `${pLabel}${d.period}`,
+    tooltip: (d) => [
+      d.period === 0 ? "Initial Investment" : `Period ${d.period}`,
+      `Cash Flow: ${formatCurrency(d.cashflow)}`,
+      `Discounted: ${formatCurrency(d.discountedValue)}`,
+      `Cumulative NPV: ${formatCurrency(d.cumulativeNPV)}`,
+    ],
+    controller: npvBarController,
   });
 }
 
 function displayCompareChart(breakdownA, breakdownB, nameA, nameB) {
-  const chartBars = document.getElementById("npv-chart-bars");
-  const chartYAxis = document.getElementById("npv-chart-y-axis");
+  const canvas = document.getElementById("npv-bar-canvas");
   const legend = document.getElementById("npv-chart-legend");
   const title = document.getElementById("npv-chart-title");
+  if (!canvas) return;
 
   title.textContent = "Cumulative NPV Comparison";
   legend.innerHTML = `
@@ -13781,87 +14594,28 @@ function displayCompareChart(breakdownA, breakdownB, nameA, nameB) {
   `;
 
   const maxPeriods = Math.max(breakdownA.length, breakdownB.length);
-  const allValues = [
-    ...breakdownA.map((d) => d.cumulativeNPV),
-    ...breakdownB.map((d) => d.cumulativeNPV),
-  ];
-  const maxAbs = Math.max(...allValues.map((v) => Math.abs(v)));
-
-  chartYAxis.innerHTML = "";
-  const steps = 5;
-  for (let i = steps; i >= 0; i--) {
-    const label = document.createElement("span");
-    const value = (maxAbs / steps) * i;
-    label.textContent =
-      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
-    chartYAxis.appendChild(label);
-  }
-
-  chartBars.innerHTML = "";
+  const combined = [];
   for (let i = 0; i < maxPeriods; i++) {
-    const group = document.createElement("div");
-    group.className = "bar-group";
-
-    const barContainer = document.createElement("div");
-    barContainer.style.display = "flex";
-    barContainer.style.alignItems = "flex-end";
-    barContainer.style.gap = "2px";
-    barContainer.style.width = "100%";
-    barContainer.style.height = "100%";
-    barContainer.style.justifyContent = "center";
-
-    const valA = breakdownA[i] ? breakdownA[i].cumulativeNPV : null;
-    const valB = breakdownB[i] ? breakdownB[i].cumulativeNPV : null;
-
-    if (valA !== null) {
-      const barA = document.createElement("div");
-      barA.className = "bar-principal";
-      barA.style.width = "45%";
-      barA.style.height = `${(Math.abs(valA) / maxAbs) * 100}%`;
-      barA.style.borderRadius = "3px 3px 0 0";
-      if (valA < 0) barA.style.opacity = "0.5";
-      barContainer.appendChild(barA);
-    }
-
-    if (valB !== null) {
-      const barB = document.createElement("div");
-      barB.className = "bar-interest";
-      barB.style.width = "45%";
-      barB.style.height = `${(Math.abs(valB) / maxAbs) * 100}%`;
-      barB.style.borderRadius = "3px 3px 0 0";
-      if (valB < 0) barB.style.opacity = "0.5";
-      barContainer.appendChild(barB);
-    }
-
-    const label = document.createElement("div");
-    label.className = "bar-label";
-    label.textContent = i === 0 ? "Init" : `${i}`;
-
-    group.appendChild(barContainer);
-    group.appendChild(label);
-    chartBars.appendChild(group);
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    let tooltipHTML = `<strong>Period ${i}</strong>`;
-    if (valA !== null) tooltipHTML += `<br>${nameA}: ${formatCurrency(valA)}`;
-    if (valB !== null) tooltipHTML += `<br>${nameB}: ${formatCurrency(valB)}`;
-    tooltip.innerHTML = tooltipHTML;
-    group.appendChild(tooltip);
-
-    group.addEventListener("mouseenter", (e) => {
-      tooltip.style.display = "block";
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mousemove", (e) => {
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
+    combined.push({
+      period: i,
+      npvA: breakdownA[i] ? breakdownA[i].cumulativeNPV : 0,
+      npvB: breakdownB[i] ? breakdownB[i].cumulativeNPV : 0,
     });
   }
+
+  drawBarChart(canvas, combined, {
+    series: [
+      { key: "npvA", color: "#2dd4bf", label: nameA },
+      { key: "npvB", color: "#f472b6", label: nameB },
+    ],
+    xLabel: (d) => d.period === 0 ? "Init" : `${d.period}`,
+    tooltip: (d) => [
+      `Period ${d.period}`,
+      `${nameA}: ${formatCurrency(d.npvA)}`,
+      `${nameB}: ${formatCurrency(d.npvB)}`,
+    ],
+    controller: npvBarController,
+  });
 }
 
 // ===== DISPLAY: TABLE =====
@@ -15358,6 +16112,9 @@ let lastPayoffData = null;
 let lastPayoffLegs = null;
 let lastPayoffStockPrice = null;
 let lastPayoffBreakevens = null;
+let payoffChartController = null;
+let payoffMouseController = null;
+let multiCurveMouseController = null;
 
 async function renderStrategyButtons() {
   const strategies = await loadStrategies();
@@ -15729,7 +16486,7 @@ document.getElementById("payoff-before-btn").addEventListener("click", () => {
 });
 
 document.getElementById("payoff-days-slider").addEventListener("input", (e) => {
-  const days = parseInt(e.target.value);
+  const days = safeParseInt(e.target.value);
   const label =
     days === 0 ? "Expiration (0)" : days === 1 ? "1 day" : `${days} days`;
   document.getElementById("payoff-days-display").textContent = label;
@@ -15739,27 +16496,20 @@ document.getElementById("payoff-days-slider").addEventListener("input", (e) => {
   }
 });
 function suggestPremiums() {
-  const stockPrice = parseFloat(
-    document.getElementById("opt-stock-price").value,
-  );
-  const days = parseFloat(document.getElementById("opt-days").value);
-  const iv = parseFloat(document.getElementById("opt-iv").value) / 100;
-  const rfr = parseFloat(document.getElementById("opt-rfr").value) / 100;
+  const stockPrice = safeParseFloat(
+    document.getElementById("opt-stock-price").value
+    );
+  const days = safeParseFloat(document.getElementById("opt-days").value);
+  const iv = safeParseFloat(document.getElementById("opt-iv").value) / 100;
+  const rfr = safeParseFloat(document.getElementById("opt-rfr").value) / 100;
 
-  if (!stockPrice || stockPrice <= 0) {
-    alert("Please enter the current stock price.");
-    return;
-  }
-
-  if (!days || days <= 0) {
-    alert("Please enter days to expiration.");
-    return;
-  }
-
-  if (!iv || iv <= 0) {
-    alert("Please enter implied volatility.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "opt-stock-price", label: "Stock Price",          required: true, min: 0.01          },
+    { id: "opt-days",        label: "Days to Expiration",   required: true, min: 1,   max: 2000, integer: true },
+    { id: "opt-iv",          label: "Implied Volatility",   required: true, min: 0.1, max: 500  },
+    { id: "opt-rfr",         label: "Risk-Free Rate",       required: false, min: 0,  max: 30   },
+  ], ".calc-form");
+  if (!valid) return;
 
   const T = days / 365;
   const rows = document.querySelectorAll(".leg-row");
@@ -15772,7 +16522,7 @@ function suggestPremiums() {
     const premiumInput = row.querySelector(".leg-premium");
     const suggestion = row.querySelector(".leg-premium-suggestion");
 
-    const strike = parseFloat(strikeInput?.value);
+    const strike = safeParseFloat(strikeInput?.value);
 
     if (!strike || strike <= 0) {
       if (suggestion) {
@@ -15817,9 +16567,9 @@ document.getElementById("legs-container").addEventListener("input", (e) => {
     // Debounce
     clearTimeout(e.target._suggestTimeout);
     e.target._suggestTimeout = setTimeout(() => {
-      const stockPrice = parseFloat(
-        document.getElementById("opt-stock-price").value,
-      );
+      const stockPrice = safeParseFloat(
+        document.getElementById("opt-stock-price").value
+        );
       if (stockPrice > 0) {
         suggestSingleLeg(e.target);
       }
@@ -15828,12 +16578,12 @@ document.getElementById("legs-container").addEventListener("input", (e) => {
 });
 
 function suggestSingleLeg(strikeInput) {
-  const stockPrice = parseFloat(
-    document.getElementById("opt-stock-price").value,
-  );
-  const days = parseFloat(document.getElementById("opt-days").value);
-  const iv = parseFloat(document.getElementById("opt-iv").value) / 100;
-  const rfr = parseFloat(document.getElementById("opt-rfr").value) / 100;
+  const stockPrice = safeParseFloat(
+    document.getElementById("opt-stock-price").value
+    );
+  const days = safeParseFloat(document.getElementById("opt-days").value);
+  const iv = safeParseFloat(document.getElementById("opt-iv").value) / 100;
+  const rfr = safeParseFloat(document.getElementById("opt-rfr").value) / 100;
 
   if (!stockPrice || !days || !iv) return;
 
@@ -15841,7 +16591,7 @@ function suggestSingleLeg(strikeInput) {
   const type = row.dataset.legType;
   if (type === "stock") return;
 
-  const strike = parseFloat(strikeInput.value);
+  const strike = safeParseFloat(strikeInput.value);
   const suggestion = row.querySelector(".leg-premium-suggestion");
   const premiumInput = row.querySelector(".leg-premium");
 
@@ -15930,10 +16680,10 @@ function redrawPayoffChart() {
   const legs = lastPayoffLegs;
   const breakevens = lastPayoffBreakevens;
 
-  const iv = parseFloat(document.getElementById("opt-iv").value) / 100 || 0.25;
+  const iv = safeParseFloat(document.getElementById("opt-iv").value) / 100 || 0.25;
   const rfr =
-    parseFloat(document.getElementById("opt-rfr").value) / 100 || 0.05;
-  const totalDays = parseFloat(document.getElementById("opt-days").value) || 30;
+    safeParseFloat(document.getElementById("opt-rfr").value) / 100 || 0.05;
+  const totalDays = safeParseFloat(document.getElementById("opt-days").value, 30);
 
   if (payoffMode === "expiration") {
     // Just redraw the standard expiration chart
@@ -15969,9 +16719,9 @@ function redrawPayoffChart() {
   }
 
   // Before expiration mode — draw multiple curves
-  const daysRemaining = parseInt(
-    document.getElementById("payoff-days-slider").value,
-  );
+  const daysRemaining = safeParseInt(
+    document.getElementById("payoff-days-slider").value
+    );
   const priceMin = lastPayoffData[0].price;
   const priceMax = lastPayoffData[lastPayoffData.length - 1].price;
   const steps = lastPayoffData.length - 1;
@@ -16106,8 +16856,8 @@ function updateTimeExplainer(daysRemaining, curves, legs) {
   explainer.classList.remove("hidden");
 
   const stockPrice = lastPayoffStockPrice;
-  const iv = parseFloat(document.getElementById("opt-iv").value) || 25;
-  const totalDays = parseInt(document.getElementById("opt-days").value) || 30;
+  const iv = safeParseFloat(document.getElementById("opt-iv").value, 25);
+  const totalDays = safeParseInt(document.getElementById("opt-days").value, 30);
 
   // Calculate P&L at current stock price for today vs expiration
   const todayCurve = curves.find((c) => c.days === daysRemaining);
@@ -16461,13 +17211,13 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
     return priceMin + ((x - padding.left) / chartWidth) * (priceMax - priceMin);
   }
 
-  const newCanvas = canvas.cloneNode(true);
-  newCanvas.id = "payoff-chart-canvas";
-  canvas.parentNode.replaceChild(newCanvas, canvas);
+  if (payoffChartController) payoffChartController.abort();
+  payoffChartController = new AbortController();
+  const { signal } = payoffChartController;
 
   // Redraw initial state on new canvas
   drawPayoffDirect(
-    newCanvas,
+    canvas,
     payoffData,
     stockPrice,
     breakevens,
@@ -16479,15 +17229,15 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
     null,
   );
 
-  newCanvas.addEventListener("mousemove", (e) => {
-    const r = newCanvas.getBoundingClientRect();
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
+    const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
 
     if (price >= priceMin && price <= priceMax) {
-      newCanvas.style.cursor = "crosshair";
+      canvas.style.cursor = "crosshair";
       drawPayoffDirect(
-        newCanvas,
+        canvas,
         payoffData,
         stockPrice,
         breakevens,
@@ -16499,9 +17249,9 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
         price,
       );
     } else {
-      newCanvas.style.cursor = "default";
+      canvas.style.cursor = "default";
       drawPayoffDirect(
-        newCanvas,
+        canvas,
         payoffData,
         stockPrice,
         breakevens,
@@ -16513,12 +17263,12 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
         null,
       );
     }
-  });
+  }), { signal });
 
-  newCanvas.addEventListener("mouseleave", () => {
-    newCanvas.style.cursor = "default";
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
     drawPayoffDirect(
-      newCanvas,
+        canvas,
       payoffData,
       stockPrice,
       breakevens,
@@ -16529,7 +17279,7 @@ function bindPayoffMouse(canvas, payoffData, stockPrice, breakevens, legs) {
       yMax,
       null,
     );
-  });
+  }, { signal });
 }
 
 function bindMultiCurveMouse(
@@ -16551,12 +17301,12 @@ function bindMultiCurveMouse(
     return priceMin + ((x - padding.left) / chartWidth) * (priceMax - priceMin);
   }
 
-  const newCanvas = canvas.cloneNode(true);
-  newCanvas.id = "payoff-chart-canvas";
-  canvas.parentNode.replaceChild(newCanvas, canvas);
+  if (multiCurveMouseController) multiCurveMouseController.abort();
+  multiCurveMouseController = new AbortController();
+  const { signal } = multiCurveMouseController;
 
   drawMultiCurvePayoff(
-    newCanvas,
+    canvas,
     curves,
     stockPrice,
     breakevens,
@@ -16568,15 +17318,15 @@ function bindMultiCurveMouse(
     null,
   );
 
-  newCanvas.addEventListener("mousemove", (e) => {
-    const r = newCanvas.getBoundingClientRect();
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
+    const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
 
     if (price >= priceMin && price <= priceMax) {
-      newCanvas.style.cursor = "crosshair";
+      canvas.style.cursor = "crosshair";
       drawMultiCurvePayoff(
-        newCanvas,
+        canvas,
         curves,
         stockPrice,
         breakevens,
@@ -16588,9 +17338,9 @@ function bindMultiCurveMouse(
         price,
       );
     } else {
-      newCanvas.style.cursor = "default";
+      canvas.style.cursor = "default";
       drawMultiCurvePayoff(
-        newCanvas,
+        canvas,
         curves,
         stockPrice,
         breakevens,
@@ -16602,12 +17352,12 @@ function bindMultiCurveMouse(
         null,
       );
     }
-  });
+  }), { signal });
 
-  newCanvas.addEventListener("mouseleave", () => {
-    newCanvas.style.cursor = "default";
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
     drawMultiCurvePayoff(
-      newCanvas,
+        canvas,
       curves,
       stockPrice,
       breakevens,
@@ -16618,7 +17368,7 @@ function bindMultiCurveMouse(
       yMax,
       null,
     );
-  });
+  }, { signal });
 }
 // ===================================================================
 // PAYOFF CALCULATION
@@ -16648,18 +17398,18 @@ function calculatePayoff(stockPrice, legs) {
 function getLegsFromInputs() {
   const rows = document.querySelectorAll(".leg-row");
   const contracts =
-    parseInt(document.getElementById("opt-contracts").value) || 1;
+    safeParseInt(document.getElementById("opt-contracts").value, 1);
   const legs = [];
 
   rows.forEach((row) => {
     const type = row.dataset.legType;
     const action = row.dataset.legAction;
-    const qty = parseInt(row.dataset.legQty) || 1;
+    const qty = safeParseInt(row.dataset.legQty, 1);
     const strikeInput = row.querySelector(".leg-strike");
     const premiumInput = row.querySelector(".leg-premium");
 
-    const strike = parseFloat(strikeInput?.value) || 0;
-    const premium = parseFloat(premiumInput?.value) || 0;
+    const strike = safeParseFloat(strikeInput?.value, 0);
+    const premium = safeParseFloat(premiumInput?.value, 0);
 
     legs.push({
       type,
@@ -16682,20 +17432,20 @@ document
   .addEventListener("click", handlePayoffCalculate);
 
 function handlePayoffCalculate() {
-  const stockPrice = parseFloat(
-    document.getElementById("opt-stock-price").value,
-  );
+  const stockPrice = safeParseFloat(
+    document.getElementById("opt-stock-price").value
+    );
   const legs = getLegsFromInputs();
 
-  if (!stockPrice || stockPrice <= 0) {
-    alert("Please enter the current stock price.");
-    return;
-  }
-
-  // Validate legs
+  const valid = validateInputs([
+    { id: "opt-stock-price", label: "Stock Price",        required: true, min: 0.01          },
+    { id: "opt-days",        label: "Days to Expiration", required: true, min: 1,   max: 2000, integer: true },
+    { id: "opt-iv",          label: "Implied Volatility", required: true, min: 0.1, max: 500  },
+  ], ".calc-form");
+  if (!valid) return;
   for (const leg of legs) {
     if (leg.type !== "stock" && leg.strike <= 0) {
-      alert("Please enter strike prices for all legs.");
+      showFieldError("opt-stock-price", "Please enter strike prices for all legs.");
       return;
     }
   }
@@ -16767,7 +17517,7 @@ function handlePayoffCalculate() {
   lastPayoffBreakevens = breakevens;
 
   // Set slider max to days input
-  const totalDays = parseInt(document.getElementById("opt-days").value) || 30;
+  const totalDays = safeParseInt(document.getElementById("opt-days").value, 30);
   const slider = document.getElementById("payoff-days-slider");
   slider.max = totalDays;
   slider.value = totalDays;
@@ -17095,19 +17845,19 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
   draw(null);
 
   // Mouse events — clone canvas to remove old listeners
-  const newCanvas = canvas.cloneNode(true);
-  newCanvas.id = "payoff-chart-canvas";
-  canvas.parentNode.replaceChild(newCanvas, canvas);
+  if (payoffMouseController) payoffMouseController.abort();
+  payoffMouseController = new AbortController();
+  const { signal } = payoffMouseController;
 
-  newCanvas.addEventListener("mousemove", (e) => {
-    const r = newCanvas.getBoundingClientRect();
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
+    const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const price = fromX(mouseX);
 
     if (price >= priceMin && price <= priceMax) {
-      newCanvas.style.cursor = "crosshair";
+      canvas.style.cursor = "crosshair";
       drawPayoffDirect(
-        newCanvas,
+        canvas,
         payoffData,
         stockPrice,
         breakevens,
@@ -17119,9 +17869,9 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
         price,
       );
     } else {
-      newCanvas.style.cursor = "default";
+      canvas.style.cursor = "default";
       drawPayoffDirect(
-        newCanvas,
+        canvas,
         payoffData,
         stockPrice,
         breakevens,
@@ -17133,12 +17883,12 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
         null,
       );
     }
-  });
+  }), { signal });
 
-  newCanvas.addEventListener("mouseleave", () => {
-    newCanvas.style.cursor = "default";
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
     drawPayoffDirect(
-      newCanvas,
+        canvas,
       payoffData,
       stockPrice,
       breakevens,
@@ -17149,7 +17899,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       yMax,
       null,
     );
-  });
+  }, { signal });
 }
 
 // Direct draw function for mouse events (avoids closure issues with canvas replacement)
@@ -17386,1023 +18136,24 @@ document
   .addEventListener("click", handleBSCalculate);
 
 function handleBSCalculate() {
-  const S = parseFloat(document.getElementById("bs-stock").value);
-  const K = parseFloat(document.getElementById("bs-strike").value);
-  const days = parseFloat(document.getElementById("bs-time").value);
+  const S = safeParseFloat(document.getElementById("bs-stock").value);
+  const K = safeParseFloat(document.getElementById("bs-strike").value);
+  const days = safeParseFloat(document.getElementById("bs-time").value);
   const sigma =
-    parseFloat(document.getElementById("bs-volatility").value) / 100;
-  const r = parseFloat(document.getElementById("bs-rate").value) / 100;
-  const q = parseFloat(document.getElementById("bs-dividend").value) / 100;
+    safeParseFloat(document.getElementById("bs-volatility").value) / 100;
+  const r = safeParseFloat(document.getElementById("bs-rate").value) / 100;
+  const q = safeParseFloat(document.getElementById("bs-dividend").value) / 100;
 
-  if (!S || !K || !days || !sigma) {
-    alert("Please fill in all required fields.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "bs-stock",      label: "Stock Price",  required: true, min: 0.01          },
+    { id: "bs-strike",     label: "Strike Price", required: true, min: 0.01          },
+    { id: "bs-time",       label: "Days",         required: true, min: 1,   max: 2000 },
+    { id: "bs-volatility", label: "Volatility",   required: true, min: 0.1, max: 500  },
+    { id: "bs-rate",       label: "Rate",         required: false, min: 0,  max: 30   },
+    { id: "bs-dividend",   label: "Dividend",     required: false, min: 0,  max: 30   },
+  ], ".calc-form");
+  if (!valid) return;
 
   const T = days / 365;
   const result = blackScholes(S, K, T, r, sigma, q);
-  const greeks = calculateGreeks(S, K, T, r, sigma, q);
-
-  // Moneyness
-  const moneyness =
-    S > K ? "In the Money" : S < K ? "Out of the Money" : "At the Money";
-  const putMoneyness =
-    S < K ? "In the Money" : S > K ? "Out of the Money" : "At the Money";
-
-  document.getElementById("bs-call-price").textContent = formatCurrency(
-    result.callPrice,
-  );
-  document.getElementById("bs-call-moneyness").textContent =
-    `Call is ${moneyness}`;
-  document.getElementById("bs-put-price").textContent = formatCurrency(
-    result.putPrice,
-  );
-  document.getElementById("bs-put-moneyness").textContent =
-    `Put is ${putMoneyness}`;
-
-  // Greeks display
-  const greeksGrid = document.getElementById("bs-greeks-grid");
-  greeksGrid.innerHTML = renderGreeksCards(greeks.call, greeks.put);
-
-  document.getElementById("bs-results-section").classList.remove("hidden");
-  document
-    .getElementById("bs-results-section")
-    .scrollIntoView({ behavior: "smooth" });
-}
-
-// ===================================================================
-// GREEKS TAB
-// ===================================================================
-
-document
-  .getElementById("gk-calculate-btn")
-  .addEventListener("click", handleGreeksCalculate);
-
-let greeksChartData = null;
-
-function handleGreeksCalculate() {
-  const S = parseFloat(document.getElementById("gk-stock").value);
-  const K = parseFloat(document.getElementById("gk-strike").value);
-  const days = parseFloat(document.getElementById("gk-time").value);
-  const sigma =
-    parseFloat(document.getElementById("gk-volatility").value) / 100;
-  const r = parseFloat(document.getElementById("gk-rate").value) / 100;
-  const optionType = document.getElementById("gk-type").value;
-
-  if (!S || !K || !days || !sigma) {
-    alert("Please fill in all required fields.");
-    return;
-  }
-
-  const T = days / 365;
-  const greeks = calculateGreeks(S, K, T, r, sigma, 0);
-  const g = optionType === "call" ? greeks.call : greeks.put;
-
-  // Display cards
-  const grid = document.getElementById("gk-greeks-grid");
-  grid.innerHTML = renderGreeksSingle(g, optionType);
-
-  // Build sensitivity data
-  const range = S * 0.3;
-  const steps = 100;
-  greeksChartData = { S, K, T, r, sigma, optionType, range, steps };
-
-  document.getElementById("gk-results-section").classList.remove("hidden");
-  document.getElementById("gk-chart-section").classList.remove("hidden");
-
-  drawGreeksSensitivity("delta");
-
-  document
-    .getElementById("gk-results-section")
-    .scrollIntoView({ behavior: "smooth" });
-}
-
-// Greeks chart toggle buttons
-["delta", "gamma", "theta", "vega"].forEach((greek) => {
-  document.getElementById(`gk-${greek}-btn`).addEventListener("click", () => {
-    document
-      .querySelectorAll(".proj-chart-controls.btn-toggle")
-      .forEach((b) => b.classList.remove("active"));
-    document.getElementById(`gk-${greek}-btn`).classList.add("active");
-    if (greeksChartData) drawGreeksSensitivity(greek);
-  });
-});
-
-function drawGreeksSensitivity(greek) {
-  const { S, K, T, r, sigma, optionType, range, steps } = greeksChartData;
-
-  const canvas = document.getElementById("gk-chart-canvas");
-
-  const container = canvas.parentElement;
-  const rect = container.getBoundingClientRect();
-  if (rect.width === 0 || rect.height === 0) {
-    requestAnimationFrame(() => drawGreeksSensitivity(greek));
-    return;
-  }
-  const chart = createChartContext(canvas, rect.width, rect.height);
-  const ctx = chart.ctx;
-
-  const padding = { top: 30, right: 30, bottom: 50, left: 80 };
-  const chartWidth = chart.width - padding.left - padding.right;
-  const chartHeight = chart.height - padding.top - padding.bottom;
-
-  // Generate data
-  const priceMin = Math.max(1, S - range);
-  const priceMax = S + range;
-  const stepSize = (priceMax - priceMin) / steps;
-  const data = [];
-
-  for (let i = 0; i <= steps; i++) {
-    const price = priceMin + i * stepSize;
-    const g = calculateGreeks(price, K, T, r, sigma, 0);
-    const val = optionType === "call" ? g.call[greek] : g.put[greek];
-    data.push({ price, value: val });
-  }
-
-  const values = data.map((d) => d.value);
-  const vMin = Math.min(...values);
-  const vMax = Math.max(...values);
-  const vPad = (vMax - vMin) * 0.1 || 0.1;
-
-  function toX(price) {
-    return (
-      padding.left + ((price - priceMin) / (priceMax - priceMin)) * chartWidth
-    );
-  }
-
-  function toY(val) {
-    return (
-      padding.top +
-      chartHeight -
-      ((val - (vMin - vPad)) / (vMax + vPad - (vMin - vPad))) * chartHeight
-    );
-  }
-
-  chart.clear();
-
-  // Grid
-  ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 5; i++) {
-    const val = vMin - vPad + ((vMax + vPad - (vMin - vPad)) / 5) * i;
-    const y = toY(val);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, y);
-    ctx.lineTo(chart.width - padding.right, y);
-    ctx.stroke();
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText(val.toFixed(4), padding.left - 10, y + 4);
-  }
-
-  // X-axis
-  ctx.textAlign = "center";
-  for (let i = 0; i <= 8; i++) {
-    const price = priceMin + ((priceMax - priceMin) / 8) * i;
-    ctx.fillStyle = "#94a3b8";
-    ctx.fillText(
-      "$" + price.toFixed(0),
-      toX(price),
-      chart.height - padding.bottom + 20,
-    );
-  }
-  ctx.fillText("Stock Price", chart.width / 2, chart.height - 5);
-
-  // Current stock price line
-  ctx.strokeStyle = "rgba(96, 165, 250, 0.4)";
-  ctx.setLineDash([4, 4]);
-  ctx.beginPath();
-  ctx.moveTo(toX(S), padding.top);
-  ctx.lineTo(toX(S), padding.top + chartHeight);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Zero line if applicable
-  if (vMin < 0 && vMax > 0) {
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, toY(0));
-    ctx.lineTo(chart.width - padding.right, toY(0));
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // Line
-  const colors = {
-    delta: "#2dd4bf",
-    gamma: "#f59e0b",
-    theta: "#f472b6",
-    vega: "#60a5fa",
-  };
-  ctx.strokeStyle = colors[greek] || "#2dd4bf";
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  data.forEach((point, i) => {
-    const x = toX(point.price);
-    const y = toY(point.value);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-
-  // Title
-  const greekNames = {
-    delta: "Delta (Δ)",
-    gamma: "Gamma (Γ)",
-    theta: "Theta (Θ)",
-    vega: "Vega (ν)",
-  };
-  ctx.fillStyle = colors[greek];
-  ctx.font = "bold 13px sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText(
-    `${greekNames[greek]} vs Stock Price — ${optionType.toUpperCase()}`,
-    padding.left,
-    padding.top - 10,
-  );
-}
-
-// ===================================================================
-// GREEKS CARD RENDERERS
-// ===================================================================
-
-function renderGreeksCards(callGreeks, putGreeks) {
-  const greekDefs = [
-    {
-      key: "delta",
-      symbol: "Δ",
-      name: "Delta",
-      desc: "How much the option price moves for a $1 change in stock price. A delta of 0.50 means the option gains $0.50 when the stock rises $1.",
-    },
-    {
-      key: "gamma",
-      symbol: "Γ",
-      name: "Gamma",
-      desc: "How fast delta changes. High gamma means delta is sensitive to stock price moves. Highest for ATM options near expiration.",
-    },
-    {
-      key: "theta",
-      symbol: "Θ",
-      name: "Theta",
-      desc: "Time decay — how much value the option loses each day. Negative for long options (time works against you), positive for short options.",
-    },
-    {
-      key: "vega",
-      symbol: "ν",
-      name: "Vega",
-      desc: "Sensitivity to volatility. How much the option price changes for a 1% change in implied volatility. Higher for longer-dated options.",
-    },
-    {
-      key: "rho",
-      symbol: "ρ",
-      name: "Rho",
-      desc: "Sensitivity to interest rates. How much the option price changes for a 1% change in the risk-free rate. Usually the least impactful Greek.",
-    },
-  ];
-
-  return greekDefs
-    .map(
-      (g) => `
-    <div class="greek-card">
-      <div class="greek-card-header">
-        <span class="greek-symbol">${g.symbol}</span>
-        <div style="text-align: right;">
-          <div style="font-size: 0.7rem; color: var(--text-secondary);">Call / Put</div>
-          <span class="greek-value">${callGreeks[g.key].toFixed(4)} / ${putGreeks[g.key].toFixed(4)}</span>
-        </div>
-      </div>
-      <span class="greek-name">${g.name}</span>
-      <span class="greek-description">${g.desc}</span>
-    </div>
-  `,
-    )
-    .join("");
-}
-
-function renderGreeksSingle(greeks, type) {
-  const greekDefs = [
-    {
-      key: "delta",
-      symbol: "Δ",
-      name: "Delta",
-      desc: "How much the option price moves for a $1 change in stock price.",
-    },
-    {
-      key: "gamma",
-      symbol: "Γ",
-      name: "Gamma",
-      desc: "How fast delta changes as the stock price moves.",
-    },
-    {
-      key: "theta",
-      symbol: "Θ",
-      name: "Theta",
-      desc: "How much value the option loses each day (time decay).",
-    },
-    {
-      key: "vega",
-      symbol: "ν",
-      name: "Vega",
-      desc: "How much the option price changes for a 1% change in implied volatility.",
-    },
-    {
-      key: "rho",
-      symbol: "ρ",
-      name: "Rho",
-      desc: "How much the option price changes for a 1% change in interest rates.",
-    },
-  ];
-
-  return greekDefs
-    .map(
-      (g) => `
-    <div class="greek-card">
-      <div class="greek-card-header">
-        <span class="greek-symbol">${g.symbol}</span>
-        <span class="greek-value">${greeks[g.key].toFixed(4)}</span>
-      </div>
-      <span class="greek-name">${g.name} (${type})</span>
-      <span class="greek-description">${g.desc}</span>
-    </div>
-  `,
-    )
-    .join("");
-}
-
-// ===================================================================
-// P&L CALCULATOR TAB
-// ===================================================================
-
-document
-  .getElementById("pnl-calculate-btn")
-  .addEventListener("click", handlePnLCalculate);
-
-function handlePnLCalculate() {
-  const type = document.getElementById("pnl-type").value;
-  const contracts =
-    parseInt(document.getElementById("pnl-contracts").value) || 1;
-  const strike = parseFloat(document.getElementById("pnl-strike").value);
-  const premium = parseFloat(document.getElementById("pnl-premium").value);
-  const currentStock = parseFloat(
-    document.getElementById("pnl-current-stock").value,
-  );
-  const currentPremium = parseFloat(
-    document.getElementById("pnl-current-premium").value,
-  );
-
-  if (!strike || !premium || !currentStock) {
-    alert("Please fill in strike, premium, and current stock price.");
-    return;
-  }
-
-  const shares = contracts * 100;
-  const isLong = type.startsWith("long");
-  const isCall = type.includes("call");
-
-  // Current P&L (if closing now)
-  let pnlClose = 0;
-  if (currentPremium) {
-    pnlClose = isLong
-      ? (currentPremium - premium) * shares
-      : (premium - currentPremium) * shares;
-  }
-
-  // P&L at expiration at current stock price
-  let intrinsic = 0;
-  if (isCall) {
-    intrinsic = Math.max(0, currentStock - strike);
-  } else {
-    intrinsic = Math.max(0, strike - currentStock);
-  }
-
-  const pnlExpiration = isLong
-    ? (intrinsic - premium) * shares
-    : (premium - intrinsic) * shares;
-
-  // Breakeven
-  const breakeven = isCall
-    ? strike + (isLong ? premium : -premium)
-    : strike - (isLong ? premium : -premium);
-
-  // Max profit / loss
-  let maxProfit, maxLoss;
-  if (type === "long-call") {
-    maxProfit = "Unlimited";
-    maxLoss = formatCurrency(premium * shares);
-  } else if (type === "long-put") {
-    maxProfit = formatCurrency((strike - premium) * shares);
-    maxLoss = formatCurrency(premium * shares);
-  } else if (type === "short-call") {
-    maxProfit = formatCurrency(premium * shares);
-    maxLoss = "Unlimited";
-  } else if (type === "short-put") {
-    maxProfit = formatCurrency(premium * shares);
-    maxLoss = formatCurrency((strike - premium) * shares);
-  }
-
-  // Return on investment
-  const costBasis = premium * shares;
-  const roi =
-    costBasis > 0 ? ((pnlClose || pnlExpiration) / costBasis) * 100 : 0;
-
-  // Display
-  const results = document.getElementById("pnl-results");
-  results.innerHTML = `
-    <div class="result-item">
-      <span class="result-label">P&L if Closed Now</span>
-      <span class="result-value ${pnlClose >= 0 ? "positive" : "negative"}">${currentPremium ? formatCurrency(pnlClose) : "Enter current option price"}</span>
-    </div>
-    <div class="result-item">
-      <span class="result-label">P&L at Expiration</span>
-      <span class="result-value ${pnlExpiration >= 0 ? "positive" : "negative"}">${formatCurrency(pnlExpiration)}</span>
-    </div>
-    <div class="result-item">
-      <span class="result-label">Breakeven</span>
-      <span class="result-value">${formatCurrency(breakeven)}</span>
-    </div>
-    <div class="result-item">
-      <span class="result-label">Max Profit</span>
-      <span class="result-value positive">${maxProfit}</span>
-    </div>
-    <div class="result-item">
-      <span class="result-label">Max Loss</span>
-      <span class="result-value negative">${maxLoss}</span>
-    </div>
-    <div class="result-item">
-      <span class="result-label">ROI</span>
-      <span class="result-value ${roi >= 0 ? "positive" : "negative"}">${roi.toFixed(1)}%</span>
-    </div>
-  `;
-
-  // Draw P&L chart
-  const legs = [
-    {
-      type: isCall ? "call" : "put",
-      action: isLong ? "buy" : "sell",
-      strike: strike,
-      premium: premium,
-      qty: contracts,
-    },
-  ];
-
-  const range = strike * 0.3;
-  const pMin = Math.max(0, strike - range);
-  const pMax = strike + range;
-  const stepSize = (pMax - pMin) / 200;
-  const payoffData = [];
-
-  for (let i = 0; i <= 200; i++) {
-    const price = pMin + i * stepSize;
-    const pnl = calculatePayoff(price, legs);
-    payoffData.push({ price, pnl });
-  }
-
-  const pnlValues = payoffData.map((d) => d.pnl);
-  const yMinVal = Math.min(...pnlValues);
-  const yMaxVal = Math.max(...pnlValues);
-  const yPad = Math.max(Math.abs(yMaxVal), Math.abs(yMinVal)) * 0.15;
-
-  document.getElementById("pnl-results-section").classList.remove("hidden");
-  document.getElementById("pnl-chart-section").classList.remove("hidden");
-
-  // Use the direct draw function
-  const canvas = document.getElementById("pnl-chart-canvas");
-  const container = canvas.parentElement;
-  const rect = container.getBoundingClientRect();
-  createChartContext(canvas, rect.width, rect.height);
-
-  drawPayoffDirect(
-    canvas,
-    payoffData,
-    currentStock,
-    [breakeven],
-    legs,
-    pMin,
-    pMax,
-    Math.min(yMinVal - yPad, -yPad),
-    Math.max(yMaxVal + yPad, yPad),
-    null,
-  );
-
-  document
-    .getElementById("pnl-results-section")
-    .scrollIntoView({ behavior: "smooth" });
-}
-
-// ===================================================================
-// INITIALIZE
-// ===================================================================
-
-renderStrategyButtons();
-
-
-============================================================
- FILE: /Users/careycarroll/Github Projects/financial-calculator/js/prefetch.js
-============================================================
-
-// Performance optimizations using Quicklink
-// Load Quicklink from CDN and initialize prefetching
-(function () {
-  // Load Quicklink library
-  const script = document.createElement("script");
-  script.src = "https://unpkg.com/quicklink@2.3.0/dist/quicklink.umd.js";
-  script.onload = function () {
-    // Initialize prefetching on hover for all links
-    if (window.quicklink) {
-      window.quicklink.listen({
-        el: document.body,
-        origins: [location.origin],
-      });
-    }
-
-    // Optional: Prefetch critical pages on idle
-    const criticalPages = [
-      "pages/loan.html",
-      "pages/loan-advanced.html",
-      "pages/pv.html",
-      "pages/npv-irr.html",
-      "pages/options.html",
-      "pages/projections.html",
-      "pages/fire.html",
-      "pages/news.html",
-    ];
-
-    // Prefetch critical pages after initial page load
-    if ("requestIdleCallback" in window) {
-      requestIdleCallback(() => {
-        criticalPages.forEach((page) => {
-          const link = document.createElement("link");
-          link.rel = "prefetch";
-          link.href = page;
-          document.head.appendChild(link);
-        });
-      });
-    }
-  };
-  document.head.appendChild(script);
-})();
-
-
-============================================================
- FILE: /Users/careycarroll/Github Projects/financial-calculator/js/projections.js
-============================================================
-
-// ===== CONSTANTS =====
-const SP500_NOMINAL = 10.5;
-const SP500_REAL = 7.0;
-
-// ===== DOM ELEMENTS =====
-const calculateBtn = document.getElementById("proj-calculate-btn");
-const nominalBtn = document.getElementById("proj-nominal-btn");
-const realBtn = document.getElementById("proj-real-btn");
-
-let currentView = "nominal";
-let storedProjections = null;
-let storedInputs = null;
-
-// ===== EVENT LISTENERS =====
-calculateBtn.addEventListener("click", handleCalculate);
-
-nominalBtn.addEventListener("click", () => {
-  if (currentView === "nominal") return;
-  currentView = "nominal";
-  nominalBtn.classList.add("active");
-  realBtn.classList.remove("active");
-  if (storedProjections && storedInputs) {
-    displayChart(storedProjections, storedInputs, "nominal");
-  }
-});
-
-realBtn.addEventListener("click", () => {
-  if (currentView === "real") return;
-  currentView = "real";
-  realBtn.classList.add("active");
-  nominalBtn.classList.remove("active");
-  if (storedProjections && storedInputs) {
-    displayChart(storedProjections, storedInputs, "real");
-  }
-});
-
-// Enter key
-bindFormEnter(() => handleCalculate());
-
-// ===== FORMATTING =====
-// formatCurrency is now provided by chart-utils.js
-// Unified function auto-scales: <$1K → 2 decimals, $1K-$999K → whole, $1M+ → compact
-
-// ===== SCENARIO DEFINITIONS =====
-function buildScenarios(baseRate, deviation, showSP500) {
-  const scenarios = [
-    {
-      name: "Bear Case",
-      rate: baseRate - deviation,
-      color: "#f472b6",
-      dash: [],
-    },
-    {
-      name: "Conservative",
-      rate: baseRate - deviation / 2,
-      color: "#f59e0b",
-      dash: [],
-    },
-    {
-      name: "Base Case",
-      rate: baseRate,
-      color: "#2dd4bf",
-      dash: [],
-      bold: true,
-    },
-    {
-      name: "Optimistic",
-      rate: baseRate + deviation / 2,
-      color: "#4ade80",
-      dash: [],
-    },
-    {
-      name: "Bull Case",
-      rate: baseRate + deviation,
-      color: "#22c55e",
-      dash: [],
-    },
-  ];
-
-  if (showSP500) {
-    scenarios.push({
-      name: "S&P 500 Avg",
-      rate: SP500_NOMINAL,
-      color: "#e2e8f0",
-      dash: [6, 4],
-      isBenchmark: true,
-    });
-  }
-
-  // Ensure no negative rates
-  scenarios.forEach((s) => {
-    if (s.rate < 0) s.rate = 0;
-  });
-
-  return scenarios;
-}
-
-// ===== PROJECTION CALCULATION =====
-function projectPortfolio(
-  portfolio,
-  monthlyContrib,
-  contribIncrease,
-  annualRate,
-  years,
-) {
-  const monthlyRate = annualRate / 100 / 12;
-  const yearlyData = [];
-  let balance = portfolio;
-  let totalContributed = portfolio;
-  let currentMonthly = monthlyContrib;
-
-  yearlyData.push({
-    year: 0,
-    balance: balance,
-    totalContributed: portfolio,
-    growth: 0,
-  });
-
-  for (let year = 1; year <= years; year++) {
-    for (let month = 1; month <= 12; month++) {
-      balance = balance * (1 + monthlyRate) + currentMonthly;
-      totalContributed += currentMonthly;
-    }
-
-    yearlyData.push({
-      year: year,
-      balance: balance,
-      totalContributed: totalContributed,
-      growth: balance - totalContributed,
-    });
-
-    // Increase contributions annually
-    currentMonthly = currentMonthly * (1 + contribIncrease / 100);
-  }
-
-  return yearlyData;
-}
-
-// ===== MILESTONE CALCULATION =====
-function findMilestoneYear(yearlyData, milestone) {
-  for (let i = 1; i < yearlyData.length; i++) {
-    if (
-      yearlyData[i].balance >= milestone &&
-      yearlyData[i - 1].balance < milestone
-    ) {
-      // Interpolate
-      const prev = yearlyData[i - 1].balance;
-      const curr = yearlyData[i].balance;
-      const fraction = (milestone - prev) / (curr - prev);
-      return (i - 1 + fraction).toFixed(1);
-    }
-  }
-  return null;
-}
-
-// ===== MAIN HANDLER =====
-function handleCalculate() {
-  const portfolio =
-    parseFloat(document.getElementById("proj-portfolio").value) || 0;
-  const monthly =
-    parseFloat(document.getElementById("proj-monthly").value) || 0;
-  const contribIncrease =
-    parseFloat(document.getElementById("proj-contrib-increase").value) || 0;
-  const horizon = parseInt(document.getElementById("proj-horizon").value);
-  const expectedReturn = parseFloat(
-    document.getElementById("proj-return").value,
-  );
-  const deviation = parseFloat(document.getElementById("proj-deviation").value);
-  const inflation = parseFloat(document.getElementById("proj-inflation").value);
-  const showSP500 = document.getElementById("proj-sp500").value === "yes";
-
-  // Validate
-  if (!horizon || !expectedReturn) {
-    alert("Please enter a time horizon and expected annual return.");
-    return;
-  }
-
-  if (portfolio === 0 && monthly === 0) {
-    alert("Please enter a portfolio value or monthly contribution.");
-    return;
-  }
-
-  const milestones = [];
-  const m1 = parseFloat(document.getElementById("proj-milestone-1").value);
-  const m2 = parseFloat(document.getElementById("proj-milestone-2").value);
-  const m3 = parseFloat(document.getElementById("proj-milestone-3").value);
-  if (m1) milestones.push(m1);
-  if (m2) milestones.push(m2);
-  if (m3) milestones.push(m3);
-
-  const scenarios = buildScenarios(expectedReturn, deviation, showSP500);
-
-  // Calculate projections for each scenario
-  const projections = scenarios.map((scenario) => {
-    const data = projectPortfolio(
-      portfolio,
-      monthly,
-      contribIncrease,
-      scenario.rate,
-      horizon,
-    );
-    return {
-      ...scenario,
-      data: data,
-      finalValue: data[data.length - 1].balance,
-      totalContributed: data[data.length - 1].totalContributed,
-      growth: data[data.length - 1].growth,
-    };
-  });
-
-  // Store for view toggling
-  storedProjections = projections;
-  storedInputs = {
-    portfolio,
-    monthly,
-    contribIncrease,
-    horizon,
-    inflation,
-    milestones,
-    showSP500,
-  };
-
-  // Show sections first so canvas has dimensions
-  document.getElementById("proj-results").classList.remove("hidden");
-  document.getElementById("proj-chart-section").classList.remove("hidden");
-  if (milestones.length > 0) {
-    document
-      .getElementById("proj-milestones-section")
-      .classList.remove("hidden");
-  }
-  document.getElementById("proj-breakdown-section").classList.remove("hidden");
-
-  // Render everything
-  displayResults(projections);
-  currentView = "nominal";
-  nominalBtn.classList.add("active");
-  realBtn.classList.remove("active");
-  displayChart(projections, storedInputs, "nominal");
-  if (milestones.length > 0) {
-    displayMilestones(projections, milestones);
-  }
-  displayBreakdown(projections);
-
-  document
-    .getElementById("proj-results")
-    .scrollIntoView({ behavior: "smooth" });
-}
-
-// ===== DISPLAY: RESULTS TABLE =====
-function displayResults(projections) {
-  const tbody = document.getElementById("proj-results-body");
-  tbody.innerHTML = "";
-
-  projections.forEach((proj) => {
-    const multiple =
-      proj.totalContributed > 0
-        ? (proj.finalValue / proj.totalContributed).toFixed(2) + "x"
-        : "—";
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>
-        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${proj.color};margin-right:6px;vertical-align:middle;${proj.dash.length ? "border:2px dashed " + proj.color + ";background:transparent;" : ""}"></span>
-        <strong>${proj.name}</strong>
-      </td>
-      <td style="color:${proj.color}">${proj.rate.toFixed(1)}%</td>
-      <td style="font-weight:${proj.bold ? "700" : "400"};color:${proj.bold ? "var(--accent)" : "var(--text-primary)"}">${formatCurrency(proj.finalValue)}</td>
-      <td>${formatCurrency(proj.totalContributed)}</td>
-      <td style="color:var(--accent)">${formatCurrency(proj.growth)}</td>
-      <td>${multiple}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// ===== DISPLAY: CHART =====
-function displayChart(projections, inputs, view) {
-  const canvas = document.getElementById("proj-chart-canvas");
-
-  const container = canvas.parentElement;
-  const rect = container.getBoundingClientRect();
-  if (rect.width === 0 || rect.height === 0) {
-    requestAnimationFrame(() => displayChart(projections, inputs, view));
-    return;
-  }
-  const chart = createChartContext(canvas, rect.width, rect.height);
-  const ctx = chart.ctx;
-
-  const padding = { top: 30, right: 30, bottom: 50, left: 80 };
-  const chartWidth = chart.width - padding.left - padding.right;
-  const chartHeight = chart.height - padding.top - padding.bottom;
-
-  const horizon = inputs.horizon;
-  const inflation = inputs.inflation / 100;
-
-  // Adjust data for inflation if needed
-  const adjustedProjections = projections.map((proj) => {
-    let adjustedRate = proj.rate;
-    if (view === "real") {
-      adjustedRate = ((1 + proj.rate / 100) / (1 + inflation) - 1) * 100;
-      if (proj.isBenchmark) {
-        adjustedRate = SP500_REAL;
-      }
-    }
-
-    if (view === "real") {
-      const data = projectPortfolio(
-        inputs.portfolio,
-        inputs.monthly,
-        inputs.contribIncrease,
-        adjustedRate,
-        horizon,
-      );
-      return { ...proj, adjustedData: data, adjustedRate: adjustedRate };
-    }
-
-    return { ...proj, adjustedData: proj.data, adjustedRate: proj.rate };
-  });
-
-  // Find max value
-  const maxValue = Math.max(
-    ...adjustedProjections.flatMap((p) => p.adjustedData.map((d) => d.balance)),
-  );
-
-  function toX(year) {
-    return padding.left + (year / horizon) * chartWidth;
-  }
-
-  function toY(value) {
-    return padding.top + chartHeight - (value / (maxValue * 1.1)) * chartHeight;
-  }
-
-  function fromX(x) {
-    return ((x - padding.left) / chartWidth) * horizon;
-  }
-
-  function drawChart(highlightYear) {
-    ctx.clearRect(0, 0, chart.width, chart.height);
-
-    // Grid
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-    ctx.lineWidth = 1;
-
-    const ySteps = 5;
-    for (let i = 0; i <= ySteps; i++) {
-      const value = ((maxValue * 1.1) / ySteps) * i;
-      const y = toY(value);
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(chart.width - padding.right, y);
-      ctx.stroke();
-
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
-    }
-
-    // X-axis
-    ctx.textAlign = "center";
-    const xStep = Math.max(1, Math.ceil(horizon / 10));
-    for (let year = 0; year <= horizon; year += xStep) {
-      const x = toX(year);
-      ctx.fillStyle = "#94a3b8";
-      ctx.fillText(`Yr ${year}`, x, chart.height - padding.bottom + 20);
-
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
-      ctx.beginPath();
-      ctx.moveTo(x, padding.top);
-      ctx.lineTo(x, padding.top + chartHeight);
-      ctx.stroke();
-    }
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
-    ctx.fillText(
-      view === "real" ? "Years (Inflation-Adjusted)" : "Years",
-      chart.width / 2,
-      chart.height - 5,
-    );
-
-    // Draw each projection line
-    adjustedProjections.forEach((proj) => {
-      ctx.strokeStyle = proj.color;
-      ctx.lineWidth = proj.bold ? 3 : 2;
-      ctx.setLineDash(proj.dash || []);
-
-      ctx.beginPath();
-      proj.adjustedData.forEach((point, i) => {
-        const x = toX(point.year);
-        const y = toY(point.balance);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-      ctx.setLineDash([]);
-    });
-
-    // Hover crosshair and tooltip
-    if (
-      highlightYear !== null &&
-      highlightYear >= 0 &&
-      highlightYear <= horizon
-    ) {
-      const yearIndex = Math.round(highlightYear);
-
-      const hx = toX(yearIndex);
-
-      // Crosshair
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath();
-      ctx.moveTo(hx, padding.top);
-      ctx.lineTo(hx, padding.top + chartHeight);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Dots on each line
-      const tooltipLines = [`Year ${yearIndex}`];
-
-      adjustedProjections.forEach((proj) => {
-        if (yearIndex < proj.adjustedData.length) {
-          const point = proj.adjustedData[yearIndex];
-          const hy = toY(point.balance);
-
-          ctx.beginPath();
-          ctx.arc(hx, hy, 4, 0, Math.PI * 2);
-          ctx.fillStyle = proj.color;
-          ctx.fill();
-          ctx.strokeStyle = "#0f172a";
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-
-          tooltipLines.push(`${proj.name}: ${formatCurrency(point.balance)}`);
-        }
-      });
-
-      // Tooltip
-      ctx.font = "12px sans-serif";
-      const tooltipWidth =
-        Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
-      const tooltipHeight = tooltipLines.length * 20 + 12;
-
-      let tx = hx + 15;
-      let ty = padding.top + 10;
-
-      if (tx + tooltipWidth > chart.width - padding.right) {
-        tx = hx - tooltipWidth - 15;
-      }
-
-      // Background
-      ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-      ctx.lineWidth = 1;
-
-      const radius = 
+  const greeks = calculateGreeks(S, K, T, r, sigma,

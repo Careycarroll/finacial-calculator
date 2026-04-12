@@ -1,4 +1,1021 @@
-6;
+ q);
+
+  // Moneyness
+  const moneyness =
+    S > K ? "In the Money" : S < K ? "Out of the Money" : "At the Money";
+  const putMoneyness =
+    S < K ? "In the Money" : S > K ? "Out of the Money" : "At the Money";
+
+  document.getElementById("bs-call-price").textContent = formatCurrency(
+    result.callPrice,
+  );
+  document.getElementById("bs-call-moneyness").textContent =
+    `Call is ${moneyness}`;
+  document.getElementById("bs-put-price").textContent = formatCurrency(
+    result.putPrice,
+  );
+  document.getElementById("bs-put-moneyness").textContent =
+    `Put is ${putMoneyness}`;
+
+  // Greeks display
+  const greeksGrid = document.getElementById("bs-greeks-grid");
+  greeksGrid.innerHTML = renderGreeksCards(greeks.call, greeks.put);
+
+  document.getElementById("bs-results-section").classList.remove("hidden");
+  document
+    .getElementById("bs-results-section")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+// ===================================================================
+// GREEKS TAB
+// ===================================================================
+
+document
+  .getElementById("gk-calculate-btn")
+  .addEventListener("click", handleGreeksCalculate);
+
+let greeksChartData = null;
+
+function handleGreeksCalculate() {
+  const S = safeParseFloat(document.getElementById("gk-stock").value);
+  const K = safeParseFloat(document.getElementById("gk-strike").value);
+  const days = safeParseFloat(document.getElementById("gk-time").value);
+  const sigma =
+    safeParseFloat(document.getElementById("gk-volatility").value) / 100;
+  const r = safeParseFloat(document.getElementById("gk-rate").value) / 100;
+  const q = safeParseFloat(document.getElementById("gk-dividend").value) / 100;
+  const optionType = document.getElementById("gk-type").value;
+
+  const valid = validateInputs([
+    { id: "gk-stock",      label: "Stock Price",  required: true, min: 0.01          },
+    { id: "gk-strike",     label: "Strike Price", required: true, min: 0.01          },
+    { id: "gk-time",       label: "Days",         required: true, min: 1,   max: 2000 },
+    { id: "gk-volatility", label: "Volatility",   required: true, min: 0.1, max: 500  },
+    { id: "gk-rate",       label: "Rate",         required: false, min: 0,  max: 30   },
+    { id: "gk-dividend",   label: "Dividend",     required: false, min: 0,  max: 30   },
+  ], ".calc-form");
+  if (!valid) return;
+
+  const T = days / 365;
+  const greeks = calculateGreeks(S, K, T, r, sigma, q);
+  const g = optionType === "call" ? greeks.call : greeks.put;
+
+  // Display cards
+  const grid = document.getElementById("gk-greeks-grid");
+  grid.innerHTML = renderGreeksSingle(g, optionType);
+
+  // Build sensitivity data
+  const range = S * 0.3;
+  const steps = 100;
+  greeksChartData = { S, K, T, r, sigma, optionType, range, steps };
+
+  document.getElementById("gk-results-section").classList.remove("hidden");
+  document.getElementById("gk-chart-section").classList.remove("hidden");
+
+  drawGreeksSensitivity("delta");
+
+  document
+    .getElementById("gk-results-section")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+// Greeks chart toggle buttons
+["delta", "gamma", "theta", "vega"].forEach((greek) => {
+  document.getElementById(`gk-${greek}-btn`).addEventListener("click", () => {
+    document
+      .querySelectorAll(".proj-chart-controls.btn-toggle")
+      .forEach((b) => b.classList.remove("active"));
+    document.getElementById(`gk-${greek}-btn`).classList.add("active");
+    if (greeksChartData) drawGreeksSensitivity(greek);
+  });
+});
+
+function drawGreeksSensitivity(greek) {
+  const { S, K, T, r, sigma, optionType, range, steps } = greeksChartData;
+
+  const canvas = document.getElementById("gk-chart-canvas");
+
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() => drawGreeksSensitivity(greek));
+    return;
+  }
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+
+  const padding = { top: 30, right: 30, bottom: 50, left: 80 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+
+  // Generate data
+  const priceMin = Math.max(1, S - range);
+  const priceMax = S + range;
+  const stepSize = (priceMax - priceMin) / steps;
+  const data = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const price = priceMin + i * stepSize;
+    const g = calculateGreeks(price, K, T, r, sigma, q);
+    const val = optionType === "call" ? g.call[greek] : g.put[greek];
+    data.push({ price, value: val });
+  }
+
+  const values = data.map((d) => d.value);
+  const vMin = Math.min(...values);
+  const vMax = Math.max(...values);
+  const vPad = (vMax - vMin) * 0.1 || 0.1;
+
+  function toX(price) {
+    return (
+      padding.left + ((price - priceMin) / (priceMax - priceMin)) * chartWidth
+    );
+  }
+
+  function toY(val) {
+    return (
+      padding.top +
+      chartHeight -
+      ((val - (vMin - vPad)) / (vMax + vPad - (vMin - vPad))) * chartHeight
+    );
+  }
+
+  chart.clear();
+
+  // Grid
+  ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const val = vMin - vPad + ((vMax + vPad - (vMin - vPad)) / 5) * i;
+    const y = toY(val);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(chart.width - padding.right, y);
+    ctx.stroke();
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "11px sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(val.toFixed(4), padding.left - 10, y + 4);
+  }
+
+  // X-axis
+  ctx.textAlign = "center";
+  for (let i = 0; i <= 8; i++) {
+    const price = priceMin + ((priceMax - priceMin) / 8) * i;
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText(
+      "$" + price.toFixed(0),
+      toX(price),
+      chart.height - padding.bottom + 20,
+    );
+  }
+  ctx.fillText("Stock Price", chart.width / 2, chart.height - 5);
+
+  // Current stock price line
+  ctx.strokeStyle = "rgba(96, 165, 250, 0.4)";
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(toX(S), padding.top);
+  ctx.lineTo(toX(S), padding.top + chartHeight);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Zero line if applicable
+  if (vMin < 0 && vMax > 0) {
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, toY(0));
+    ctx.lineTo(chart.width - padding.right, toY(0));
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Line
+  const colors = {
+    delta: "#2dd4bf",
+    gamma: "#f59e0b",
+    theta: "#f472b6",
+    vega: "#60a5fa",
+  };
+  ctx.strokeStyle = colors[greek] || "#2dd4bf";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  data.forEach((point, i) => {
+    const x = toX(point.price);
+    const y = toY(point.value);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Title
+  const greekNames = {
+    delta: "Delta (Δ)",
+    gamma: "Gamma (Γ)",
+    theta: "Theta (Θ)",
+    vega: "Vega (ν)",
+  };
+  ctx.fillStyle = colors[greek];
+  ctx.font = "bold 13px sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(
+    `${greekNames[greek]} vs Stock Price — ${optionType.toUpperCase()}`,
+    padding.left,
+    padding.top - 10,
+  );
+}
+
+// ===================================================================
+// GREEKS CARD RENDERERS
+// ===================================================================
+
+function renderGreeksCards(callGreeks, putGreeks) {
+  const greekDefs = [
+    {
+      key: "delta",
+      symbol: "Δ",
+      name: "Delta",
+      desc: "How much the option price moves for a $1 change in stock price. A delta of 0.50 means the option gains $0.50 when the stock rises $1.",
+    },
+    {
+      key: "gamma",
+      symbol: "Γ",
+      name: "Gamma",
+      desc: "How fast delta changes. High gamma means delta is sensitive to stock price moves. Highest for ATM options near expiration.",
+    },
+    {
+      key: "theta",
+      symbol: "Θ",
+      name: "Theta",
+      desc: "Time decay — how much value the option loses each day. Negative for long options (time works against you), positive for short options.",
+    },
+    {
+      key: "vega",
+      symbol: "ν",
+      name: "Vega",
+      desc: "Sensitivity to volatility. How much the option price changes for a 1% change in implied volatility. Higher for longer-dated options.",
+    },
+    {
+      key: "rho",
+      symbol: "ρ",
+      name: "Rho",
+      desc: "Sensitivity to interest rates. How much the option price changes for a 1% change in the risk-free rate. Usually the least impactful Greek.",
+    },
+  ];
+
+  return greekDefs
+    .map(
+      (g) => `
+    <div class="greek-card">
+      <div class="greek-card-header">
+        <span class="greek-symbol">${g.symbol}</span>
+        <div style="text-align: right;">
+          <div style="font-size: 0.7rem; color: var(--text-secondary);">Call / Put</div>
+          <span class="greek-value">${callGreeks[g.key].toFixed(4)} / ${putGreeks[g.key].toFixed(4)}</span>
+        </div>
+      </div>
+      <span class="greek-name">${g.name}</span>
+      <span class="greek-description">${g.desc}</span>
+    </div>
+  `,
+    )
+    .join("");
+}
+
+function renderGreeksSingle(greeks, type) {
+  const greekDefs = [
+    {
+      key: "delta",
+      symbol: "Δ",
+      name: "Delta",
+      desc: "How much the option price moves for a $1 change in stock price.",
+    },
+    {
+      key: "gamma",
+      symbol: "Γ",
+      name: "Gamma",
+      desc: "How fast delta changes as the stock price moves.",
+    },
+    {
+      key: "theta",
+      symbol: "Θ",
+      name: "Theta",
+      desc: "How much value the option loses each day (time decay).",
+    },
+    {
+      key: "vega",
+      symbol: "ν",
+      name: "Vega",
+      desc: "How much the option price changes for a 1% change in implied volatility.",
+    },
+    {
+      key: "rho",
+      symbol: "ρ",
+      name: "Rho",
+      desc: "How much the option price changes for a 1% change in interest rates.",
+    },
+  ];
+
+  return greekDefs
+    .map(
+      (g) => `
+    <div class="greek-card">
+      <div class="greek-card-header">
+        <span class="greek-symbol">${g.symbol}</span>
+        <span class="greek-value">${greeks[g.key].toFixed(4)}</span>
+      </div>
+      <span class="greek-name">${g.name} (${type})</span>
+      <span class="greek-description">${g.desc}</span>
+    </div>
+  `,
+    )
+    .join("");
+}
+
+// ===================================================================
+// P&L CALCULATOR TAB
+// ===================================================================
+
+document
+  .getElementById("pnl-calculate-btn")
+  .addEventListener("click", handlePnLCalculate);
+
+function handlePnLCalculate() {
+  const type = document.getElementById("pnl-type").value;
+  const contracts =
+    safeParseInt(document.getElementById("pnl-contracts").value, 1);
+  const strike = safeParseFloat(document.getElementById("pnl-strike").value);
+  const premium = safeParseFloat(document.getElementById("pnl-premium").value);
+  const currentStock = safeParseFloat(
+    document.getElementById("pnl-current-stock").value
+    );
+  const currentPremium = safeParseFloat(
+    document.getElementById("pnl-current-premium").value
+    );
+
+  const valid = validateInputs([
+    { id: "pnl-strike",        label: "Strike Price",   required: true, min: 0.01 },
+    { id: "pnl-premium",       label: "Premium",        required: true, min: 0.01 },
+    { id: "pnl-current-stock", label: "Current Stock",  required: true, min: 0.01 },
+  ], ".calc-form");
+  if (!valid) return;
+
+  const shares = contracts * 100;
+  const isLong = type.startsWith("long");
+  const isCall = type.includes("call");
+
+  // Current P&L (if closing now)
+  let pnlClose = 0;
+  if (currentPremium) {
+    pnlClose = isLong
+      ? (currentPremium - premium) * shares
+      : (premium - currentPremium) * shares;
+  }
+
+  // P&L at expiration at current stock price
+  let intrinsic = 0;
+  if (isCall) {
+    intrinsic = Math.max(0, currentStock - strike);
+  } else {
+    intrinsic = Math.max(0, strike - currentStock);
+  }
+
+  const pnlExpiration = isLong
+    ? (intrinsic - premium) * shares
+    : (premium - intrinsic) * shares;
+
+  // Breakeven
+  const breakeven = isCall
+    ? strike + (isLong ? premium : -premium)
+    : strike - (isLong ? premium : -premium);
+
+  // Max profit / loss
+  let maxProfit, maxLoss;
+  if (type === "long-call") {
+    maxProfit = "Unlimited";
+    maxLoss = formatCurrency(premium * shares);
+  } else if (type === "long-put") {
+    maxProfit = formatCurrency((strike - premium) * shares);
+    maxLoss = formatCurrency(premium * shares);
+  } else if (type === "short-call") {
+    maxProfit = formatCurrency(premium * shares);
+    maxLoss = "Unlimited";
+  } else if (type === "short-put") {
+    maxProfit = formatCurrency(premium * shares);
+    maxLoss = formatCurrency((strike - premium) * shares);
+  }
+
+  // Return on investment
+  const costBasis = premium * shares;
+  const roi =
+    costBasis > 0 ? ((pnlClose || pnlExpiration) / costBasis) * 100 : 0;
+
+  // Display
+  const results = document.getElementById("pnl-results");
+  results.innerHTML = `
+    <div class="result-item">
+      <span class="result-label">P&L if Closed Now</span>
+      <span class="result-value ${pnlClose >= 0 ? "positive" : "negative"}">${currentPremium ? formatCurrency(pnlClose) : "Enter current option price"}</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">P&L at Expiration</span>
+      <span class="result-value ${pnlExpiration >= 0 ? "positive" : "negative"}">${formatCurrency(pnlExpiration)}</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">Breakeven</span>
+      <span class="result-value">${formatCurrency(breakeven)}</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">Max Profit</span>
+      <span class="result-value positive">${maxProfit}</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">Max Loss</span>
+      <span class="result-value negative">${maxLoss}</span>
+    </div>
+    <div class="result-item">
+      <span class="result-label">ROI</span>
+      <span class="result-value ${roi >= 0 ? "positive" : "negative"}">${roi.toFixed(1)}%</span>
+    </div>
+  `;
+
+  // Draw P&L chart
+  const legs = [
+    {
+      type: isCall ? "call" : "put",
+      action: isLong ? "buy" : "sell",
+      strike: strike,
+      premium: premium,
+      qty: contracts,
+    },
+  ];
+
+  const range = strike * 0.3;
+  const pMin = Math.max(0, strike - range);
+  const pMax = strike + range;
+  const stepSize = (pMax - pMin) / 200;
+  const payoffData = [];
+
+  for (let i = 0; i <= 200; i++) {
+    const price = pMin + i * stepSize;
+    const pnl = calculatePayoff(price, legs);
+    payoffData.push({ price, pnl });
+  }
+
+  const pnlValues = payoffData.map((d) => d.pnl);
+  const yMinVal = Math.min(...pnlValues);
+  const yMaxVal = Math.max(...pnlValues);
+  const yPad = Math.max(Math.abs(yMaxVal), Math.abs(yMinVal)) * 0.15;
+
+  document.getElementById("pnl-results-section").classList.remove("hidden");
+  document.getElementById("pnl-chart-section").classList.remove("hidden");
+
+  // Use the direct draw function
+  const canvas = document.getElementById("pnl-chart-canvas");
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  createChartContext(canvas, rect.width, rect.height);
+
+  drawPayoffDirect(
+    canvas,
+    payoffData,
+    currentStock,
+    [breakeven],
+    legs,
+    pMin,
+    pMax,
+    Math.min(yMinVal - yPad, -yPad),
+    Math.max(yMaxVal + yPad, yPad),
+    null,
+  );
+
+  document
+    .getElementById("pnl-results-section")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+// ===================================================================
+// INITIALIZE
+// ===================================================================
+
+renderStrategyButtons();
+
+
+============================================================
+ FILE: /Users/careycarroll/Github Projects/financial-calculator/js/prefetch.js
+============================================================
+
+// Performance optimizations using Quicklink
+// Load Quicklink from CDN and initialize prefetching
+(function () {
+  // Load Quicklink library
+  const script = document.createElement("script");
+  script.src = "https://unpkg.com/quicklink@2.3.0/dist/quicklink.umd.js";
+  script.onload = function () {
+    // Initialize prefetching on hover for all links
+    if (window.quicklink) {
+      window.quicklink.listen({
+        el: document.body,
+        origins: [location.origin],
+      });
+    }
+
+    // Optional: Prefetch critical pages on idle
+    const criticalPages = [
+      "pages/loan.html",
+      "pages/loan-advanced.html",
+      "pages/pv.html",
+      "pages/npv-irr.html",
+      "pages/options.html",
+      "pages/projections.html",
+      "pages/fire.html",
+      "pages/news.html",
+    ];
+
+    // Prefetch critical pages after initial page load
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(() => {
+        criticalPages.forEach((page) => {
+          const link = document.createElement("link");
+          link.rel = "prefetch";
+          link.href = page;
+          document.head.appendChild(link);
+        });
+      });
+    }
+  };
+  document.head.appendChild(script);
+})();
+
+
+============================================================
+ FILE: /Users/careycarroll/Github Projects/financial-calculator/js/projections.js
+============================================================
+
+// ===== CONSTANTS =====
+// SP500 constants — sourced from CONFIG in chart-utils.js
+const SP500_NOMINAL = CONFIG.SP500_NOMINAL_RETURN;
+const SP500_REAL = CONFIG.SP500_REAL_RETURN;
+
+// ===== DOM ELEMENTS =====
+const calculateBtn = document.getElementById("proj-calculate-btn");
+const nominalBtn = document.getElementById("proj-nominal-btn");
+const realBtn = document.getElementById("proj-real-btn");
+
+let currentView = "nominal";
+let storedProjections = null;
+let projectionChartController = null;
+let storedInputs = null;
+
+// ===== EVENT LISTENERS =====
+calculateBtn.addEventListener("click", handleCalculate);
+
+nominalBtn.addEventListener("click", () => {
+  if (currentView === "nominal") return;
+  currentView = "nominal";
+  nominalBtn.classList.add("active");
+  realBtn.classList.remove("active");
+  if (storedProjections && storedInputs) {
+    displayChart(storedProjections, storedInputs, "nominal");
+  }
+});
+
+realBtn.addEventListener("click", () => {
+  if (currentView === "real") return;
+  currentView = "real";
+  realBtn.classList.add("active");
+  nominalBtn.classList.remove("active");
+  if (storedProjections && storedInputs) {
+    displayChart(storedProjections, storedInputs, "real");
+  }
+});
+
+// Enter key
+bindFormEnter(() => handleCalculate());
+
+// ===== FORMATTING =====
+// formatCurrency is now provided by chart-utils.js
+// Unified function auto-scales: <$1K → 2 decimals, $1K-$999K → whole, $1M+ → compact
+
+// ===== SCENARIO DEFINITIONS =====
+function buildScenarios(baseRate, deviation, showSP500) {
+  const scenarios = [
+    {
+      name: "Bear Case",
+      rate: baseRate - deviation,
+      color: "#f472b6",
+      dash: [],
+    },
+    {
+      name: "Conservative",
+      rate: baseRate - deviation / 2,
+      color: "#f59e0b",
+      dash: [],
+    },
+    {
+      name: "Base Case",
+      rate: baseRate,
+      color: "#2dd4bf",
+      dash: [],
+      bold: true,
+    },
+    {
+      name: "Optimistic",
+      rate: baseRate + deviation / 2,
+      color: "#4ade80",
+      dash: [],
+    },
+    {
+      name: "Bull Case",
+      rate: baseRate + deviation,
+      color: "#22c55e",
+      dash: [],
+    },
+  ];
+
+  if (showSP500) {
+    scenarios.push({
+      name: "S&P 500 Avg",
+      rate: SP500_NOMINAL,
+      color: "#e2e8f0",
+      dash: [6, 4],
+      isBenchmark: true,
+    });
+  }
+
+  // Ensure no negative rates
+  scenarios.forEach((s) => {
+    if (s.rate < 0) s.rate = 0;
+  });
+
+  return scenarios;
+}
+
+// ===== PROJECTION CALCULATION =====
+function projectPortfolio(
+  portfolio,
+  monthlyContrib,
+  contribIncrease,
+  annualRate,
+  years,
+) {
+  const monthlyRate = annualRate / 100 / 12;
+  const yearlyData = [];
+  let balance = portfolio;
+  let totalContributed = portfolio;
+  let currentMonthly = monthlyContrib;
+
+  yearlyData.push({
+    year: 0,
+    balance: balance,
+    totalContributed: portfolio,
+    growth: 0,
+  });
+
+  for (let year = 1; year <= years; year++) {
+    for (let month = 1; month <= 12; month++) {
+      balance = balance * (1 + monthlyRate) + currentMonthly;
+      totalContributed += currentMonthly;
+    }
+
+    yearlyData.push({
+      year: year,
+      balance: balance,
+      totalContributed: totalContributed,
+      growth: balance - totalContributed,
+    });
+
+    // Increase contributions annually
+    currentMonthly = currentMonthly * (1 + contribIncrease / 100);
+  }
+
+  return yearlyData;
+}
+
+// ===== MILESTONE CALCULATION =====
+function findMilestoneYear(yearlyData, milestone) {
+  for (let i = 1; i < yearlyData.length; i++) {
+    if (
+      yearlyData[i].balance >= milestone &&
+      yearlyData[i - 1].balance < milestone
+    ) {
+      // Interpolate
+      const prev = yearlyData[i - 1].balance;
+      const curr = yearlyData[i].balance;
+      const fraction = (milestone - prev) / (curr - prev);
+      return (i - 1 + fraction).toFixed(1);
+    }
+  }
+  return null;
+}
+
+// ===== MAIN HANDLER =====
+function handleCalculate() {
+  const portfolio =
+    safeParseFloat(document.getElementById("proj-portfolio").value, 0);
+  const monthly =
+    safeParseFloat(document.getElementById("proj-monthly").value, 0);
+  const contribIncrease =
+    safeParseFloat(document.getElementById("proj-contrib-increase").value, 0);
+  const horizon = safeParseInt(document.getElementById("proj-horizon").value);
+  const expectedReturn = safeParseFloat(
+    document.getElementById("proj-return").value
+    );
+  const deviation = safeParseFloat(document.getElementById("proj-deviation").value);
+  const inflation = safeParseFloat(document.getElementById("proj-inflation").value);
+  const showSP500 = document.getElementById("proj-sp500").value === "yes";
+
+  // Validate
+  const valid = validateInputs([
+    { id: "proj-horizon",   label: "Time Horizon",    required: true, min: 1,  max: 60, integer: true },
+    { id: "proj-return",    label: "Expected Return", required: true, min: 0,  max: 50  },
+    { id: "proj-deviation", label: "Std Deviation",   required: false, min: 0, max: 30  },
+    { id: "proj-inflation", label: "Inflation Rate",  required: false, min: 0, max: 20  },
+  ], ".calc-form");
+  if (!valid) return;
+
+  if (portfolio === 0 && monthly === 0) {
+    showFieldError("proj-portfolio", "Please enter a portfolio value or monthly contribution.");
+    return;
+  }
+
+  const milestones = [];
+  const m1 = safeParseFloat(document.getElementById("proj-milestone-1").value);
+  const m2 = safeParseFloat(document.getElementById("proj-milestone-2").value);
+  const m3 = safeParseFloat(document.getElementById("proj-milestone-3").value);
+  if (m1) milestones.push(m1);
+  if (m2) milestones.push(m2);
+  if (m3) milestones.push(m3);
+
+  const scenarios = buildScenarios(expectedReturn, deviation, showSP500);
+
+  // Calculate projections for each scenario
+  const projections = scenarios.map((scenario) => {
+    const data = projectPortfolio(
+      portfolio,
+      monthly,
+      contribIncrease,
+      scenario.rate,
+      horizon,
+    );
+    return {
+      ...scenario,
+      data: data,
+      finalValue: data[data.length - 1].balance,
+      totalContributed: data[data.length - 1].totalContributed,
+      growth: data[data.length - 1].growth,
+    };
+  });
+
+  // Store for view toggling
+  storedProjections = projections;
+  storedInputs = {
+    portfolio,
+    monthly,
+    contribIncrease,
+    horizon,
+    inflation,
+    milestones,
+    showSP500,
+  };
+
+  // Show sections first so canvas has dimensions
+  document.getElementById("proj-results").classList.remove("hidden");
+  document.getElementById("proj-chart-section").classList.remove("hidden");
+  if (milestones.length > 0) {
+    document
+      .getElementById("proj-milestones-section")
+      .classList.remove("hidden");
+  }
+  document.getElementById("proj-breakdown-section").classList.remove("hidden");
+
+  // Render everything
+  displayResults(projections);
+  currentView = "nominal";
+  nominalBtn.classList.add("active");
+  realBtn.classList.remove("active");
+  displayChart(projections, storedInputs, "nominal");
+  if (milestones.length > 0) {
+    displayMilestones(projections, milestones);
+  }
+  displayBreakdown(projections);
+
+  document
+    .getElementById("proj-results")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+// ===== DISPLAY: RESULTS TABLE =====
+function displayResults(projections) {
+  const tbody = document.getElementById("proj-results-body");
+  tbody.innerHTML = "";
+
+  projections.forEach((proj) => {
+    const multiple =
+      proj.totalContributed > 0
+        ? (proj.finalValue / proj.totalContributed).toFixed(2) + "x"
+        : "—";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${proj.color};margin-right:6px;vertical-align:middle;${proj.dash.length ? "border:2px dashed " + proj.color + ";background:transparent;" : ""}"></span>
+        <strong>${proj.name}</strong>
+      </td>
+      <td style="color:${proj.color}">${proj.rate.toFixed(1)}%</td>
+      <td style="font-weight:${proj.bold ? "700" : "400"};color:${proj.bold ? "var(--accent)" : "var(--text-primary)"}">${formatCurrency(proj.finalValue)}</td>
+      <td>${formatCurrency(proj.totalContributed)}</td>
+      <td style="color:var(--accent)">${formatCurrency(proj.growth)}</td>
+      <td>${multiple}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== DISPLAY: CHART =====
+function displayChart(projections, inputs, view) {
+  const canvas = document.getElementById("proj-chart-canvas");
+
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() => displayChart(projections, inputs, view));
+    return;
+  }
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+
+  const padding = { top: 30, right: 30, bottom: 50, left: 80 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+
+  const horizon = inputs.horizon;
+  const inflation = inputs.inflation / 100;
+
+  // Adjust data for inflation if needed
+  const adjustedProjections = projections.map((proj) => {
+    let adjustedRate = proj.rate;
+    if (view === "real") {
+      adjustedRate = ((1 + proj.rate / 100) / (1 + inflation) - 1) * 100;
+      if (proj.isBenchmark) {
+        adjustedRate = SP500_REAL;
+      }
+    }
+
+    if (view === "real") {
+      const data = projectPortfolio(
+        inputs.portfolio,
+        inputs.monthly,
+        inputs.contribIncrease,
+        adjustedRate,
+        horizon,
+      );
+      return { ...proj, adjustedData: data, adjustedRate: adjustedRate };
+    }
+
+    return { ...proj, adjustedData: proj.data, adjustedRate: proj.rate };
+  });
+
+  // Find max value
+  const maxValue = Math.max(
+    ...adjustedProjections.flatMap((p) => p.adjustedData.map((d) => d.balance)),
+  );
+
+  function toX(year) {
+    return padding.left + (year / horizon) * chartWidth;
+  }
+
+  function toY(value) {
+    return padding.top + chartHeight - (value / (maxValue * 1.1)) * chartHeight;
+  }
+
+  function fromX(x) {
+    return ((x - padding.left) / chartWidth) * horizon;
+  }
+
+  function drawChart(highlightYear) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+
+    // Grid
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
+    ctx.lineWidth = 1;
+
+    const ySteps = 5;
+    for (let i = 0; i <= ySteps; i++) {
+      const value = ((maxValue * 1.1) / ySteps) * i;
+      const y = toY(value);
+      ctx.beginPath();
+      ctx.moveTo(padding.left, y);
+      ctx.lineTo(chart.width - padding.right, y);
+      ctx.stroke();
+
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "11px sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
+    }
+
+    // X-axis
+    ctx.textAlign = "center";
+    const xStep = Math.max(1, Math.ceil(horizon / 10));
+    for (let year = 0; year <= horizon; year += xStep) {
+      const x = toX(year);
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillText(`Yr ${year}`, x, chart.height - padding.bottom + 20);
+
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
+      ctx.beginPath();
+      ctx.moveTo(x, padding.top);
+      ctx.lineTo(x, padding.top + chartHeight);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "12px sans-serif";
+    ctx.fillText(
+      view === "real" ? "Years (Inflation-Adjusted)" : "Years",
+      chart.width / 2,
+      chart.height - 5,
+    );
+
+    // Draw each projection line
+    adjustedProjections.forEach((proj) => {
+      ctx.strokeStyle = proj.color;
+      ctx.lineWidth = proj.bold ? 3 : 2;
+      ctx.setLineDash(proj.dash || []);
+
+      ctx.beginPath();
+      proj.adjustedData.forEach((point, i) => {
+        const x = toX(point.year);
+        const y = toY(point.balance);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    // Hover crosshair and tooltip
+    if (
+      highlightYear !== null &&
+      highlightYear >= 0 &&
+      highlightYear <= horizon
+    ) {
+      const yearIndex = Math.round(highlightYear);
+
+      const hx = toX(yearIndex);
+
+      // Crosshair
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(hx, padding.top);
+      ctx.lineTo(hx, padding.top + chartHeight);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Dots on each line
+      const tooltipLines = [`Year ${yearIndex}`];
+
+      adjustedProjections.forEach((proj) => {
+        if (yearIndex < proj.adjustedData.length) {
+          const point = proj.adjustedData[yearIndex];
+          const hy = toY(point.balance);
+
+          ctx.beginPath();
+          ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+          ctx.fillStyle = proj.color;
+          ctx.fill();
+          ctx.strokeStyle = "#0f172a";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          tooltipLines.push(`${proj.name}: ${formatCurrency(point.balance)}`);
+        }
+      });
+
+      // Tooltip
+      ctx.font = "12px sans-serif";
+      const tooltipWidth =
+        Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
+      const tooltipHeight = tooltipLines.length * 20 + 12;
+
+      let tx = hx + 15;
+      let ty = padding.top + 10;
+
+      if (tx + tooltipWidth > chart.width - padding.right) {
+        tx = hx - tooltipWidth - 15;
+      }
+
+      // Background
+      ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+      ctx.lineWidth = 1;
+
+      const radius = 6;
       ctx.beginPath();
       ctx.moveTo(tx + radius, ty);
       ctx.lineTo(tx + tooltipWidth - radius, ty);
@@ -40,32 +1057,181 @@
     }
   }
 
-  // Remove old listeners by replacing canvas
-  const newCanvas = canvas.cloneNode(true);
-  canvas.parentNode.replaceChild(newCanvas, canvas);
+  // Build offscreen static cache
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 30, right: 30, bottom: 50, left: 80 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+  const maxValue = Math.max(...adjustedProjections.flatMap((p) => p.adjustedData.map((d) => d.balance)),
+  );
 
-  // Initial draw on the new canvas
-  displayChartDirect(newCanvas, adjustedProjections, inputs, view, null);
+  function toXProj(year) {
+    return padding.left + (year / horizon) * chartWidth;
+  }
+  function toYProj(value) {
+    return padding.top + chartHeight - (value / (maxValue * 1.1)) * chartHeight;
+  }
+  function fromXProj(x) {
+    return ((x - padding.left) / chartWidth) * horizon;
+  }
 
-  // Bind mouse events on new canvas
-  newCanvas.addEventListener("mousemove", (e) => {
-    const r = newCanvas.getBoundingClientRect();
-    const mouseX = e.clientX - r.left;
-    const year = fromX(mouseX);
+  const offscreenProj = document.createElement("canvas");
+  offscreenProj.width = chart.width;
+  offscreenProj.height = chart.height;
+  const offCtxProj = offscreenProj.getContext("2d");
 
-    if (year >= 0 && year <= horizon) {
-      newCanvas.style.cursor = "crosshair";
-      displayChartDirect(newCanvas, adjustedProjections, inputs, view, year);
-    } else {
-      newCanvas.style.cursor = "default";
-      displayChartDirect(newCanvas, adjustedProjections, inputs, view, null);
+  // Draw static layer once
+  offCtxProj.clearRect(0, 0, offscreenProj.width, offscreenProj.height);
+
+  const ySteps = 5;
+  for (let i = 0; i <= ySteps; i++) {
+    const value = ((maxValue * 1.1) / ySteps) * i;
+    const y = toYProj(value);
+    offCtxProj.strokeStyle = "rgba(148, 163, 184, 0.15)";
+    offCtxProj.lineWidth = 1;
+    offCtxProj.beginPath();
+    offCtxProj.moveTo(padding.left, y);
+    offCtxProj.lineTo(offscreenProj.width - padding.right, y);
+    offCtxProj.stroke();
+    offCtxProj.fillStyle = "#94a3b8";
+    offCtxProj.font = "11px sans-serif";
+    offCtxProj.textAlign = "right";
+    offCtxProj.fillText(formatCurrency(value), padding.left - 10, y + 4);
+  }
+
+  offCtxProj.textAlign = "center";
+  const xStepProj = Math.max(1, Math.ceil(horizon / 10));
+  for (let year = 0; year <= horizon; year += xStepProj) {
+    const x = toXProj(year);
+    offCtxProj.fillStyle = "#94a3b8";
+    offCtxProj.fillText(`Yr ${year}`, x, chart.height - padding.bottom + 20);
+    offCtxProj.strokeStyle = "rgba(148, 163, 184, 0.1)";
+    offCtxProj.lineWidth = 1;
+    offCtxProj.beginPath();
+    offCtxProj.moveTo(x, padding.top);
+    offCtxProj.lineTo(x, padding.top + chartHeight);
+    offCtxProj.stroke();
+  }
+
+  offCtxProj.fillStyle = "#94a3b8";
+  offCtxProj.font = "12px sans-serif";
+  offCtxProj.fillText(
+    view === "real" ? "Years (Inflation-Adjusted)" : "Years",
+    chart.width / 2, chart.height - 5,
+  );
+
+  adjustedProjections.forEach((proj) => {
+    offCtxProj.strokeStyle = proj.color;
+    offCtxProj.lineWidth = proj.bold ? 3 : 2;
+    offCtxProj.setLineDash(proj.dash || []);
+    offCtxProj.beginPath();
+    proj.adjustedData.forEach((point, i) => {
+      const x = toXProj(point.year);
+      const y = toYProj(point.balance);
+      if (i === 0) offCtxProj.moveTo(x, y);
+      else offCtxProj.lineTo(x, y);
+    });
+    offCtxProj.stroke();
+    offCtxProj.setLineDash([]);
+  });
+
+  // Initial draw
+  ctx.clearRect(0, 0, chart.width, chart.height);
+  ctx.drawImage(offscreenProj, 0, 0);
+
+  if (projectionChartController) projectionChartController.abort();
+  projectionChartController = new AbortController();
+  const { signal } = projectionChartController;
+
+  function drawProjOverlay(highlightYear) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+    ctx.drawImage(offscreenProj, 0, 0);
+
+    if (highlightYear === null || highlightYear < 0 || highlightYear > horizon) return;
+
+    const yearIndex = Math.round(highlightYear);
+    const hx = toXProj(yearIndex);
+
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(hx, padding.top);
+    ctx.lineTo(hx, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const tooltipLines = [`Year ${yearIndex}`];
+    adjustedProjections.forEach((proj) => {
+      if (yearIndex < proj.adjustedData.length) {
+        const point = proj.adjustedData[yearIndex];
+        const hy = toYProj(point.balance);
+        ctx.beginPath();
+        ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+        ctx.fillStyle = proj.color;
+        ctx.fill();
+        ctx.strokeStyle = "#0f172a";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        tooltipLines.push(`${proj.name}: ${formatCurrency(point.balance)}`);
+      }
+    });
+
+    ctx.font = "12px sans-serif";
+    const tooltipWidth = Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
+    const tooltipHeight = tooltipLines.length * 20 + 12;
+    let tx = hx + 15;
+    let ty = padding.top + 10;
+    if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
+
+    const radius = 6;
+    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tx + radius, ty);
+    ctx.lineTo(tx + tooltipWidth - radius, ty);
+    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + radius, radius);
+    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - radius);
+    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - radius, ty + tooltipHeight, radius);
+    ctx.lineTo(tx + radius, ty + tooltipHeight);
+    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - radius, r);
+    ctx.lineTo(tx, ty + radius);
+    ctx.arcTo(tx, ty, tx + radius, ty, radius);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#e2e8f0";
+    ctx.font = "bold 12px sans-serif";
+    ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
+    for (let i = 1; i < tooltipLines.length; i++) {
+      const proj = adjustedProjections[i - 1];
+      ctx.fillStyle = proj ? proj.color : "#e2e8f0";
+      ctx.font = "12px sans-serif";
+      ctx.fillText(tooltipLines[i], tx + 12, ty + 18 + i * 20);
     }
-  });
+  }
 
-  newCanvas.addEventListener("mouseleave", () => {
-    newCanvas.style.cursor = "default";
-    displayChartDirect(newCanvas, adjustedProjections, inputs, view, null);
-  });
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = chart.width / r.width;
+    const year = fromXProj((e.clientX - r.left) * scaleX);
+    if (year >= 0 && year <= horizon) {
+      canvas.style.cursor = "crosshair";
+      drawProjOverlay(year);
+    } else {
+      canvas.style.cursor = "default";
+      drawProjOverlay(null);
+    }
+  }), { signal });
+
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
+    drawProjOverlay(null);
+  }, { signal });
 
   // Build legend
   const legend = document.getElementById("proj-chart-legend");
@@ -79,187 +1245,6 @@
       return `<span class="legend-item"><span class="legend-color" style="${style}"></span> ${proj.name} (${rateLabel}%)</span>`;
     })
     .join("");
-}
-
-// ===== DIRECT DRAW (for mouse events after canvas replacement) =====
-function displayChartDirect(
-  canvas,
-  adjustedProjections,
-  inputs,
-  view,
-  highlightYear,
-) {
-  const chart = createChartContext(
-    canvas,
-    canvas.clientWidth,
-    canvas.clientHeight,
-  );
-  const ctx = chart.ctx;
-  const horizon = inputs.horizon;
-
-  const padding = { top: 30, right: 30, bottom: 50, left: 80 };
-  const chartWidth = chart.width - padding.left - padding.right;
-  const chartHeight = chart.height - padding.top - padding.bottom;
-
-  const maxValue = Math.max(
-    ...adjustedProjections.flatMap((p) => p.adjustedData.map((d) => d.balance)),
-  );
-
-  function toX(year) {
-    return padding.left + (year / horizon) * chartWidth;
-  }
-
-  function toY(value) {
-    return padding.top + chartHeight - (value / (maxValue * 1.1)) * chartHeight;
-  }
-
-  ctx.clearRect(0, 0, chart.width, chart.height);
-
-  // Grid
-  ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-  ctx.lineWidth = 1;
-
-  const ySteps = 5;
-  for (let i = 0; i <= ySteps; i++) {
-    const value = ((maxValue * 1.1) / ySteps) * i;
-    const y = toY(value);
-    ctx.beginPath();
-    ctx.moveTo(padding.left, y);
-    ctx.lineTo(chart.width - padding.right, y);
-    ctx.stroke();
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
-  }
-
-  // X-axis
-  ctx.textAlign = "center";
-  const xStep = Math.max(1, Math.ceil(horizon / 10));
-  for (let year = 0; year <= horizon; year += xStep) {
-    const x = toX(year);
-    ctx.fillStyle = "#94a3b8";
-    ctx.fillText(`Yr ${year}`, x, chart.height - padding.bottom + 20);
-
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
-    ctx.beginPath();
-    ctx.moveTo(x, padding.top);
-    ctx.lineTo(x, padding.top + chartHeight);
-    ctx.stroke();
-  }
-
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
-  ctx.fillText(
-    view === "real" ? "Years (Inflation-Adjusted)" : "Years",
-    chart.width / 2,
-    chart.height - 5,
-  );
-
-  // Lines
-  adjustedProjections.forEach((proj) => {
-    ctx.strokeStyle = proj.color;
-    ctx.lineWidth = proj.bold ? 3 : 2;
-    ctx.setLineDash(proj.dash || []);
-
-    ctx.beginPath();
-    proj.adjustedData.forEach((point, i) => {
-      const x = toX(point.year);
-      const y = toY(point.balance);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-    ctx.setLineDash([]);
-  });
-
-  // Hover
-  if (
-    highlightYear !== null &&
-    highlightYear >= 0 &&
-    highlightYear <= horizon
-  ) {
-    const yearIndex = Math.round(highlightYear);
-    const hx = toX(yearIndex);
-
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]);
-    ctx.beginPath();
-    ctx.moveTo(hx, padding.top);
-    ctx.lineTo(hx, padding.top + chartHeight);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    const tooltipLines = [`Year ${yearIndex}`];
-
-    adjustedProjections.forEach((proj) => {
-      if (yearIndex < proj.adjustedData.length) {
-        const point = proj.adjustedData[yearIndex];
-        const hy = toY(point.balance);
-
-        ctx.beginPath();
-        ctx.arc(hx, hy, 4, 0, Math.PI * 2);
-        ctx.fillStyle = proj.color;
-        ctx.fill();
-        ctx.strokeStyle = "#0f172a";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        tooltipLines.push(`${proj.name}: ${formatCurrency(point.balance)}`);
-      }
-    });
-
-    ctx.font = "12px sans-serif";
-    const tooltipWidth =
-      Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
-    const tooltipHeight = tooltipLines.length * 20 + 12;
-
-    let tx = hx + 15;
-    let ty = padding.top + 10;
-
-    if (tx + tooltipWidth > chart.width - padding.right) {
-      tx = hx - tooltipWidth - 15;
-    }
-
-    const radius = 6;
-    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-    ctx.lineWidth = 1;
-
-    ctx.beginPath();
-    ctx.moveTo(tx + radius, ty);
-    ctx.lineTo(tx + tooltipWidth - radius, ty);
-    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + radius, radius);
-    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - radius);
-    ctx.arcTo(
-      tx + tooltipWidth,
-      ty + tooltipHeight,
-      tx + tooltipWidth - radius,
-      ty + tooltipHeight,
-      radius,
-    );
-    ctx.lineTo(tx + radius, ty + tooltipHeight);
-    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - radius, radius);
-    ctx.lineTo(tx, ty + radius);
-    ctx.arcTo(tx, ty, tx + radius, ty, radius);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#e2e8f0";
-    ctx.font = "bold 12px sans-serif";
-    ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
-
-    ctx.font = "12px sans-serif";
-    for (let i = 1; i < tooltipLines.length; i++) {
-      const proj = adjustedProjections[i - 1];
-      ctx.fillStyle = proj ? proj.color : "#e2e8f0";
-      ctx.fillText(tooltipLines[i], tx + 12, ty + 18 + i * 20);
-    }
-  }
 }
 
 // ===== DISPLAY: MILESTONES =====
@@ -413,19 +1398,14 @@ function handleCalculate() {
     return;
   }
 
-  const annualRate = parseFloat(document.getElementById("pv-rate").value);
-  const years = parseInt(document.getElementById("pv-periods").value);
-  const compounding = parseInt(document.getElementById("pv-compounding").value);
+  const annualRate = safeParseFloat(document.getElementById("pv-rate").value);
+  const years = safeParseInt(document.getElementById("pv-periods").value);
+  const compounding = safeParseInt(document.getElementById("pv-compounding").value);
 
-  if (!annualRate || !years) {
-    alert("Please fill in the discount rate and number of years.");
-    return;
-  }
-
-  if (annualRate <= 0 || years <= 0) {
-    alert("Discount rate and years must be greater than zero.");
-    return;
-  }
+  const valid = validateInputs([
+    { id: "pv-rate",    label: "Discount Rate", required: true, min: 0.01, max: 50  },
+    { id: "pv-periods", label: "Years",         required: true, min: 1,    max: 100, integer: true },
+  ], ".calc-form");
 
   const ratePerPeriod = annualRate / 100 / compounding;
   const totalPeriods = years * compounding;
@@ -433,20 +1413,20 @@ function handleCalculate() {
   let presentValue, futureValue, totalPayments;
 
   if (currentMode === "lump") {
-    futureValue = parseFloat(document.getElementById("pv-future-value").value);
+    futureValue = safeParseFloat(document.getElementById("pv-future-value").value);
 
     if (!futureValue || futureValue <= 0) {
-      alert("Please enter a valid future value.");
+      showFieldError("pv-future-value", "Please enter a valid future value.");
       return;
     }
 
     presentValue = futureValue / Math.pow(1 + ratePerPeriod, totalPeriods);
     totalPayments = futureValue;
   } else {
-    const payment = parseFloat(document.getElementById("pv-payment").value);
+    const payment = safeParseFloat(document.getElementById("pv-payment").value);
 
     if (!payment || payment <= 0) {
-      alert("Please enter a valid payment amount.");
+      showFieldError("pv-payment", "Please enter a valid payment amount.");
       return;
     }
 
@@ -493,32 +1473,34 @@ function handleCalculate() {
 
 // ===== COMPARE CALCULATION =====
 function handleCompare() {
-  const annualRate = parseFloat(document.getElementById("pv-rate").value);
-  const compounding = parseInt(document.getElementById("pv-compounding").value);
-  const lumpSum = parseFloat(document.getElementById("pv-compare-lump").value);
-  const annuityPayment = parseFloat(
-    document.getElementById("pv-compare-payment").value,
-  );
-  const annuityYears = parseInt(
-    document.getElementById("pv-compare-years").value,
-  );
-
-  if (!annualRate || !lumpSum || !annuityPayment || !annuityYears) {
-    alert(
-      "Please fill in all fields: lump sum, annuity payment, annuity duration, and discount rate.",
+  const annualRate = safeParseFloat(document.getElementById("pv-rate").value);
+  const compounding = safeParseInt(document.getElementById("pv-compounding").value);
+  const lumpSum = safeParseFloat(document.getElementById("pv-compare-lump").value);
+  const annuityPayment = safeParseFloat(
+    document.getElementById("pv-compare-payment").value
     );
-    return;
+  const annuityYears = safeParseInt(
+    document.getElementById("pv-compare-years").value
+    );
+
+  if (!annualRate || annualRate <= 0) {
+    showFieldError("pv-rate", "Please enter a valid discount rate.");
+    valid = false;
+  }
+  if (!lumpSum || lumpSum <= 0) {
+    showFieldError("pv-compare-lump", "Please enter a valid lump sum.");
+    valid = false;
+  }
+  if (!annuityPayment || annuityPayment <= 0) {
+    showFieldError("pv-compare-payment", "Please enter a valid annuity payment.");
+    valid = false;
+  }
+  if (!annuityYears || annuityYears <= 0) {
+    showFieldError("pv-compare-years", "Please enter a valid number of years.");
+    valid = false;
   }
 
-  if (
-    annualRate <= 0 ||
-    lumpSum <= 0 ||
-    annuityPayment <= 0 ||
-    annuityYears <= 0
-  ) {
-    alert("All values must be greater than zero.");
-    return;
-  }
+  if (!valid) return;
 
   const useTax = taxToggle.checked;
   let lumpTaxRate = 0;
@@ -527,14 +1509,13 @@ function handleCompare() {
 
   if (useTax) {
     lumpTaxRate =
-      (parseFloat(document.getElementById("pv-lump-tax-rate").value) || 0) /
+      (safeParseFloat(document.getElementById("pv-lump-tax-rate").value, 0)) /
       100;
     annuityTaxRate =
-      (parseFloat(document.getElementById("pv-annuity-tax-rate").value) || 0) /
+      (safeParseFloat(document.getElementById("pv-annuity-tax-rate").value, 0)) /
       100;
     investmentTaxRate =
-      (parseFloat(document.getElementById("pv-investment-tax-rate").value) ||
-        0) / 100;
+      (safeParseFloat(document.getElementById("pv-investment-tax-rate").value, 0)) / 100;
   }
 
   const ratePerPeriod = annualRate / 100 / compounding;
@@ -740,7 +1721,7 @@ function buildBreakdown(
       });
     }
   } else {
-    const payment = parseFloat(document.getElementById("pv-payment").value);
+    const payment = safeParseFloat(document.getElementById("pv-payment").value);
 
     for (let year = 0; year <= years; year++) {
       const periods = year * compounding;
@@ -802,166 +1783,61 @@ function buildComparisonBreakdown(
 }
 
 // ===== STANDARD CHART =====
-function displayChart(breakdown) {
-  const chartBars = document.getElementById("pv-chart-bars");
-  const chartYAxis = document.getElementById("pv-chart-y-axis");
-  const legend = document.getElementById("pv-chart-legend");
+let pvBarController = null;
 
-  // Update header and legend for standard mode
-  document.querySelector("#pv-chart-section h2").textContent =
-    "Value Over Time";
+function displayChart(breakdown) {
+  const canvas = document.getElementById("pv-bar-canvas");
+  const legend = document.getElementById("pv-chart-legend");
+  if (!canvas) return;
+
+  document.querySelector("#pv-chart-section h2").textContent = "Value Over Time";
   legend.innerHTML = `
     <span class="legend-item"><span class="legend-color legend-principal"></span> Present Value Portion</span>
     <span class="legend-item"><span class="legend-color legend-interest"></span> Interest (Discount)</span>
   `;
 
   const data = breakdown.filter((d) => d.year > 0);
-  const maxTotal = Math.max(...data.map((d) => d.value + d.interest));
-
-  chartYAxis.innerHTML = "";
-  const steps = 5;
-  for (let i = steps; i >= 0; i--) {
-    const label = document.createElement("span");
-    const value = (maxTotal / steps) * i;
-    label.textContent =
-      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
-    chartYAxis.appendChild(label);
-  }
-
-  chartBars.innerHTML = "";
-  data.forEach((d) => {
-    const total = d.value + d.interest;
-    const totalHeight = (total / maxTotal) * 100;
-    const pvHeight = (d.value / total) * totalHeight;
-    const interestHeight = (d.interest / total) * totalHeight;
-
-    const group = document.createElement("div");
-    group.className = "bar-group";
-
-    const stack = document.createElement("div");
-    stack.className = "bar-stack";
-    stack.style.height = `${totalHeight}%`;
-
-    const interestBar = document.createElement("div");
-    interestBar.className = "bar-interest";
-    interestBar.style.height = `${interestHeight}%`;
-
-    const pvBar = document.createElement("div");
-    pvBar.className = "bar-principal";
-    pvBar.style.height = `${pvHeight}%`;
-
-    stack.appendChild(interestBar);
-    stack.appendChild(pvBar);
-
-    const label = document.createElement("div");
-    label.className = "bar-label";
-    label.textContent = `Yr ${d.year}`;
-
-    group.appendChild(stack);
-    group.appendChild(label);
-    chartBars.appendChild(group);
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    tooltip.innerHTML = `<strong>Year ${d.year}</strong><br>Present Value: ${formatCurrency(d.value)}<br>Discount: ${formatCurrency(d.interest)}`;
-    group.appendChild(tooltip);
-
-    group.addEventListener("mouseenter", (e) => {
-      tooltip.style.display = "block";
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mousemove", (e) => {
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  drawBarChart(canvas, data, {
+    series: [
+      { key: "value", color: "#2dd4bf", label: "Present Value" },
+      { key: "interest", color: "#f472b6", label: "Discount" },
+    ],
+    xLabel: (d) => `Yr ${d.year}`,
+    tooltip: (d) => [
+      `Year ${d.year}`,
+      `Present Value: ${formatCurrency(d.value)}`,
+      `Discount: ${formatCurrency(d.interest)}`,
+    ],
+    controller: pvBarController,
   });
 }
 
 // ===== COMPARISON CHART =====
 function displayComparisonChart(breakdown, lumpAfterTax) {
-  const chartBars = document.getElementById("pv-chart-bars");
-  const chartYAxis = document.getElementById("pv-chart-y-axis");
+  const canvas = document.getElementById("pv-bar-canvas");
   const legend = document.getElementById("pv-chart-legend");
+  if (!canvas) return;
 
-  document.querySelector("#pv-chart-section h2").textContent =
-    "Lump Sum Growth vs. Annuity Payments";
+  document.querySelector("#pv-chart-section h2").textContent = "Lump Sum Growth vs. Annuity Payments";
   legend.innerHTML = `
     <span class="legend-item"><span class="legend-color legend-principal"></span> Lump Sum (Invested)</span>
     <span class="legend-item"><span class="legend-color legend-interest"></span> Annuity (Cumulative Received)</span>
   `;
 
   const data = breakdown.filter((d) => d.year > 0);
-  const maxVal = Math.max(
-    ...data.map((d) => Math.max(d.lumpGrowth, d.annuityReceived)),
-  );
-
-  chartYAxis.innerHTML = "";
-  const steps = 5;
-  for (let i = steps; i >= 0; i--) {
-    const label = document.createElement("span");
-    const value = (maxVal / steps) * i;
-    label.textContent =
-      value >= 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toFixed(0)}`;
-    chartYAxis.appendChild(label);
-  }
-
-  chartBars.innerHTML = "";
-  data.forEach((d) => {
-    const group = document.createElement("div");
-    group.className = "bar-group";
-
-    const barContainer = document.createElement("div");
-    barContainer.style.display = "flex";
-    barContainer.style.alignItems = "flex-end";
-    barContainer.style.gap = "2px";
-    barContainer.style.width = "100%";
-    barContainer.style.height = "100%";
-    barContainer.style.justifyContent = "center";
-
-    const lumpBar = document.createElement("div");
-    lumpBar.className = "bar-principal";
-    lumpBar.style.width = "45%";
-    lumpBar.style.height = `${(d.lumpGrowth / maxVal) * 100}%`;
-    lumpBar.style.borderRadius = "3px 3px 0 0";
-
-    const annuityBar = document.createElement("div");
-    annuityBar.className = "bar-interest";
-    annuityBar.style.width = "45%";
-    annuityBar.style.height = `${(d.annuityReceived / maxVal) * 100}%`;
-    annuityBar.style.borderRadius = "3px 3px 0 0";
-
-    barContainer.appendChild(lumpBar);
-    barContainer.appendChild(annuityBar);
-
-    const label = document.createElement("div");
-    label.className = "bar-label";
-    label.textContent = `Yr ${d.year}`;
-
-    group.appendChild(barContainer);
-    group.appendChild(label);
-    chartBars.appendChild(group);
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "bar-tooltip";
-    tooltip.innerHTML = `<strong>Year ${d.year}</strong><br>Lump Invested: ${formatCurrency(d.lumpGrowth)}<br>Annuity Received: ${formatCurrency(d.annuityReceived)}<br>Annuity PV: ${formatCurrency(d.annuityPV)}`;
-    group.appendChild(tooltip);
-
-    group.addEventListener("mouseenter", (e) => {
-      tooltip.style.display = "block";
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mousemove", (e) => {
-      tooltip.style.left = `${e.clientX + 12}px`;
-      tooltip.style.top = `${e.clientY - 12}px`;
-    });
-    group.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
+  drawBarChart(canvas, data, {
+    series: [
+      { key: "lumpGrowth", color: "#2dd4bf", label: "Lump Sum" },
+      { key: "annuityReceived", color: "#f472b6", label: "Annuity" },
+    ],
+    xLabel: (d) => `Yr ${d.year}`,
+    tooltip: (d) => [
+      `Year ${d.year}`,
+      `Lump Invested: ${formatCurrency(d.lumpGrowth)}`,
+      `Annuity Received: ${formatCurrency(d.annuityReceived)}`,
+      `Annuity PV: ${formatCurrency(d.annuityPV)}`,
+    ],
+    controller: pvBarController,
   });
 }
 
@@ -3365,6 +4241,22 @@ function formatValuationCurrency(num) {
           </div>
           <div class="form-row">
             <div class="form-group">
+              <label for="fire-life-expectancy">Life Expectancy</label>
+              <input
+                type="number"
+                id="fire-life-expectancy"
+                placeholder="e.g. 90"
+                min="50"
+                max="120"
+                step="1"
+                value="90"
+              />
+              <span class="form-hint">Used to project portfolio through retirement.</span>
+            </div>
+            <div class="form-group"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label for="fire-current-portfolio"
                 >Current Portfolio Value ($)</label
               >
@@ -3530,6 +4422,29 @@ function formatValuationCurrency(num) {
                 >
               </div>
             </div>
+            <div id="fire-fv-options" class="form-row hidden">
+              <div class="form-group">
+                <label for="fire-income-start-age">Income Start Age</label>
+                <input
+                  type="number"
+                  id="fire-income-start-age"
+                  placeholder="e.g. 67"
+                  min="0"
+                  max="100"
+                  step="1"
+                />
+                <span class="form-hint"
+                  >Age when you expect to start receiving this income.</span
+                >
+              </div>
+              <div class="form-group">
+                <label>Present Value Equivalent</label>
+                <span id="fire-income-pv-display" class="result-value">—</span>
+                <span class="form-hint"
+                  >Estimated today's dollar value of your future income.</span
+                >
+              </div>
+            </div>
             
 
             <button id="fire-calculate-btn" class="btn-primary">
@@ -3591,6 +4506,7 @@ function formatValuationCurrency(num) {
                     <th>FIRE Number</th>
                     <th>Monthly Withdrawal</th>
                     <th>Years to FIRE</th>
+                    <th>Portfolio at Life Expectancy</th>
                     <th>Risk Level</th>
                   </tr>
                 </thead>
@@ -3618,6 +4534,24 @@ function formatValuationCurrency(num) {
                 ><span class="legend-color legend-fire-target"></span> FIRE
                 Target</span
               >
+            </div>
+          </div>
+
+          <!-- Retirement Lifecycle Chart -->
+          <div id="fire-lifecycle-section" class="chart-panel hidden">
+            <h2>Retirement Lifecycle</h2>
+            <p class="form-hint" style="margin-bottom: 1rem;">
+              Accumulation to retirement, then drawdown at multiple withdrawal rates to life expectancy.
+            </p>
+            <div class="canvas-chart">
+              <canvas id="fire-lifecycle-canvas"></canvas>
+            </div>
+            <div class="chart-legend" id="fire-lifecycle-legend">
+              <span class="legend-item"><span class="legend-color" style="background:#2dd4bf"></span> Accumulation</span>
+              <span class="legend-item"><span class="legend-color" style="background:#22c55e"></span> 3% Withdrawal</span>
+              <span class="legend-item"><span class="legend-color" style="background:#a78bfa"></span> 4% Withdrawal</span>
+              <span class="legend-item"><span class="legend-color" style="background:#f59e0b"></span> 5% Withdrawal</span>
+              <span class="legend-item"><span class="legend-color" style="background:#f472b6"></span> 6% Withdrawal</span>
             </div>
           </div>
         </div>
@@ -3731,7 +4665,7 @@ function formatValuationCurrency(num) {
     </div>
 
     <script src="../js/chart-utils.js"></script>
-    <script src="../js/fire.js" defer></script>
+    <script src="../js/fire.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -4081,9 +5015,8 @@ function formatValuationCurrency(num) {
             </button>
             <button id="chart-adjusted" class="btn-toggle">With Extras</button>
           </div>
-          <div class="chart-container">
-            <div class="chart-y-axis" id="adv-chart-y-axis"></div>
-            <div class="chart-bars" id="adv-chart-bars"></div>
+          <div class="canvas-chart">
+            <canvas id="adv-bar-canvas"></canvas>
           </div>
           <div class="chart-legend">
             <span class="legend-item"
@@ -4121,14 +5054,8 @@ function formatValuationCurrency(num) {
               Total Paid</span
             >
           </div>
-          <div class="line-chart-container">
-            <svg
-              id="adv-cumulative-chart-svg"
-              class="line-chart-svg"
-              viewBox="0 0 700 260"
-              preserveAspectRatio="none"
-            ></svg>
-            <div id="adv-cumulative-chart-tooltip" class="line-tooltip"></div>
+          <div class="canvas-chart">
+            <canvas id="adv-line-canvas"></canvas>
           </div>
         </div>
 
@@ -4175,7 +5102,7 @@ function formatValuationCurrency(num) {
     </div>
 
     <script src="../js/chart-utils.js"></script>
-    <script src="../js/loan-advanced.js" defer></script>
+    <script src="../js/loan-advanced.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -4285,14 +5212,8 @@ function formatValuationCurrency(num) {
                 Total Paid</span
               >
             </div>
-            <div class="line-chart-container">
-              <svg
-                id="cumulative-chart-svg"
-                class="line-chart-svg"
-                viewBox="0 0 700 260"
-                preserveAspectRatio="none"
-              ></svg>
-              <div id="cumulative-chart-tooltip" class="line-tooltip"></div>
+            <div class="canvas-chart">
+              <canvas id="loan-line-canvas"></canvas>
             </div>
           </div>
         </div>
@@ -4300,9 +5221,8 @@ function formatValuationCurrency(num) {
         <!-- Stacked Bar Chart -->
         <div id="item-chart">
           <div id="chart-section" class="chart-panel hidden">
-            <div class="chart-container">
-              <div class="chart-y-axis" id="chart-y-axis"></div>
-              <div class="chart-bars" id="chart-bars"></div>
+            <div class="canvas-chart">
+              <canvas id="loan-bar-canvas"></canvas>
             </div>
             <div class="chart-legend">
               <span class="legend-item"
@@ -4374,7 +5294,7 @@ function formatValuationCurrency(num) {
     </div>
 
     <script src="../js/chart-utils.js"></script>
-    <script src="../js/loan.js" defer></script>
+    <script src="../js/loan.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -5054,9 +5974,8 @@ function formatValuationCurrency(num) {
         <!-- Chart -->
         <div id="npv-chart-section" class="chart-panel hidden">
           <h2 id="npv-chart-title">Cash Flows by Period</h2>
-          <div class="chart-container">
-            <div class="chart-y-axis" id="npv-chart-y-axis"></div>
-            <div class="chart-bars" id="npv-chart-bars"></div>
+          <div class="canvas-chart">
+            <canvas id="npv-bar-canvas"></canvas>
           </div>
           <div class="chart-legend" id="npv-chart-legend">
             <span class="legend-item"
@@ -5104,7 +6023,7 @@ function formatValuationCurrency(num) {
     </div>
 
     <script src="../js/chart-utils.js"></script>
-    <script src="../js/npv-irr.js" defer></script>
+    <script src="../js/npv-irr.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -5532,12 +6451,27 @@ function formatValuationCurrency(num) {
                 />
               </div>
               <div class="form-group">
+                <label for="gk-dividend">Dividend Yield (%)</label>
+                <input
+                  type="number"
+                  id="gk-dividend"
+                  placeholder="e.g. 0"
+                  min="0"
+                  max="30"
+                  step="any"
+                  value="0"
+                />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
                 <label for="gk-type">Option Type</label>
                 <select id="gk-type">
                   <option value="call">Call</option>
                   <option value="put">Put</option>
                 </select>
               </div>
+              <div class="form-group"></div>
             </div>
 
             <button id="gk-calculate-btn" class="btn-primary">
@@ -6303,9 +7237,8 @@ function formatValuationCurrency(num) {
         <!-- Breakdown Chart -->
         <div id="pv-chart-section" class="chart-panel hidden">
           <h2>Value Over Time</h2>
-          <div class="chart-container">
-            <div class="chart-y-axis" id="pv-chart-y-axis"></div>
-            <div class="chart-bars" id="pv-chart-bars"></div>
+          <div class="canvas-chart">
+            <canvas id="pv-bar-canvas"></canvas>
           </div>
           <
           <div class="chart-legend" id="pv-chart-legend">
@@ -6345,7 +7278,7 @@ function formatValuationCurrency(num) {
     </div>
 
     <script src="../js/chart-utils.js"></script>
-    <script src="../js/pv.js" defer></script>
+    <script src="../js/pv.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>

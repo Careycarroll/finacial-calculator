@@ -80,13 +80,15 @@ function futureValue(presentValue, monthlyContribution, annualRate, years) {
 }
 
 // ===== YEARS TO REACH TARGET =====
+const MAX_PROJECTION_MONTHS = 1200; // 100 years — effectively infinity for FIRE projections
+
 function yearsToTarget(currentValue, monthlyContribution, annualRate, target) {
   if (currentValue >= target) return 0;
 
   const monthlyRate = annualRate / 12;
   let balance = currentValue;
 
-  for (let month = 1; month <= 1200; month++) {
+  for (let month = 1; month <= MAX_PROJECTION_MONTHS; month++) {
     balance = balance * (1 + monthlyRate) + monthlyContribution;
     if (balance >= target) {
       return month / 12;
@@ -183,7 +185,6 @@ function handleFireCalculate() {
   coastInput.value = Math.round(fireNumberFuture);
 
   // Years to FIRE at current rate — based on adjusted target
-  const realReturn = (1 + profile.annualReturn) / (1 + profile.inflation) - 1;
   const yearsAtCurrentRate = yearsToTarget(
     profile.portfolio,
     profile.monthlyContribution,
@@ -369,6 +370,8 @@ function handleCoastCalculate() {
   let extraMonthly = 0;
   if (!isPastCoast && profile.monthlyContribution > 0) {
     // Find how much more per month to hit coast fire number in half the remaining time
+    // Target reaching Coast FIRE within the sooner of 5 years or half the time to retirement.
+    // This gives a realistic near-term savings goal rather than spreading it over decades.
     const coastTargetYears = Math.min(5, yearsToRetire / 2);
     const totalNeeded = monthlyNeeded(
       profile.portfolio,

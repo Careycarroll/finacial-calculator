@@ -107,38 +107,21 @@ pkill -f "python.\*http" && python3 -m http.server 8000
 
 > **Goal:** Reduce code duplication, improve maintainability, and clean up dead code.
 
-- [ ] **4a. Extract shared chart drawing utilities**
-  - Grid drawing, axis labeling, and tooltip rendering logic is duplicated across 6+ chart functions (~150 lines repeated per chart).
-  - **Fix:** Create shared utilities:
-    ```
-    drawChartFrame(ctx, dims, options)
-    drawGridLines(ctx, dims, options)
-    drawTooltip(ctx, lines, x, y, bounds)
-    drawAxisLabels(ctx, dims, labels, format)
-    ```
+- [x] **4a. Extract shared chart drawing utilities**
+  - **Fix:** Added `drawTooltip(ctx, lines, x, y, bounds)` to `chart-utils.js`. Replaces all inline rounded-rect tooltip drawing blocks in `drawBarChart` and `drawLineChart`. Accepts plain strings or `{ text, color, bold }` objects for colored tooltip lines. `drawBarChart`, `drawLineChart`, `rafThrottle`, `validateInputs`, `showFieldError`, `createChartContext`, `getChartDimensions` were already extracted in Phase 1-3.
 
-- [ ] **4b. Replace magic numbers with named constants**
-  - Hardcoded values like `1200` (months), `10.5` (S&P nominal return), `7.0` (S&P real return), and various padding multipliers are scattered throughout.
-  - **Fix:** Consolidate into a top-level config object:
-    ```
-    const CONFIG = {
-      MAX_PROJECTION_MONTHS: 1200,
-      SP500_NOMINAL_RETURN: 10.5,
-      SP500_REAL_RETURN: 7.0,...
-    }
-    ```
+- [x] **4b. Replace magic numbers with named constants**
+  - **Fix:** Added `CONFIG` object to `chart-utils.js` with `MAX_PROJECTION_MONTHS`, `SP500_NOMINAL_RETURN`, `SP500_REAL_RETURN`, `DEFAULT_INFLATION`, `DEFAULT_WITHDRAWAL_RATE`, `CHART_PADDING`. Added `MAX_PROJECTION_MONTHS` constant to `fire.js`. Updated `projections.js` to reference `CONFIG.SP500_NOMINAL_RETURN` and `CONFIG.SP500_REAL_RETURN`.
 
-- [ ] **4c. Remove dead code**
-  - `getMoneyZones()` — defined inside `handlePayoffCalculate` but never called (incomplete ITM/OTM zone shading feature).
-  - `realReturn` variable — computed in `handleFireCalculate` but never used. The math is actually correct without it (nominal growth vs. nominal target), so the variable is just misleading.
+- [x] **4c. Remove dead code**
+  - `getMoneyZones()` — already removed prior to this session.
+  - `realReturn` variable — removed from `handleFireCalculate` in `fire.js`. Was computed but never used.
 
-- [ ] **4d. Document or inline `createChartContext` / `getChartDimensions`**
-  - These functions are called throughout the chart code but are not defined in the main file. They presumably live in a shared utility file, but this dependency is undocumented.
-  - **Fix:** Either inline the definitions or add clear documentation/import references.
+- [x] **4d. Document or inline `createChartContext` / `getChartDimensions`**
+  - **Fix:** Added doc comments to both functions in `chart-utils.js` explaining purpose, DPR scaling behavior, and when to use each.
 
-- [ ] **4e. Clarify Coast FIRE timeframe calculation**
-  - `coastTargetYears = Math.min(5, yearsToRetire / 2)` is an arbitrary heuristic with no explanation to the user, making the "extra monthly contribution needed" figure confusing.
-  - **Fix:** Either expose this as a user-configurable input or add a clear explanation in the UI.
+- [x] **4e. Clarify Coast FIRE timeframe calculation**
+  - **Fix:** Added inline code comment explaining the `Math.min(5, yearsToRetire / 2)` heuristic. Added UI hint below "Extra Monthly to Coast by Target" result explaining the 5-year / half-retirement-time logic to the user.
 
 ---
 

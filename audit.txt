@@ -1,0 +1,2 @@
+15:const CONFIG = {
+17:  SP500_NOMINAL_RETURN: 10.5,    // Historical S&P 500 nominal annual return (%)

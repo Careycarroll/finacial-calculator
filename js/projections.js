@@ -1,6 +1,7 @@
 // ===== CONSTANTS =====
-const SP500_NOMINAL = 10.5;
-const SP500_REAL = 7.0;
+// SP500 constants — sourced from CONFIG in chart-utils.js
+const SP500_NOMINAL = CONFIG.SP500_NOMINAL_RETURN;
+const SP500_REAL = CONFIG.SP500_REAL_RETURN;
 
 // ===== DOM ELEMENTS =====
 const calculateBtn = document.getElementById("proj-calculate-btn");

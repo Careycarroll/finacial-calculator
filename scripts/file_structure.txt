@@ -1,11 +1,12 @@
 ============================================================
  FILE STRUCTURE
- Generated: Sat Apr 11 11:43:10 EDT 2026
+ Generated: Sat Apr 11 21:53:48 EDT 2026
  Directory: /Users/careycarroll/Github Projects/financial-calculator
 ============================================================
 
 /.git
 /README.md
+/agent_promp.txt
 /audit.txt
 /css
 /css/analyzer.css
@@ -57,6 +58,9 @@
 /pages/valuator.html
 /proxy.js
 /scripts
+/scripts/codebase.txt
+/scripts/codebase_part_aa.txt
+/scripts/codebase_part_ab.txt
 /scripts/file_structure.txt
 /scripts/project_export.zsh
 /scripts/split_audit.zsh
@@ -65,24 +69,25 @@
  DETAILED LISTING (ls -lR)
 ============================================================
 
-total 80
--rw-r--r--@  1 careycarroll  staff  9926 Apr 11 11:39 README.md
--rw-r--r--@  1 careycarroll  staff  5179 Apr 11 11:27 audit.txt
-drwxr-xr-x@ 12 careycarroll  staff   384 Apr 11 08:47 css
-drwxr-xr-x@  3 careycarroll  staff    96 Apr 10 16:59 data
--rw-r--r--@  1 careycarroll  staff  4253 Apr 10 20:07 index.html
-drwxr-xr-x@ 21 careycarroll  staff   672 Apr 11 09:11 js
--rw-r--r--@  1 careycarroll  staff  2069 Apr  8 19:48 package-lock.json
--rw-r--r--@  1 careycarroll  staff   587 Apr  8 19:48 package.json
-drwxr-xr-x@ 12 careycarroll  staff   384 Apr 11 11:14 pages
--rw-r--r--@  1 careycarroll  staff  3050 Apr  9 22:11 proxy.js
-drwxr-xr-x@  5 careycarroll  staff   160 Apr 11 11:43 scripts
+total 96
+-rw-r--r--@  1 careycarroll  staff  10518 Apr 11 21:40 README.md
+-rw-r--r--@  1 careycarroll  staff  11409 Apr 11 10:05 agent_promp.txt
+-rw-r--r--@  1 careycarroll  staff   1258 Apr 11 21:52 audit.txt
+drwxr-xr-x@ 12 careycarroll  staff    384 Apr 11 08:47 css
+drwxr-xr-x@  3 careycarroll  staff     96 Apr 10 16:59 data
+-rw-r--r--@  1 careycarroll  staff   4253 Apr 10 20:07 index.html
+drwxr-xr-x@ 21 careycarroll  staff    672 Apr 11 09:11 js
+-rw-r--r--@  1 careycarroll  staff   2069 Apr  8 19:48 package-lock.json
+-rw-r--r--@  1 careycarroll  staff    587 Apr  8 19:48 package.json
+drwxr-xr-x@ 12 careycarroll  staff    384 Apr 11 16:26 pages
+-rw-r--r--@  1 careycarroll  staff   3050 Apr  9 22:11 proxy.js
+drwxr-xr-x@  8 careycarroll  staff    256 Apr 11 11:43 scripts
 
 /Users/careycarroll/Github Projects/financial-calculator/css:
 total 216
 -rw-r--r--@ 1 careycarroll  staff  15364 Apr 11 08:47 analyzer.css
 -rw-r--r--@ 1 careycarroll  staff   5329 Apr 10 21:56 base.css
--rw-r--r--@ 1 careycarroll  staff  20885 Apr 10 13:52 common-calculator.css
+-rw-r--r--@ 1 careycarroll  staff  21293 Apr 11 17:17 common-calculator.css
 -rw-r--r--@ 1 careycarroll  staff   1952 Apr 10 21:31 fire.css
 -rw-r--r--@ 1 careycarroll  staff   8933 Apr  8 19:41 loan-advanced.css
 -rw-r--r--@ 1 careycarroll  staff  11621 Apr 10 13:55 news.css
@@ -96,23 +101,23 @@ total 48
 -rw-r--r--@ 1 careycarroll  staff  23014 Apr 10 19:57 strategies.json
 
 /Users/careycarroll/Github Projects/financial-calculator/js:
-total 3064
+total 3104
 -rw-r--r--@ 1 careycarroll  staff    51589 Apr 11 09:11 analyzer-ui.js
 -rw-r--r--@ 1 careycarroll  staff    29126 Apr  9 21:41 analyzer.js
 -rw-r--r--@ 1 careycarroll  staff    24425 Apr  9 08:13 api-manager.js
--rw-r--r--@ 1 careycarroll  staff     3670 Apr 11 00:17 chart-utils.js
+-rw-r--r--@ 1 careycarroll  staff    25395 Apr 11 21:52 chart-utils.js
 -rw-r--r--@ 1 careycarroll  staff  1015955 Apr  9 21:23 company_tickers.json
 -rw-r--r--@ 1 careycarroll  staff    19801 Apr 10 11:03 financial-terms.js
--rw-r--r--@ 1 careycarroll  staff    45221 Apr 10 22:33 fire.js
--rw-r--r--@ 1 careycarroll  staff    26967 Apr 11 01:42 loan-advanced.js
--rw-r--r--@ 1 careycarroll  staff    12599 Apr 11 01:42 loan.js
+-rw-r--r--@ 1 careycarroll  staff    62835 Apr 11 21:49 fire.js
+-rw-r--r--@ 1 careycarroll  staff    23760 Apr 11 17:24 loan-advanced.js
+-rw-r--r--@ 1 careycarroll  staff     7494 Apr 11 17:23 loan.js
 -rw-r--r--@ 1 careycarroll  staff    39210 Apr 11 00:49 news.js
--rw-r--r--@ 1 careycarroll  staff    30049 Apr 11 01:42 npv-irr.js
+-rw-r--r--@ 1 careycarroll  staff    26963 Apr 11 17:24 npv-irr.js
 -rw-r--r--@ 1 careycarroll  staff    30849 Apr 10 17:02 options-reference-shapes.js
--rw-r--r--@ 1 careycarroll  staff    83116 Apr 10 21:47 options.js
+-rw-r--r--@ 1 careycarroll  staff    85227 Apr 11 21:38 options.js
 -rw-r--r--@ 1 careycarroll  staff     1206 Apr  8 19:50 prefetch.js
--rw-r--r--@ 1 careycarroll  staff    23644 Apr 10 22:32 projections.js
--rw-r--r--@ 1 careycarroll  staff    21684 Apr 11 01:42 pv.js
+-rw-r--r--@ 1 careycarroll  staff    24469 Apr 11 21:50 projections.js
+-rw-r--r--@ 1 careycarroll  staff    18153 Apr 11 17:23 pv.js
 -rw-r--r--@ 1 careycarroll  staff    24824 Apr  9 22:35 sec-api.js
 -rw-r--r--@ 1 careycarroll  staff    24783 Apr  9 11:07 valuator-ui.js
 -rw-r--r--@ 1 careycarroll  staff    12613 Apr  9 07:15 valuator.js
@@ -187,20 +192,23 @@ total 32
 -rw-r--r--@ 1 careycarroll  staff  619 Apr  8 19:48 index.mjs
 
 /Users/careycarroll/Github Projects/financial-calculator/pages:
-total 288
+total 304
 -rw-r--r--@ 1 careycarroll  staff   7644 Apr 11 01:56 analyzer.html
--rw-r--r--@ 1 careycarroll  staff  15592 Apr 11 11:14 fire.html
--rw-r--r--@ 1 careycarroll  staff  16729 Apr 11 01:40 loan-advanced.html
--rw-r--r--@ 1 careycarroll  staff   6389 Apr 11 01:40 loan.html
+-rw-r--r--@ 1 careycarroll  staff  18313 Apr 11 16:26 fire.html
+-rw-r--r--@ 1 careycarroll  staff  16409 Apr 11 15:07 loan-advanced.html
+-rw-r--r--@ 1 careycarroll  staff   6073 Apr 11 14:57 loan.html
 -rw-r--r--@ 1 careycarroll  staff   7901 Apr 11 11:08 news.html
--rw-r--r--@ 1 careycarroll  staff  18237 Apr 11 01:43 npv-irr.html
--rw-r--r--@ 1 careycarroll  staff  20048 Apr 10 21:28 options.html
+-rw-r--r--@ 1 careycarroll  staff  18148 Apr 11 15:07 npv-irr.html
+-rw-r--r--@ 1 careycarroll  staff  20533 Apr 11 17:36 options.html
 -rw-r--r--@ 1 careycarroll  staff   8096 Apr 11 01:20 projections.html
--rw-r--r--@ 1 careycarroll  staff  15143 Apr 11 01:43 pv.html
+-rw-r--r--@ 1 careycarroll  staff  15055 Apr 11 15:07 pv.html
 -rw-r--r--@ 1 careycarroll  staff  18558 Apr 11 01:33 valuator.html
 
 /Users/careycarroll/Github Projects/financial-calculator/scripts:
-total 32
--rw-r--r--@ 1 careycarroll  staff  1347 Apr 11 11:43 file_structure.txt
--rwxr-xr-x@ 1 careycarroll  staff  5238 Apr 11 11:41 project_export.zsh
--rwxr-xr-x@ 1 careycarroll  staff  1959 Apr 11 11:41 split_audit.zsh
+total 2960
+-rw-r--r--@ 1 careycarroll  staff  747017 Apr 11 11:43 codebase.txt
+-rw-r--r--@ 1 careycarroll  staff  512000 Apr 11 11:43 codebase_part_aa.txt
+-rw-r--r--@ 1 careycarroll  staff  235017 Apr 11 11:43 codebase_part_ab.txt
+-rw-r--r--@ 1 careycarroll  staff    1446 Apr 11 21:53 file_structure.txt
+-rwxr-xr-x@ 1 careycarroll  staff    5238 Apr 11 11:41 project_export.zsh
+-rwxr-xr-x@ 1 careycarroll  staff    1959 Apr 11 11:41 split_audit.zsh

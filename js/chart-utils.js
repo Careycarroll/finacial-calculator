@@ -11,6 +11,16 @@
 // Handles negatives: -$1,250, -$3.45M
 
 
+// ===== SHARED CONSTANTS =====
+const CONFIG = {
+  MAX_PROJECTION_MONTHS: 1200,   // 100 years — used in yearsToTarget loops
+  SP500_NOMINAL_RETURN: 10.5,    // Historical S&P 500 nominal annual return (%)
+  SP500_REAL_RETURN: 7.0,        // Historical S&P 500 real (inflation-adjusted) return (%)
+  DEFAULT_INFLATION: 3.0,        // Default inflation rate (%)
+  DEFAULT_WITHDRAWAL_RATE: 4.0,  // Classic safe withdrawal rate (%)
+  CHART_PADDING: { top: 30, right: 30, bottom: 50, left: 70 },
+};
+
 // ===== INPUT PARSING UTILITIES =====
 // safeParseFloat: parses a DOM input value, returns fallback if NaN/infinite
 // safeParseInt:   same for integer inputs
@@ -57,6 +67,9 @@ function formatCurrency(value) {
 
 // ===== CHART CONTEXT (DPI-aware) =====
 
+// createChartContext: sets canvas dimensions accounting for device pixel ratio (DPR).
+// Always call this instead of setting canvas.width/height directly.
+// Returns { ctx, width, height, clear } where width/height are DPR-scaled logical pixels.
 function createChartContext(canvas, width, height) {
   const dpr = window.devicePixelRatio || 1;
 
@@ -81,6 +94,8 @@ function createChartContext(canvas, width, height) {
 }
 
 // Get logical dimensions from a canvas already set up by createChartContext
+// getChartDimensions: returns the current rendered width/height of a canvas element.
+// Use when the canvas size is determined by CSS layout rather than explicit dimensions.
 function getChartDimensions(canvas) {
   return {
     width: parseInt(canvas.style.width) || canvas.width,
@@ -102,6 +117,68 @@ function autoScrollTables(maxRows = 25) {
       wrapper.style.maxHeight = "";
       wrapper.style.overflowY = "";
     }
+  });
+}
+
+// ===== SHARED TOOLTIP RENDERER =====
+// Draws a rounded-rect tooltip with lines of text on a canvas context.
+// ctx:    CanvasRenderingContext2D
+// lines:  array of { text, color, bold } or plain strings
+// x, y:  anchor point (tip of crosshair or hover point)
+// bounds: { width, height, top, right } — chart bounds for edge clamping
+
+// ===== SHARED TOOLTIP RENDERER =====
+// Draws a rounded-rect tooltip with lines of text on a canvas context.
+// ctx:    CanvasRenderingContext2D
+// lines:  array of { text, color, bold } or plain strings
+// x, y:  anchor point (tip of crosshair or hover point)
+// bounds: { width, height, top, right } — chart bounds for edge clamping
+
+function drawTooltip(ctx, lines, x, y, bounds) {
+  if (!lines || lines.length === 0) return;
+
+  const normalized = lines.map((l) =>
+    typeof l === "string" ? { text: l, color: null, bold: false } : l
+  );
+
+  ctx.font = "12px sans-serif";
+  const tooltipWidth = Math.max(...normalized.map((l) => ctx.measureText(l.text).width)) + 24;
+  const tooltipHeight = normalized.length * 20 + 16;
+
+  let tx = x + 15;
+  let ty = y - tooltipHeight / 2;
+
+  if (bounds) {
+    if (tx + tooltipWidth > bounds.right) tx = x - tooltipWidth - 15;
+    if (ty < bounds.top) ty = bounds.top;
+    if (ty + tooltipHeight > bounds.top + bounds.height) ty = bounds.top + bounds.height - tooltipHeight;
+  }
+
+  // Background
+  ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+  ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+  ctx.lineWidth = 1;
+  const r = 6;
+  ctx.beginPath();
+  ctx.moveTo(tx + r, ty);
+  ctx.lineTo(tx + tooltipWidth - r, ty);
+  ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
+  ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
+  ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
+  ctx.lineTo(tx + r, ty + tooltipHeight);
+  ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
+  ctx.lineTo(tx, ty + r);
+  ctx.arcTo(tx, ty, tx + r, ty, r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Text
+  ctx.textAlign = "left";
+  normalized.forEach((line, i) => {
+    ctx.fillStyle = line.color || (i === 0 ? "#e2e8f0" : "#94a3b8");
+    ctx.font = (line.bold || i === 0) ? "bold 12px sans-serif" : "12px sans-serif";
+    ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
   });
 }
 
@@ -245,37 +322,10 @@ function drawBarChart(canvas, data, options) {
 
     // Tooltip
     const lines = options.tooltip ? options.tooltip(d) : [];
-    ctx.font = "12px sans-serif";
-    const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
-    const tooltipHeight = lines.length * 20 + 16;
-    let tx = x + 15;
-    let ty = padding.top + 10;
-    if (tx + tooltipWidth > chart.width - padding.right) tx = x - tooltipWidth - 15;
-    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
-
-    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-    ctx.lineWidth = 1;
-    const r = 6;
-    ctx.beginPath();
-    ctx.moveTo(tx + r, ty);
-    ctx.lineTo(tx + tooltipWidth - r, ty);
-    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
-    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
-    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
-    ctx.lineTo(tx + r, ty + tooltipHeight);
-    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
-    ctx.lineTo(tx, ty + r);
-    ctx.arcTo(tx, ty, tx + r, ty, r);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.textAlign = "left";
-    lines.forEach((line, li) => {
-      ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
-      ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
-      ctx.fillText(line, tx + 12, ty + 18 + li * 20);
+    drawTooltip(ctx, lines, x, padding.top + 10, {
+      right: chart.width - padding.right,
+      top: padding.top,
+      height: chartHeight,
     });
   }
 
@@ -463,33 +513,13 @@ function drawLineChart(canvas, data, options) {
 
     // Tooltip
     const lines = options.tooltip ? options.tooltip(d) : [];
-    ctx.font = "12px sans-serif";
-    const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
-    const tooltipHeight = lines.length * 20 + 16;
-    let tx = hx + 15;
-    let ty = padding.top + 10;
-    if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
-    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
-
-    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-    ctx.lineWidth = 1;
-    const r = 6;
-    ctx.beginPath();
-    ctx.moveTo(tx + r, ty);
-    ctx.lineTo(tx + tooltipWidth - r, ty);
-    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
-    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
-    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
-    ctx.lineTo(tx + r, ty + tooltipHeight);
-    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
-    ctx.lineTo(tx, ty + r);
-    ctx.arcTo(tx, ty, tx + r, ty, r);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.textAlign = "left";
+    drawTooltip(ctx, lines, hx, padding.top + 10, {
+      right: chart.width - padding.right,
+      top: padding.top,
+      height: chartHeight,
+    });
+    {
+    const li_dummy = null; // placeholder to maintain block structure
     lines.forEach((line, li) => {
       ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
       ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
