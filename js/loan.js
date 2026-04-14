@@ -231,6 +231,18 @@ function displayTable(schedule, view) {
   });
 }
 
+// ===== RESIZE HANDLER =====
+let resizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    if (yearlySchedule.length > 0) {
+      displayChart(yearlySchedule);
+      displayCumulativeChart(monthlySchedule);
+    }
+  }, 250);
+});
+
 // ===== VIEW TOGGLE =====
 function switchView(view) {
   if (view === "monthly") {

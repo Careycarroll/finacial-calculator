@@ -747,6 +747,18 @@ function updateTable() {
   displayTable(schedule, currentTablePeriod);
 }
 
+// ===== RESIZE HANDLER =====
+let resizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    if (originalYearly.length > 0) {
+      displayChart(currentChartView === "original" ? originalYearly : adjustedYearly);
+      displayCumulativeChart(currentChartView === "original" ? originalMonthly : adjustedMonthly);
+    }
+  }, 250);
+});
+
 function resetToggleStates() {
   chartOriginalBtn.classList.add("active");
   chartAdjustedBtn.classList.remove("active");

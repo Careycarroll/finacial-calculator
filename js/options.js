@@ -2295,7 +2295,7 @@ function handleGreeksCalculate() {
   // Build sensitivity data
   const range = S * 0.3;
   const steps = 100;
-  greeksChartData = { S, K, T, r, sigma, optionType, range, steps };
+  greeksChartData = { S, K, T, r, sigma, q, optionType, range, steps };
 
   document.getElementById("gk-results-section").classList.remove("hidden");
   document.getElementById("gk-chart-section").classList.remove("hidden");
@@ -2320,7 +2320,7 @@ function handleGreeksCalculate() {
 });
 
 function drawGreeksSensitivity(greek) {
-  const { S, K, T, r, sigma, optionType, range, steps } = greeksChartData;
+  const { S, K, T, r, sigma, q, optionType, range, steps } = greeksChartData;
 
   const canvas = document.getElementById("gk-chart-canvas");
   hideChartLoading("gk-chart-canvas");

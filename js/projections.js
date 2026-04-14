@@ -251,6 +251,17 @@ function handleCalculate() {
     .scrollIntoView({ behavior: "smooth" });
 }
 
+// ===== RESIZE HANDLER =====
+let resizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    if (storedProjections && storedInputs) {
+      displayChart(storedProjections, storedInputs, currentView);
+    }
+  }, 250);
+});
+
 // ===== DISPLAY: RESULTS TABLE =====
 function displayResults(projections) {
   const tbody = document.getElementById("proj-results-body");
@@ -289,13 +300,6 @@ function displayChart(projections, inputs, view) {
     requestAnimationFrame(() => displayChart(projections, inputs, view));
     return;
   }
-  const chart = createChartContext(canvas, rect.width, rect.height);
-  const ctx = chart.ctx;
-
-  const padding = { top: 30, right: 30, bottom: 50, left: 80 };
-  const chartWidth = chart.width - padding.left - padding.right;
-  const chartHeight = chart.height - padding.top - padding.bottom;
-
   const horizon = inputs.horizon;
   const inflation = inputs.inflation / 100;
 
@@ -323,186 +327,6 @@ function displayChart(projections, inputs, view) {
     return { ...proj, adjustedData: proj.data, adjustedRate: proj.rate };
   });
 
-  // Find max value
-  const maxValue = Math.max(
-    ...adjustedProjections.flatMap((p) => p.adjustedData.map((d) => d.balance)),
-  );
-
-  function toX(year) {
-    return padding.left + (year / horizon) * chartWidth;
-  }
-
-  function toY(value) {
-    return padding.top + chartHeight - (value / (maxValue * 1.1)) * chartHeight;
-  }
-
-  function fromX(x) {
-    return ((x - padding.left) / chartWidth) * horizon;
-  }
-
-  function drawChart(highlightYear) {
-    ctx.clearRect(0, 0, chart.width, chart.height);
-
-    // Grid
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.15)";
-    ctx.lineWidth = 1;
-
-    const ySteps = 5;
-    for (let i = 0; i <= ySteps; i++) {
-      const value = ((maxValue * 1.1) / ySteps) * i;
-      const y = toY(value);
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(chart.width - padding.right, y);
-      ctx.stroke();
-
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
-    }
-
-    // X-axis
-    ctx.textAlign = "center";
-    const xStep = Math.max(1, Math.ceil(horizon / 10));
-    for (let year = 0; year <= horizon; year += xStep) {
-      const x = toX(year);
-      ctx.fillStyle = "#94a3b8";
-      ctx.fillText(`Yr ${year}`, x, chart.height - padding.bottom + 20);
-
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
-      ctx.beginPath();
-      ctx.moveTo(x, padding.top);
-      ctx.lineTo(x, padding.top + chartHeight);
-      ctx.stroke();
-    }
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
-    ctx.fillText(
-      view === "real" ? "Years (Inflation-Adjusted)" : "Years",
-      chart.width / 2,
-      chart.height - 5,
-    );
-
-    // Draw each projection line
-    adjustedProjections.forEach((proj) => {
-      ctx.strokeStyle = proj.color;
-      ctx.lineWidth = proj.bold ? 3 : 2;
-      ctx.setLineDash(proj.dash || []);
-
-      ctx.beginPath();
-      proj.adjustedData.forEach((point, i) => {
-        const x = toX(point.year);
-        const y = toY(point.balance);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-      ctx.setLineDash([]);
-    });
-
-    // Hover crosshair and tooltip
-    if (
-      highlightYear !== null &&
-      highlightYear >= 0 &&
-      highlightYear <= horizon
-    ) {
-      const yearIndex = Math.round(highlightYear);
-
-      const hx = toX(yearIndex);
-
-      // Crosshair
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.5)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath();
-      ctx.moveTo(hx, padding.top);
-      ctx.lineTo(hx, padding.top + chartHeight);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Dots on each line
-      const tooltipLines = [`Year ${yearIndex}`];
-
-      adjustedProjections.forEach((proj) => {
-        if (yearIndex < proj.adjustedData.length) {
-          const point = proj.adjustedData[yearIndex];
-          const hy = toY(point.balance);
-
-          ctx.beginPath();
-          ctx.arc(hx, hy, 4, 0, Math.PI * 2);
-          ctx.fillStyle = proj.color;
-          ctx.fill();
-          ctx.strokeStyle = "#0f172a";
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-
-          tooltipLines.push(`${proj.name}: ${formatCurrency(point.balance)}`);
-        }
-      });
-
-      // Tooltip
-      ctx.font = "12px sans-serif";
-      const tooltipWidth =
-        Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
-      const tooltipHeight = tooltipLines.length * 20 + 12;
-
-      let tx = hx + 15;
-      let ty = padding.top + 10;
-
-      if (tx + tooltipWidth > chart.width - padding.right) {
-        tx = hx - tooltipWidth - 15;
-      }
-
-      // Background
-      ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-      ctx.lineWidth = 1;
-
-      const radius = 6;
-      ctx.beginPath();
-      ctx.moveTo(tx + radius, ty);
-      ctx.lineTo(tx + tooltipWidth - radius, ty);
-      ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + radius, radius);
-      ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - radius);
-      ctx.arcTo(
-        tx + tooltipWidth,
-        ty + tooltipHeight,
-        tx + tooltipWidth - radius,
-        ty + tooltipHeight,
-        radius,
-      );
-      ctx.lineTo(tx + radius, ty + tooltipHeight);
-      ctx.arcTo(
-        tx,
-        ty + tooltipHeight,
-        tx,
-        ty + tooltipHeight - radius,
-        radius,
-      );
-      ctx.lineTo(tx, ty + radius);
-      ctx.arcTo(tx, ty, tx + radius, ty, radius);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      // Text
-      ctx.textAlign = "left";
-      ctx.fillStyle = "#e2e8f0";
-      ctx.font = "bold 12px sans-serif";
-      ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
-
-      ctx.font = "12px sans-serif";
-      for (let i = 1; i < tooltipLines.length; i++) {
-        const proj = adjustedProjections[i - 1];
-        ctx.fillStyle = proj ? proj.color : "#e2e8f0";
-        ctx.fillText(tooltipLines[i], tx + 12, ty + 18 + i * 20);
-      }
-    }
-  }
-
-  // Build offscreen static cache
   const chart = createChartContext(canvas, rect.width, rect.height);
   const ctx = chart.ctx;
   const padding = { top: 30, right: 30, bottom: 50, left: 80 };

@@ -518,13 +518,6 @@ function drawLineChart(canvas, data, options) {
       top: padding.top,
       height: chartHeight,
     });
-    {
-    const li_dummy = null; // placeholder to maintain block structure
-    lines.forEach((line, li) => {
-      ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
-      ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
-      ctx.fillText(line, tx + 12, ty + 18 + li * 20);
-    });
   }
 
   drawChart(null);

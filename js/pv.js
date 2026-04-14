@@ -127,6 +127,9 @@ function handleCalculate() {
     years,
   );
 
+  lastPvBreakdown = breakdown;
+  lastPvComparisonBreakdown = null;
+
   showChartLoading("pv-bar-canvas");
   requestAnimationFrame(() => {
     displayChart(breakdown);
@@ -152,6 +155,8 @@ function handleCompare() {
   const annuityYears = safeParseInt(
     document.getElementById("pv-compare-years").value
     );
+
+  let valid = true;
 
   if (!annualRate || annualRate <= 0) {
     showFieldError("pv-rate", "Please enter a valid discount rate.");
@@ -312,6 +317,10 @@ function handleCompare() {
     annuityYears,
   );
 
+  lastPvComparisonBreakdown = comparisonBreakdown;
+  lastPvLumpAfterTax = lumpAfterTax;
+  lastPvBreakdown = null;
+
   showChartLoading("pv-bar-canvas");
   requestAnimationFrame(() => {
     displayComparisonChart(comparisonBreakdown, lumpAfterTax);
@@ -325,6 +334,22 @@ function handleCompare() {
 
   document.getElementById("pv-results").scrollIntoView({ behavior: "smooth" });
 }
+
+// ===== RESIZE HANDLER =====
+let resizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    const chartSection = document.getElementById("pv-chart-section");
+    if (chartSection && !chartSection.classList.contains("hidden")) {
+      if (lastPvComparisonBreakdown) {
+        displayComparisonChart(lastPvComparisonBreakdown, lastPvLumpAfterTax);
+      } else if (lastPvBreakdown) {
+        displayChart(lastPvBreakdown);
+      }
+    }
+  }, 250);
+});
 
 // ===== BREAKEVEN RATE FINDER =====
 function findBreakevenRate(
@@ -458,6 +483,9 @@ function buildComparisonBreakdown(
 
 // ===== STANDARD CHART =====
 let pvBarController = null;
+let lastPvBreakdown = null;
+let lastPvComparisonBreakdown = null;
+let lastPvLumpAfterTax = null;
 
 function displayChart(breakdown) {
   const canvas = document.getElementById("pv-bar-canvas");

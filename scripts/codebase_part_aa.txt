@@ -1,6 +1,6 @@
 ============================================================
  CODEBASE EXPORT
- Generated: Sat Apr 11 21:53:48 EDT 2026
+ Generated: Tue Apr 14 10:29:37 EDT 2026
  Directory: /Users/careycarroll/Github Projects/financial-calculator
 ============================================================
 
@@ -1061,6 +1061,40 @@ footer {
 ============================================================
  FILE: /Users/careycarroll/Github Projects/financial-calculator/css/common-calculator.css
 ============================================================
+
+
+/* ===== CHART LOADING SPINNER ===== */
+.canvas-chart {
+  position: relative;
+}
+
+.chart-loading {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.chart-loading.active {
+  display: flex;
+}
+
+.chart-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(45, 212, 191, 0.2);
+  border-top-color: #2dd4bf;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 
 /* ===== INLINE FIELD VALIDATION ===== */
@@ -8433,6 +8467,16 @@ function normalizeIEXCashflow(data) {
 // Handles negatives: -$1,250, -$3.45M
 
 
+// ===== SHARED CONSTANTS =====
+const CONFIG = {
+  MAX_PROJECTION_MONTHS: 1200,   // 100 years — used in yearsToTarget loops
+  SP500_NOMINAL_RETURN: 10.5,    // Historical S&P 500 nominal annual return (%)
+  SP500_REAL_RETURN: 7.0,        // Historical S&P 500 real (inflation-adjusted) return (%)
+  DEFAULT_INFLATION: 3.0,        // Default inflation rate (%)
+  DEFAULT_WITHDRAWAL_RATE: 4.0,  // Classic safe withdrawal rate (%)
+  CHART_PADDING: { top: 30, right: 30, bottom: 50, left: 70 },
+};
+
 // ===== INPUT PARSING UTILITIES =====
 // safeParseFloat: parses a DOM input value, returns fallback if NaN/infinite
 // safeParseInt:   same for integer inputs
@@ -8538,54 +8582,6 @@ function autoScrollTables(maxRows = 25) {
 // lines:  array of { text, color, bold } or plain strings
 // x, y:  anchor point (tip of crosshair or hover point)
 // bounds: { width, height, top, right } — chart bounds for edge clamping
-
-function drawTooltip(ctx, lines, x, y, bounds) {
-  if (!lines || lines.length === 0) return;
-
-  const normalized = lines.map((l) =>
-    typeof l === "string" ? { text: l, color: null, bold: false } : l
-  );
-
-  ctx.font = "12px sans-serif";
-  const tooltipWidth = Math.max(...normalized.map((l) => ctx.measureText(l.text).width)) + 24;
-  const tooltipHeight = normalized.length * 20 + 16;
-
-  let tx = x + 15;
-  let ty = y - tooltipHeight / 2;
-
-  if (bounds) {
-    if (tx + tooltipWidth > bounds.right) tx = x - tooltipWidth - 15;
-    if (ty < bounds.top) ty = bounds.top;
-    if (ty + tooltipHeight > bounds.top + bounds.height) ty = bounds.top + bounds.height - tooltipHeight;
-  }
-
-  // Background
-  ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-  ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-  ctx.lineWidth = 1;
-  const r = 6;
-  ctx.beginPath();
-  ctx.moveTo(tx + r, ty);
-  ctx.lineTo(tx + tooltipWidth - r, ty);
-  ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
-  ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
-  ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
-  ctx.lineTo(tx + r, ty + tooltipHeight);
-  ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
-  ctx.lineTo(tx, ty + r);
-  ctx.arcTo(tx, ty, tx + r, ty, r);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // Text
-  ctx.textAlign = "left";
-  normalized.forEach((line, i) => {
-    ctx.fillStyle = line.color || (i === 0 ? "#e2e8f0" : "#94a3b8");
-    ctx.font = (line.bold || i === 0) ? "bold 12px sans-serif" : "12px sans-serif";
-    ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
-  });
-}
 
 // ===== SHARED TOOLTIP RENDERER =====
 // Draws a rounded-rect tooltip with lines of text on a canvas context.
@@ -8782,37 +8778,10 @@ function drawBarChart(canvas, data, options) {
 
     // Tooltip
     const lines = options.tooltip ? options.tooltip(d) : [];
-    ctx.font = "12px sans-serif";
-    const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
-    const tooltipHeight = lines.length * 20 + 16;
-    let tx = x + 15;
-    let ty = padding.top + 10;
-    if (tx + tooltipWidth > chart.width - padding.right) tx = x - tooltipWidth - 15;
-    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
-
-    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-    ctx.lineWidth = 1;
-    const r = 6;
-    ctx.beginPath();
-    ctx.moveTo(tx + r, ty);
-    ctx.lineTo(tx + tooltipWidth - r, ty);
-    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
-    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
-    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
-    ctx.lineTo(tx + r, ty + tooltipHeight);
-    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
-    ctx.lineTo(tx, ty + r);
-    ctx.arcTo(tx, ty, tx + r, ty, r);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.textAlign = "left";
-    lines.forEach((line, li) => {
-      ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
-      ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
-      ctx.fillText(line, tx + 12, ty + 18 + li * 20);
+    drawTooltip(ctx, lines, x, padding.top + 10, {
+      right: chart.width - padding.right,
+      top: padding.top,
+      height: chartHeight,
     });
   }
 
@@ -9000,33 +8969,13 @@ function drawLineChart(canvas, data, options) {
 
     // Tooltip
     const lines = options.tooltip ? options.tooltip(d) : [];
-    ctx.font = "12px sans-serif";
-    const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
-    const tooltipHeight = lines.length * 20 + 16;
-    let tx = hx + 15;
-    let ty = padding.top + 10;
-    if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
-    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
-
-    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-    ctx.lineWidth = 1;
-    const r = 6;
-    ctx.beginPath();
-    ctx.moveTo(tx + r, ty);
-    ctx.lineTo(tx + tooltipWidth - r, ty);
-    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
-    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
-    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
-    ctx.lineTo(tx + r, ty + tooltipHeight);
-    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
-    ctx.lineTo(tx, ty + r);
-    ctx.arcTo(tx, ty, tx + r, ty, r);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.textAlign = "left";
+    drawTooltip(ctx, lines, hx, padding.top + 10, {
+      right: chart.width - padding.right,
+      top: padding.top,
+      height: chartHeight,
+    });
+    {
+    const li_dummy = null; // placeholder to maintain block structure
     lines.forEach((line, li) => {
       ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
       ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
@@ -9058,6 +9007,36 @@ function drawLineChart(canvas, data, options) {
     canvas.style.cursor = "default";
     drawChart(null);
   }, { signal });
+}
+
+// ===== CHART LOADING SPINNER =====
+// showChartLoading: shows a spinner overlay on the canvas-chart container of a given canvas.
+// hideChartLoading: removes the spinner.
+// The spinner div is created once and reused on subsequent calls.
+
+function showChartLoading(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const container = canvas.closest(".canvas-chart");
+  if (!container) return;
+
+  let spinner = container.querySelector(".chart-loading");
+  if (!spinner) {
+    spinner = document.createElement("div");
+    spinner.className = "chart-loading";
+    spinner.innerHTML = '<div class="chart-spinner"></div>';
+    container.appendChild(spinner);
+  }
+  spinner.classList.add("active");
+}
+
+function hideChartLoading(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const container = canvas.closest(".canvas-chart");
+  if (!container) return;
+  const spinner = container.querySelector(".chart-loading");
+  if (spinner) spinner.classList.remove("active");
 }
 
 // ===== RAF THROTTLE =====
@@ -9924,7 +9903,12 @@ function handleFireCalculate() {
     fireNumberFuture / Math.pow(1 + profile.annualReturn, yearsToRetire);
 
   // Projection chart
-  displayFireChart(profile, fireNumberFuture, yearsToRetire, coastFireForChart);
+  showChartLoading("fire-chart-canvas");
+  showChartLoading("fire-lifecycle-canvas");
+  requestAnimationFrame(() => {
+    displayFireChart(profile, fireNumberFuture, yearsToRetire, coastFireForChart);
+    hideChartLoading("fire-chart-canvas");
+  });
 
   // Lifecycle chart
   const retirementPortfolio = futureValue(
@@ -9933,7 +9917,10 @@ function handleFireCalculate() {
     profile.annualReturn,
     yearsToRetire,
   );
-  displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireNumberFuture);
+  requestAnimationFrame(() => {
+    displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireNumberFuture);
+    hideChartLoading("fire-lifecycle-canvas");
+  });
 
   document
     .getElementById("fire-number-results")
@@ -10022,6 +10009,8 @@ function handleCoastCalculate() {
   let extraMonthly = 0;
   if (!isPastCoast && profile.monthlyContribution > 0) {
     // Find how much more per month to hit coast fire number in half the remaining time
+    // Target reaching Coast FIRE within the sooner of 5 years or half the time to retirement.
+    // This gives a realistic near-term savings goal rather than spreading it over decades.
     const coastTargetYears = Math.min(5, yearsToRetire / 2);
     const totalNeeded = monthlyNeeded(
       profile.portfolio,
@@ -10129,7 +10118,11 @@ function handleCoastCalculate() {
   document.getElementById("fire-progress-section").classList.remove("hidden");
 
   // Coast FIRE chart
-  displayCoastChart(profile, fireTarget, coastFireNumber, yearsToRetire);
+  showChartLoading("coast-chart-canvas");
+  requestAnimationFrame(() => {
+    displayCoastChart(profile, fireTarget, coastFireNumber, yearsToRetire);
+    hideChartLoading("coast-chart-canvas");
+  });
 
   document
     .getElementById("coast-fire-results")
@@ -11959,13 +11952,19 @@ function handleCalculate() {
     .getElementById("adv-amortization-section")
     .classList.remove("hidden");
 
+  showChartLoading("adv-bar-canvas");
+  showChartLoading("adv-line-canvas");
   // Display chart and table (default views)
   currentChartView = "original";
   currentTableView = "original";
   currentTablePeriod = "monthly";
   resetToggleStates();
-  displayChart(originalYearly);
-  displayCumulativeChart(originalMonthly);
+  requestAnimationFrame(() => {
+    displayChart(originalYearly);
+    hideChartLoading("adv-bar-canvas");
+    displayCumulativeChart(originalMonthly);
+    hideChartLoading("adv-line-canvas");
+  });
   displayTable(originalMonthly, "monthly");
 
   document.getElementById("adv-results").scrollIntoView({ behavior: "smooth" });
@@ -12335,8 +12334,14 @@ function handleCalculate() {
 
   // Display results
   displaySummary(monthlyPayment, principal, totalInterest, totalCost);
-  displayChart(yearlySchedule);
-  displayCumulativeChart(monthlySchedule);
+  showChartLoading("loan-bar-canvas");
+  showChartLoading("loan-line-canvas");
+  requestAnimationFrame(() => {
+    displayChart(yearlySchedule);
+    hideChartLoading("loan-bar-canvas");
+    displayCumulativeChart(monthlySchedule);
+    hideChartLoading("loan-line-canvas");
+  });
   displayTable(monthlySchedule, "monthly");
 
   // Show all sections
@@ -14285,7 +14290,11 @@ function handleSingleCalculate() {
 
   // Display sections
   displaySensitivity(sensitivity);
-  displayChart(breakdown, periodType);
+  showChartLoading("npv-bar-canvas");
+  requestAnimationFrame(() => {
+    displayChart(breakdown, periodType);
+    hideChartLoading("npv-bar-canvas");
+  });
   displayTable(breakdown);
 
   document.getElementById("npv-results").classList.remove("hidden");
@@ -14431,7 +14440,11 @@ function handleCompareCalculate() {
   );
   displayCompareSensitivity(sensitivityA, sensitivityB, nameA, nameB);
 
-  displayCompareChart(breakdownA, breakdownB, nameA, nameB);
+  showChartLoading("npv-bar-canvas");
+  requestAnimationFrame(() => {
+    displayCompareChart(breakdownA, breakdownB, nameA, nameB);
+    hideChartLoading("npv-bar-canvas");
+  });
 
   tableShowA.textContent = nameA;
   tableShowB.textContent = nameB;
@@ -15988,7 +16001,10 @@ async function loadStrategies() {
 // BLACK-SCHOLES MATH
 // ===================================================================
 
-// Standard normal CDF approximation (Abramowitz & Stegun)
+// Standard normal CDF approximation (Abramowitz & Stegun, formula 26.2.17)
+// Maximum absolute error: ~1.5×10⁻⁷ — acceptable for educational/retail options pricing.
+// Limitation: for deep ITM/OTM options where |d₁| > 6, result approaches exactly 0 or 1,
+// which may cause call/put prices to display as exactly $0 or full intrinsic value.
 function normCDF(x) {
   const a1 = 0.254829592;
   const a2 = -0.284496736;
@@ -17532,7 +17548,11 @@ function handlePayoffCalculate() {
   document.getElementById("payoff-before-btn").classList.remove("active");
   document.getElementById("payoff-slider-container").classList.add("hidden");
   // Draw chart
-  drawPayoffChart(payoffData, stockPrice, breakevens, legs);
+  showChartLoading("payoff-chart-canvas");
+  requestAnimationFrame(() => {
+    drawPayoffChart(payoffData, stockPrice, breakevens, legs);
+    hideChartLoading("payoff-chart-canvas");
+  });
 
   // Summary
   const pnlAtCurrent = calculatePayoff(stockPrice, legs);
@@ -18156,4 +18176,6 @@ function handleBSCalculate() {
 
   const T = days / 365;
   const result = blackScholes(S, K, T, r, sigma, q);
-  const greeks = calculateGreeks(S, K, T, r, sigma,
+  const greeks = calculateGreeks(S, K, T, r, sigma, q);
+
+  // Moneyne

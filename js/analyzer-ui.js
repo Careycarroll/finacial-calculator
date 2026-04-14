@@ -1111,7 +1111,7 @@ function renderChart(analysis, chartType) {
     return;
   }
 
-  const chart = createChartContext(canvas, rect.width, 400);
+  const chart = createChartContext(canvas, rect.width, rect.height);
   const ctx = chart.ctx;
 
   const inc = [...analysis.statements.incomeStatements].reverse();
@@ -1247,7 +1247,11 @@ function renderChart(analysis, chartType) {
   drawChart(ctx, chart, labels, datasets, title, yAxisFormat, chartHoverIndex);
 
   // Bind mouse events
-  canvas.onmousemove = (e) => {
+  if (canvas._analyzerController) canvas._analyzerController.abort();
+  canvas._analyzerController = new AbortController();
+  const { signal: analyzerSignal } = canvas._analyzerController;
+
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
     const r = canvas.getBoundingClientRect();
     const mouseX = e.clientX - r.left;
     const padding = { top: 40, right: 30, bottom: 75, left: 90 };
@@ -1285,9 +1289,9 @@ function renderChart(analysis, chartType) {
         null,
       );
     }
-  };
+  }), { signal: analyzerSignal });
 
-  canvas.onmouseleave = () => {
+  canvas.addEventListener("mouseleave", () => {
     if (chartHoverIndex !== null) {
       chartHoverIndex = null;
       canvas.style.cursor = "default";
@@ -1302,7 +1306,7 @@ function renderChart(analysis, chartType) {
         null,
       );
     }
-  };
+  }, { signal: analyzerSignal });
 }
 
 function drawChart(

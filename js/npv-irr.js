@@ -16,6 +16,8 @@ const tableShowB = document.getElementById("table-show-b");
 let currentMode = "single";
 let compareDataA = null;
 let compareDataB = null;
+let lastSingleBreakdown = null;
+let lastSinglePeriodType = "years";
 
 // ===== EVENT LISTENERS =====
 modeSingleBtn.addEventListener("click", () => switchMode("single"));
@@ -441,6 +443,9 @@ function handleSingleCalculate() {
   document.getElementById("npv-payback").textContent = payback;
 
   // Display sections
+  lastSingleBreakdown = breakdown;
+  lastSinglePeriodType = periodType;
+
   displaySensitivity(sensitivity);
   showChartLoading("npv-bar-canvas");
   requestAnimationFrame(() => {
@@ -615,6 +620,19 @@ function handleCompareCalculate() {
     .getElementById("npv-compare-results")
     .scrollIntoView({ behavior: "smooth" });
 }
+
+// ===== RESIZE HANDLER =====
+let resizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    if (currentMode === "single" && lastSingleBreakdown) {
+      displayChart(lastSingleBreakdown, lastSinglePeriodType);
+    } else if (compareDataA && compareDataB) {
+      displayCompareChart(compareDataA.breakdown, compareDataB.breakdown, compareDataA.name, compareDataB.name);
+    }
+  }, 250);
+});
 
 // ===== DISPLAY: SENSITIVITY =====
 function displaySensitivity(sensitivity) {

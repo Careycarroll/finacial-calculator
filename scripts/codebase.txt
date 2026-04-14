@@ -1,6 +1,6 @@
 ============================================================
  CODEBASE EXPORT
- Generated: Sat Apr 11 21:53:48 EDT 2026
+ Generated: Tue Apr 14 10:29:37 EDT 2026
  Directory: /Users/careycarroll/Github Projects/financial-calculator
 ============================================================
 
@@ -1061,6 +1061,40 @@ footer {
 ============================================================
  FILE: /Users/careycarroll/Github Projects/financial-calculator/css/common-calculator.css
 ============================================================
+
+
+/* ===== CHART LOADING SPINNER ===== */
+.canvas-chart {
+  position: relative;
+}
+
+.chart-loading {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.chart-loading.active {
+  display: flex;
+}
+
+.chart-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(45, 212, 191, 0.2);
+  border-top-color: #2dd4bf;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 
 /* ===== INLINE FIELD VALIDATION ===== */
@@ -8433,6 +8467,16 @@ function normalizeIEXCashflow(data) {
 // Handles negatives: -$1,250, -$3.45M
 
 
+// ===== SHARED CONSTANTS =====
+const CONFIG = {
+  MAX_PROJECTION_MONTHS: 1200,   // 100 years — used in yearsToTarget loops
+  SP500_NOMINAL_RETURN: 10.5,    // Historical S&P 500 nominal annual return (%)
+  SP500_REAL_RETURN: 7.0,        // Historical S&P 500 real (inflation-adjusted) return (%)
+  DEFAULT_INFLATION: 3.0,        // Default inflation rate (%)
+  DEFAULT_WITHDRAWAL_RATE: 4.0,  // Classic safe withdrawal rate (%)
+  CHART_PADDING: { top: 30, right: 30, bottom: 50, left: 70 },
+};
+
 // ===== INPUT PARSING UTILITIES =====
 // safeParseFloat: parses a DOM input value, returns fallback if NaN/infinite
 // safeParseInt:   same for integer inputs
@@ -8538,54 +8582,6 @@ function autoScrollTables(maxRows = 25) {
 // lines:  array of { text, color, bold } or plain strings
 // x, y:  anchor point (tip of crosshair or hover point)
 // bounds: { width, height, top, right } — chart bounds for edge clamping
-
-function drawTooltip(ctx, lines, x, y, bounds) {
-  if (!lines || lines.length === 0) return;
-
-  const normalized = lines.map((l) =>
-    typeof l === "string" ? { text: l, color: null, bold: false } : l
-  );
-
-  ctx.font = "12px sans-serif";
-  const tooltipWidth = Math.max(...normalized.map((l) => ctx.measureText(l.text).width)) + 24;
-  const tooltipHeight = normalized.length * 20 + 16;
-
-  let tx = x + 15;
-  let ty = y - tooltipHeight / 2;
-
-  if (bounds) {
-    if (tx + tooltipWidth > bounds.right) tx = x - tooltipWidth - 15;
-    if (ty < bounds.top) ty = bounds.top;
-    if (ty + tooltipHeight > bounds.top + bounds.height) ty = bounds.top + bounds.height - tooltipHeight;
-  }
-
-  // Background
-  ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-  ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-  ctx.lineWidth = 1;
-  const r = 6;
-  ctx.beginPath();
-  ctx.moveTo(tx + r, ty);
-  ctx.lineTo(tx + tooltipWidth - r, ty);
-  ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
-  ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
-  ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
-  ctx.lineTo(tx + r, ty + tooltipHeight);
-  ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
-  ctx.lineTo(tx, ty + r);
-  ctx.arcTo(tx, ty, tx + r, ty, r);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // Text
-  ctx.textAlign = "left";
-  normalized.forEach((line, i) => {
-    ctx.fillStyle = line.color || (i === 0 ? "#e2e8f0" : "#94a3b8");
-    ctx.font = (line.bold || i === 0) ? "bold 12px sans-serif" : "12px sans-serif";
-    ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
-  });
-}
 
 // ===== SHARED TOOLTIP RENDERER =====
 // Draws a rounded-rect tooltip with lines of text on a canvas context.
@@ -8782,37 +8778,10 @@ function drawBarChart(canvas, data, options) {
 
     // Tooltip
     const lines = options.tooltip ? options.tooltip(d) : [];
-    ctx.font = "12px sans-serif";
-    const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
-    const tooltipHeight = lines.length * 20 + 16;
-    let tx = x + 15;
-    let ty = padding.top + 10;
-    if (tx + tooltipWidth > chart.width - padding.right) tx = x - tooltipWidth - 15;
-    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
-
-    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-    ctx.lineWidth = 1;
-    const r = 6;
-    ctx.beginPath();
-    ctx.moveTo(tx + r, ty);
-    ctx.lineTo(tx + tooltipWidth - r, ty);
-    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
-    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
-    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
-    ctx.lineTo(tx + r, ty + tooltipHeight);
-    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
-    ctx.lineTo(tx, ty + r);
-    ctx.arcTo(tx, ty, tx + r, ty, r);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.textAlign = "left";
-    lines.forEach((line, li) => {
-      ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
-      ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
-      ctx.fillText(line, tx + 12, ty + 18 + li * 20);
+    drawTooltip(ctx, lines, x, padding.top + 10, {
+      right: chart.width - padding.right,
+      top: padding.top,
+      height: chartHeight,
     });
   }
 
@@ -9000,33 +8969,13 @@ function drawLineChart(canvas, data, options) {
 
     // Tooltip
     const lines = options.tooltip ? options.tooltip(d) : [];
-    ctx.font = "12px sans-serif";
-    const tooltipWidth = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 24;
-    const tooltipHeight = lines.length * 20 + 16;
-    let tx = hx + 15;
-    let ty = padding.top + 10;
-    if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
-    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
-
-    ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
-    ctx.lineWidth = 1;
-    const r = 6;
-    ctx.beginPath();
-    ctx.moveTo(tx + r, ty);
-    ctx.lineTo(tx + tooltipWidth - r, ty);
-    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + r, r);
-    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - r);
-    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - r, ty + tooltipHeight, r);
-    ctx.lineTo(tx + r, ty + tooltipHeight);
-    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - r, r);
-    ctx.lineTo(tx, ty + r);
-    ctx.arcTo(tx, ty, tx + r, ty, r);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.textAlign = "left";
+    drawTooltip(ctx, lines, hx, padding.top + 10, {
+      right: chart.width - padding.right,
+      top: padding.top,
+      height: chartHeight,
+    });
+    {
+    const li_dummy = null; // placeholder to maintain block structure
     lines.forEach((line, li) => {
       ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
       ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
@@ -9058,6 +9007,36 @@ function drawLineChart(canvas, data, options) {
     canvas.style.cursor = "default";
     drawChart(null);
   }, { signal });
+}
+
+// ===== CHART LOADING SPINNER =====
+// showChartLoading: shows a spinner overlay on the canvas-chart container of a given canvas.
+// hideChartLoading: removes the spinner.
+// The spinner div is created once and reused on subsequent calls.
+
+function showChartLoading(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const container = canvas.closest(".canvas-chart");
+  if (!container) return;
+
+  let spinner = container.querySelector(".chart-loading");
+  if (!spinner) {
+    spinner = document.createElement("div");
+    spinner.className = "chart-loading";
+    spinner.innerHTML = '<div class="chart-spinner"></div>';
+    container.appendChild(spinner);
+  }
+  spinner.classList.add("active");
+}
+
+function hideChartLoading(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const container = canvas.closest(".canvas-chart");
+  if (!container) return;
+  const spinner = container.querySelector(".chart-loading");
+  if (spinner) spinner.classList.remove("active");
 }
 
 // ===== RAF THROTTLE =====
@@ -9924,7 +9903,12 @@ function handleFireCalculate() {
     fireNumberFuture / Math.pow(1 + profile.annualReturn, yearsToRetire);
 
   // Projection chart
-  displayFireChart(profile, fireNumberFuture, yearsToRetire, coastFireForChart);
+  showChartLoading("fire-chart-canvas");
+  showChartLoading("fire-lifecycle-canvas");
+  requestAnimationFrame(() => {
+    displayFireChart(profile, fireNumberFuture, yearsToRetire, coastFireForChart);
+    hideChartLoading("fire-chart-canvas");
+  });
 
   // Lifecycle chart
   const retirementPortfolio = futureValue(
@@ -9933,7 +9917,10 @@ function handleFireCalculate() {
     profile.annualReturn,
     yearsToRetire,
   );
-  displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireNumberFuture);
+  requestAnimationFrame(() => {
+    displayLifecycleChart(profile, retirementPortfolio, annualExpenses, otherIncome, fireNumberFuture);
+    hideChartLoading("fire-lifecycle-canvas");
+  });
 
   document
     .getElementById("fire-number-results")
@@ -10022,6 +10009,8 @@ function handleCoastCalculate() {
   let extraMonthly = 0;
   if (!isPastCoast && profile.monthlyContribution > 0) {
     // Find how much more per month to hit coast fire number in half the remaining time
+    // Target reaching Coast FIRE within the sooner of 5 years or half the time to retirement.
+    // This gives a realistic near-term savings goal rather than spreading it over decades.
     const coastTargetYears = Math.min(5, yearsToRetire / 2);
     const totalNeeded = monthlyNeeded(
       profile.portfolio,
@@ -10129,7 +10118,11 @@ function handleCoastCalculate() {
   document.getElementById("fire-progress-section").classList.remove("hidden");
 
   // Coast FIRE chart
-  displayCoastChart(profile, fireTarget, coastFireNumber, yearsToRetire);
+  showChartLoading("coast-chart-canvas");
+  requestAnimationFrame(() => {
+    displayCoastChart(profile, fireTarget, coastFireNumber, yearsToRetire);
+    hideChartLoading("coast-chart-canvas");
+  });
 
   document
     .getElementById("coast-fire-results")
@@ -11959,13 +11952,19 @@ function handleCalculate() {
     .getElementById("adv-amortization-section")
     .classList.remove("hidden");
 
+  showChartLoading("adv-bar-canvas");
+  showChartLoading("adv-line-canvas");
   // Display chart and table (default views)
   currentChartView = "original";
   currentTableView = "original";
   currentTablePeriod = "monthly";
   resetToggleStates();
-  displayChart(originalYearly);
-  displayCumulativeChart(originalMonthly);
+  requestAnimationFrame(() => {
+    displayChart(originalYearly);
+    hideChartLoading("adv-bar-canvas");
+    displayCumulativeChart(originalMonthly);
+    hideChartLoading("adv-line-canvas");
+  });
   displayTable(originalMonthly, "monthly");
 
   document.getElementById("adv-results").scrollIntoView({ behavior: "smooth" });
@@ -12335,8 +12334,14 @@ function handleCalculate() {
 
   // Display results
   displaySummary(monthlyPayment, principal, totalInterest, totalCost);
-  displayChart(yearlySchedule);
-  displayCumulativeChart(monthlySchedule);
+  showChartLoading("loan-bar-canvas");
+  showChartLoading("loan-line-canvas");
+  requestAnimationFrame(() => {
+    displayChart(yearlySchedule);
+    hideChartLoading("loan-bar-canvas");
+    displayCumulativeChart(monthlySchedule);
+    hideChartLoading("loan-line-canvas");
+  });
   displayTable(monthlySchedule, "monthly");
 
   // Show all sections
@@ -14285,7 +14290,11 @@ function handleSingleCalculate() {
 
   // Display sections
   displaySensitivity(sensitivity);
-  displayChart(breakdown, periodType);
+  showChartLoading("npv-bar-canvas");
+  requestAnimationFrame(() => {
+    displayChart(breakdown, periodType);
+    hideChartLoading("npv-bar-canvas");
+  });
   displayTable(breakdown);
 
   document.getElementById("npv-results").classList.remove("hidden");
@@ -14431,7 +14440,11 @@ function handleCompareCalculate() {
   );
   displayCompareSensitivity(sensitivityA, sensitivityB, nameA, nameB);
 
-  displayCompareChart(breakdownA, breakdownB, nameA, nameB);
+  showChartLoading("npv-bar-canvas");
+  requestAnimationFrame(() => {
+    displayCompareChart(breakdownA, breakdownB, nameA, nameB);
+    hideChartLoading("npv-bar-canvas");
+  });
 
   tableShowA.textContent = nameA;
   tableShowB.textContent = nameB;
@@ -15988,7 +16001,10 @@ async function loadStrategies() {
 // BLACK-SCHOLES MATH
 // ===================================================================
 
-// Standard normal CDF approximation (Abramowitz & Stegun)
+// Standard normal CDF approximation (Abramowitz & Stegun, formula 26.2.17)
+// Maximum absolute error: ~1.5×10⁻⁷ — acceptable for educational/retail options pricing.
+// Limitation: for deep ITM/OTM options where |d₁| > 6, result approaches exactly 0 or 1,
+// which may cause call/put prices to display as exactly $0 or full intrinsic value.
 function normCDF(x) {
   const a1 = 0.254829592;
   const a2 = -0.284496736;
@@ -17532,7 +17548,11 @@ function handlePayoffCalculate() {
   document.getElementById("payoff-before-btn").classList.remove("active");
   document.getElementById("payoff-slider-container").classList.add("hidden");
   // Draw chart
-  drawPayoffChart(payoffData, stockPrice, breakevens, legs);
+  showChartLoading("payoff-chart-canvas");
+  requestAnimationFrame(() => {
+    drawPayoffChart(payoffData, stockPrice, breakevens, legs);
+    hideChartLoading("payoff-chart-canvas");
+  });
 
   // Summary
   const pnlAtCurrent = calculatePayoff(stockPrice, legs);
@@ -18230,6 +18250,7 @@ function handleGreeksCalculate() {
 
   document.getElementById("gk-results-section").classList.remove("hidden");
   document.getElementById("gk-chart-section").classList.remove("hidden");
+  showChartLoading("gk-chart-canvas");
 
   drawGreeksSensitivity("delta");
 
@@ -18253,6 +18274,7 @@ function drawGreeksSensitivity(greek) {
   const { S, K, T, r, sigma, optionType, range, steps } = greeksChartData;
 
   const canvas = document.getElementById("gk-chart-canvas");
+  hideChartLoading("gk-chart-canvas");
 
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
@@ -18629,9 +18651,11 @@ function handlePnLCalculate() {
 
   document.getElementById("pnl-results-section").classList.remove("hidden");
   document.getElementById("pnl-chart-section").classList.remove("hidden");
+  showChartLoading("pnl-chart-canvas");
 
   // Use the direct draw function
   const canvas = document.getElementById("pnl-chart-canvas");
+  hideChartLoading("pnl-chart-canvas");
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
   createChartContext(canvas, rect.width, rect.height);
@@ -18994,6 +19018,7 @@ function displayResults(projections) {
 
 // ===== DISPLAY: CHART =====
 function displayChart(projections, inputs, view) {
+  showChartLoading("proj-chart-canvas");
   const canvas = document.getElementById("proj-chart-canvas");
 
   const container = canvas.parentElement;
@@ -19297,6 +19322,7 @@ function displayChart(projections, inputs, view) {
   // Initial draw
   ctx.clearRect(0, 0, chart.width, chart.height);
   ctx.drawImage(offscreenProj, 0, 0);
+  hideChartLoading("proj-chart-canvas");
 
   if (projectionChartController) projectionChartController.abort();
   projectionChartController = new AbortController();
@@ -19619,7 +19645,11 @@ function handleCalculate() {
     years,
   );
 
-  displayChart(breakdown);
+  showChartLoading("pv-bar-canvas");
+  requestAnimationFrame(() => {
+    displayChart(breakdown);
+    hideChartLoading("pv-bar-canvas");
+  });
   displayTable(breakdown);
 
   document.getElementById("pv-results").classList.remove("hidden");
@@ -19800,7 +19830,11 @@ function handleCompare() {
     annuityYears,
   );
 
-  displayComparisonChart(comparisonBreakdown, lumpAfterTax);
+  showChartLoading("pv-bar-canvas");
+  requestAnimationFrame(() => {
+    displayComparisonChart(comparisonBreakdown, lumpAfterTax);
+    hideChartLoading("pv-bar-canvas");
+  });
   displayComparisonTable(comparisonBreakdown, lumpAfterTax);
 
   document.getElementById("pv-results").classList.remove("hidden");
@@ -22378,7 +22412,7 @@ function formatValuationCurrency(num) {
               <label for="fire-current-age">Current Age</label>
               <input
                 type="number"
-                id="fire-current-age"
+                id="fire-current-age" aria-required="true"
                 placeholder="e.g. 32"
                 min="18"
                 max="80"
@@ -22389,7 +22423,7 @@ function formatValuationCurrency(num) {
               <label for="fire-retire-age">Target Retirement Age</label>
               <input
                 type="number"
-                id="fire-retire-age"
+                id="fire-retire-age" aria-required="true"
                 placeholder="e.g. 55"
                 min="25"
                 max="90"
@@ -22444,7 +22478,7 @@ function formatValuationCurrency(num) {
               <label for="fire-annual-return">Expected Annual Return (%)</label>
               <input
                 type="number"
-                id="fire-annual-return"
+                id="fire-annual-return" aria-required="true"
                 placeholder="e.g. 7"
                 min="0"
                 max="20"
@@ -22456,7 +22490,7 @@ function formatValuationCurrency(num) {
               <label for="fire-inflation">Expected Inflation Rate (%)</label>
               <input
                 type="number"
-                id="fire-inflation"
+                id="fire-inflation" aria-required="true"
                 placeholder="e.g. 3"
                 min="0"
                 max="10"
@@ -22506,10 +22540,10 @@ function formatValuationCurrency(num) {
 
         <!-- Tab Navigation -->
         <div class="fire-tabs">
-          <button id="tab-fire-number" class="fire-tab active">
+          <button id="tab-fire-number" class="fire-tab active" aria-label="FIRE Number calculator tab">
             🎯 FIRE Number
           </button>
-          <button id="tab-coast-fire" class="fire-tab">🏖️ Coast FIRE</button>
+          <button id="tab-coast-fire" class="fire-tab" aria-label="Coast FIRE calculator tab">🏖️ Coast FIRE</button>
         </div>
 
         <!-- ==================== TAB 1: FIRE NUMBER ==================== -->
@@ -22523,7 +22557,7 @@ function formatValuationCurrency(num) {
                 >
                 <input
                   type="number"
-                  id="fire-annual-expenses"
+                  id="fire-annual-expenses" aria-required="true"
                   placeholder="e.g. 60000"
                   min="0"
                   step="any"
@@ -22539,7 +22573,7 @@ function formatValuationCurrency(num) {
                 >
                 <input
                   type="number"
-                  id="fire-withdrawal-rate"
+                  id="fire-withdrawal-rate" aria-required="true"
                   placeholder="e.g. 4"
                   min="1"
                   max="10"
@@ -22605,13 +22639,13 @@ function formatValuationCurrency(num) {
             </div>
             
 
-            <button id="fire-calculate-btn" class="btn-primary">
+            <button id="fire-calculate-btn" class="btn-primary" aria-label="Calculate FIRE Number">
               Calculate FIRE Number
             </button>
           </div>
 
           <!-- FIRE Results -->
-          <div id="fire-number-results" class="results-panel hidden">
+          <div id="fire-number-results" class="results-panel hidden" aria-live="polite" aria-label="FIRE calculation results">
             <h2>Your FIRE Number</h2>
             <div class="results-grid results-grid-3">
               <div class="result-item">
@@ -22677,7 +22711,7 @@ function formatValuationCurrency(num) {
           <div id="fire-chart-section" class="chart-panel hidden">
             <h2>Portfolio Projection</h2>
             <div class="canvas-chart">
-              <canvas id="fire-chart-canvas"></canvas>
+              <canvas id="fire-chart-canvas" role="img" aria-label="FIRE portfolio projection chart showing accumulation and drawdown phases"></canvas>
             </div>
             <div class="chart-legend" id="fire-chart-legend">
               <span class="legend-item"
@@ -22702,7 +22736,7 @@ function formatValuationCurrency(num) {
               Accumulation to retirement, then drawdown at multiple withdrawal rates to life expectancy.
             </p>
             <div class="canvas-chart">
-              <canvas id="fire-lifecycle-canvas"></canvas>
+              <canvas id="fire-lifecycle-canvas" role="img" aria-label="Retirement lifecycle chart showing portfolio growth and drawdown at multiple withdrawal rates"></canvas>
             </div>
             <div class="chart-legend" id="fire-lifecycle-legend">
               <span class="legend-item"><span class="legend-color" style="background:#2dd4bf"></span> Accumulation</span>
@@ -22736,13 +22770,13 @@ function formatValuationCurrency(num) {
               <div class="form-group"></div>
             </div>
 
-            <button id="coast-calculate-btn" class="btn-primary">
+            <button id="coast-calculate-btn" class="btn-primary" aria-label="Calculate Coast FIRE Number">
               Calculate Coast FIRE
             </button>
           </div>
 
           <!-- Coast FIRE Results -->
-          <div id="coast-fire-results" class="results-panel hidden">
+          <div id="coast-fire-results" class="results-panel hidden" aria-live="polite" aria-label="Coast FIRE calculation results">
             <h2>Coast FIRE Analysis</h2>
             <div class="results-grid results-grid-3">
               <div class="result-item">
@@ -22789,6 +22823,7 @@ function formatValuationCurrency(num) {
                   >Extra Monthly to Coast by Target</span
                 >
                 <span id="coast-extra-monthly" class="result-value">—</span>
+                <span class="form-hint">Based on reaching Coast FIRE within 5 years or half your time to retirement, whichever is sooner.</span>
               </div>
             </div>
           </div>
@@ -22797,7 +22832,7 @@ function formatValuationCurrency(num) {
           <div id="coast-chart-section" class="chart-panel hidden">
             <h2>Coast FIRE Projection</h2>
             <div class="canvas-chart">
-              <canvas id="coast-chart-canvas"></canvas>
+              <canvas id="coast-chart-canvas" role="img" aria-label="Coast FIRE projection chart showing portfolio growth toward Coast FIRE threshold"></canvas>
             </div>
             <div class="chart-legend" id="coast-chart-legend">
               <span class="legend-item"
@@ -22874,7 +22909,7 @@ function formatValuationCurrency(num) {
               <label for="adv-loan-amount">Loan Amount ($)</label>
               <input
                 type="number"
-                id="adv-loan-amount"
+                id="adv-loan-amount" aria-required="true"
                 placeholder="e.g. 250000"
                 min="0"
                 step="any"
@@ -22884,7 +22919,7 @@ function formatValuationCurrency(num) {
               <label for="adv-interest-rate">Annual Interest Rate (%)</label>
               <input
                 type="number"
-                id="adv-interest-rate"
+                id="adv-interest-rate" aria-required="true"
                 placeholder="e.g. 6.5"
                 min="0"
                 step="any"
@@ -22897,7 +22932,7 @@ function formatValuationCurrency(num) {
               <label for="adv-loan-term">Loan Term</label>
               <input
                 type="number"
-                id="adv-loan-term"
+                id="adv-loan-term" aria-required="true"
                 placeholder="e.g. 30"
                 min="1"
                 step="1"
@@ -23047,7 +23082,7 @@ function formatValuationCurrency(num) {
                 step="any"
                 class="input-amount"
               />
-              <button id="add-range-btn" class="btn-add">+ Add</button>
+              <button id="add-range-btn" class="btn-add" aria-label="Add recurring extra payment range">+ Add</button>
             </div>
             <ul id="range-list" class="onetime-list"></ul>
           </div>
@@ -23082,19 +23117,19 @@ function formatValuationCurrency(num) {
                 step="any"
                 class="input-amount"
               />
-              <button id="add-onetime-btn" class="btn-add">+ Add</button>
+              <button id="add-onetime-btn" class="btn-add" aria-label="Add one-time extra payment">+ Add</button>
             </div>
             <ul id="onetime-list" class="onetime-list"></ul>
           </div>
         </div>
 
         <!-- Calculate Button -->
-        <button id="adv-calculate-btn" class="btn-primary">
+        <button id="adv-calculate-btn" class="btn-primary" aria-label="Calculate advanced loan schedule">
           Calculate & Compare
         </button>
 
         <!-- Savings Summary -->
-        <div id="adv-results" class="results-panel hidden">
+        <div id="adv-results" aria-live="polite" class="results-panel hidden">
           <h2>Summary & Savings</h2>
           <div class="results-grid results-grid-3">
             <div class="result-item">
@@ -23174,7 +23209,7 @@ function formatValuationCurrency(num) {
             <button id="chart-adjusted" class="btn-toggle">With Extras</button>
           </div>
           <div class="canvas-chart">
-            <canvas id="adv-bar-canvas"></canvas>
+            <canvas id="adv-bar-canvas" role="img" aria-label="Yearly principal and interest breakdown bar chart"></canvas>
           </div>
           <div class="chart-legend">
             <span class="legend-item"
@@ -23213,7 +23248,7 @@ function formatValuationCurrency(num) {
             >
           </div>
           <div class="canvas-chart">
-            <canvas id="adv-line-canvas"></canvas>
+            <canvas id="adv-line-canvas" role="img" aria-label="Cumulative interest vs principal chart with extra payments"></canvas>
           </div>
         </div>
 
@@ -23308,7 +23343,7 @@ function formatValuationCurrency(num) {
               <label for="loan-amount">Loan Amount ($)</label>
               <input
                 type="number"
-                id="loan-amount"
+                id="loan-amount" aria-required="true"
                 placeholder="e.g. 250000"
                 min="0"
                 step="any"
@@ -23319,7 +23354,7 @@ function formatValuationCurrency(num) {
               <label for="interest-rate">Annual Interest Rate (%)</label>
               <input
                 type="number"
-                id="interest-rate"
+                id="interest-rate" aria-required="true"
                 placeholder="e.g. 6.5"
                 min="0"
                 step="any"
@@ -23330,14 +23365,14 @@ function formatValuationCurrency(num) {
               <label for="loan-term">Loan Term (Years)</label>
               <input
                 type="number"
-                id="loan-term"
+                id="loan-term" aria-required="true"
                 placeholder="e.g. 30"
                 min="1"
                 step="1"
               />
             </div>
 
-            <button id="calculate-btn" class="btn-primary">
+            <button id="calculate-btn" class="btn-primary" aria-label="Calculate loan payment">
               Calculate
             </button>
           </div>
@@ -23371,7 +23406,7 @@ function formatValuationCurrency(num) {
               >
             </div>
             <div class="canvas-chart">
-              <canvas id="loan-line-canvas"></canvas>
+              <canvas id="loan-line-canvas" role="img" aria-label="Cumulative interest vs principal chart over loan term"></canvas>
             </div>
           </div>
         </div>
@@ -23380,7 +23415,7 @@ function formatValuationCurrency(num) {
         <div id="item-chart">
           <div id="chart-section" class="chart-panel hidden">
             <div class="canvas-chart">
-              <canvas id="loan-bar-canvas"></canvas>
+              <canvas id="loan-bar-canvas" role="img" aria-label="Yearly principal and interest breakdown bar chart"></canvas>
             </div>
             <div class="chart-legend">
               <span class="legend-item"
@@ -23423,10 +23458,10 @@ function formatValuationCurrency(num) {
         <div id="item-table">
           <div id="amortization-section" class="table-panel hidden">
             <div class="table-controls">
-              <button id="view-monthly" class="btn-toggle active">
+              <button id="view-monthly" class="btn-toggle active" aria-label="Show monthly amortization table">
                 Monthly
               </button>
-              <button id="view-yearly" class="btn-toggle">Yearly</button>
+              <button id="view-yearly" class="btn-toggle" aria-label="Show yearly amortization table">Yearly</button>
             </div>
             <div class="table-wrapper">
               <table id="amortization-table">
@@ -23723,10 +23758,10 @@ function formatValuationCurrency(num) {
         <div class="calc-form">
           <h2 class="form-section-title">Analysis Mode</h2>
           <div class="mode-toggle">
-            <button id="mode-single" class="btn-toggle active">
+            <button id="mode-single" class="btn-toggle active" aria-label="Single investment NPV mode">
               Single Investment
             </button>
-            <button id="mode-compare" class="btn-toggle">
+            <button id="mode-compare" class="btn-toggle" aria-label="Compare two investments mode">
               Compare Two Investments
             </button>
           </div>
@@ -23741,7 +23776,7 @@ function formatValuationCurrency(num) {
                 <label for="npv-initial">Initial Investment ($)</label>
                 <input
                   type="number"
-                  id="npv-initial"
+                  id="npv-initial" aria-required="true"
                   placeholder="e.g. 200000"
                   min="0"
                   step="any"
@@ -23754,7 +23789,7 @@ function formatValuationCurrency(num) {
                 <label for="npv-rate">Discount Rate (%)</label>
                 <input
                   type="number"
-                  id="npv-rate"
+                  id="npv-rate" aria-required="true"
                   placeholder="e.g. 8"
                   min="0"
                   step="any"
@@ -23825,12 +23860,12 @@ function formatValuationCurrency(num) {
             <div class="cashflow-list" id="cashflow-list">
               <!-- Dynamically populated -->
             </div>
-            <button id="add-period-btn" class="btn-secondary">
+            <button id="add-period-btn" class="btn-secondary" aria-label="Add cash flow period">
               + Add Period
             </button>
           </div>
 
-          <button id="npv-calculate-btn" class="btn-primary">
+          <button id="npv-calculate-btn" class="btn-primary" aria-label="Calculate NPV and IRR">
             Calculate NPV & IRR
           </button>
         </div>
@@ -23921,7 +23956,7 @@ function formatValuationCurrency(num) {
               </div>
             </div>
             <div class="cashflow-list" id="cashflow-list-a"></div>
-            <button id="add-period-a-btn" class="btn-secondary">
+            <button id="add-period-a-btn" class="btn-secondary" aria-label="Add cash flow period to Investment A">
               + Add Period
             </button>
           </div>
@@ -24010,18 +24045,18 @@ function formatValuationCurrency(num) {
               </div>
             </div>
             <div class="cashflow-list" id="cashflow-list-b"></div>
-            <button id="add-period-b-btn" class="btn-secondary">
+            <button id="add-period-b-btn" class="btn-secondary" aria-label="Add cash flow period to Investment B">
               + Add Period
             </button>
           </div>
 
-          <button id="npv-compare-btn" class="btn-primary">
+          <button id="npv-compare-btn" class="btn-primary" aria-label="Compare two investments">
             Compare Investments
           </button>
         </div>
 
         <!-- Results: Single -->
-        <div id="npv-results" class="results-panel hidden">
+        <div id="npv-results" aria-live="polite" class="results-panel hidden">
           <h2>Results</h2>
           <div class="results-grid results-grid-3">
             <div class="result-item">
@@ -24133,7 +24168,7 @@ function formatValuationCurrency(num) {
         <div id="npv-chart-section" class="chart-panel hidden">
           <h2 id="npv-chart-title">Cash Flows by Period</h2>
           <div class="canvas-chart">
-            <canvas id="npv-bar-canvas"></canvas>
+            <canvas id="npv-bar-canvas" role="img" aria-label="NPV cash flow breakdown chart"></canvas>
           </div>
           <div class="chart-legend" id="npv-chart-legend">
             <span class="legend-item"
@@ -24234,14 +24269,14 @@ function formatValuationCurrency(num) {
 
         <!-- Tab Navigation -->
         <div class="options-tabs">
-          <button id="tab-payoff" class="options-tab active">
+          <button id="tab-payoff" class="options-tab active" aria-label="Payoff diagram tab">
             📊 Payoff Diagrams
           </button>
-          <button id="tab-blackscholes" class="options-tab">
+          <button id="tab-blackscholes" class="options-tab" aria-label="Black-Scholes pricing tab">
             🧮 Black-Scholes
           </button>
-          <button id="tab-greeks" class="options-tab">Δ Greeks</button>
-          <button id="tab-pnl" class="options-tab">💰 P&L Calculator</button>
+          <button id="tab-greeks" class="options-tab" aria-label="Greeks sensitivity tab">Δ Greeks</button>
+          <button id="tab-pnl" class="options-tab" aria-label="P&L calculator tab">💰 P&L Calculator</button>
         </div>
 
         <!-- ==================== TAB 1: PAYOFF DIAGRAMS ==================== -->
@@ -24363,14 +24398,14 @@ function formatValuationCurrency(num) {
                 />
               </div>
             </div>
-            <button id="suggest-premiums-btn" class="btn-secondary">
+            <button id="suggest-premiums-btn" class="btn-secondary" aria-label="Suggest option premiums based on Black-Scholes">
               💡 Suggest Fair Premiums (Black-Scholes)
             </button>
 
             <!-- Dynamic legs will be inserted here -->
             <div id="legs-container" class="legs-container"></div>
 
-            <button id="payoff-calculate-btn" class="btn-primary">
+            <button id="payoff-calculate-btn" class="btn-primary" aria-label="Calculate options payoff diagram">
               Calculate Payoff
             </button>
           </div>
@@ -24414,7 +24449,7 @@ function formatValuationCurrency(num) {
             </div>
 
             <div class="canvas-chart">
-              <canvas id="payoff-chart-canvas"></canvas>
+              <canvas id="payoff-chart-canvas" role="img" aria-label="Options payoff diagram showing profit and loss at expiration"></canvas>
             </div>
             <div id="payoff-chart-legend"></div>
             <div
@@ -24516,7 +24551,7 @@ function formatValuationCurrency(num) {
               </div>
             </div>
 
-            <button id="bs-calculate-btn" class="btn-primary">
+            <button id="bs-calculate-btn" class="btn-primary" aria-label="Calculate Black-Scholes option price">
               Calculate Price
             </button>
           </div>
@@ -24632,7 +24667,7 @@ function formatValuationCurrency(num) {
               <div class="form-group"></div>
             </div>
 
-            <button id="gk-calculate-btn" class="btn-primary">
+            <button id="gk-calculate-btn" class="btn-primary" aria-label="Calculate option Greeks">
               Calculate Greeks
             </button>
           </div>
@@ -24652,7 +24687,7 @@ function formatValuationCurrency(num) {
               <button id="gk-vega-btn" class="btn-toggle">Vega</button>
             </div>
             <div class="canvas-chart">
-              <canvas id="gk-chart-canvas"></canvas>
+              <canvas id="gk-chart-canvas" role="img" aria-label="Greeks sensitivity chart showing option greek vs stock price"></canvas>
             </div>
           </div>
         </div>
@@ -24738,7 +24773,7 @@ function formatValuationCurrency(num) {
               </div>
             </div>
 
-            <button id="pnl-calculate-btn" class="btn-primary">
+            <button id="pnl-calculate-btn" class="btn-primary" aria-label="Calculate option P&L">
               Calculate P&L
             </button>
           </div>
@@ -24753,7 +24788,7 @@ function formatValuationCurrency(num) {
           <div id="pnl-chart-section" class="chart-panel hidden">
             <h2>P&L at Expiration</h2>
             <div class="canvas-chart">
-              <canvas id="pnl-chart-canvas"></canvas>
+              <canvas id="pnl-chart-canvas" role="img" aria-label="Options P&L chart showing profit and loss vs stock price"></canvas>
             </div>
           </div>
         </div>
@@ -24855,7 +24890,7 @@ function formatValuationCurrency(num) {
               <label for="proj-horizon">Time Horizon (years)</label>
               <input
                 type="number"
-                id="proj-horizon"
+                id="proj-horizon" aria-required="true"
                 placeholder="e.g. 30"
                 min="1"
                 max="60"
@@ -24868,7 +24903,7 @@ function formatValuationCurrency(num) {
               <label for="proj-return">Expected Annual Return (%)</label>
               <input
                 type="number"
-                id="proj-return"
+                id="proj-return" aria-required="true"
                 placeholder="e.g. 7"
                 min="0"
                 max="30"
@@ -24948,13 +24983,13 @@ function formatValuationCurrency(num) {
             </div>
           </div>
 
-          <button id="proj-calculate-btn" class="btn-primary">
+          <button id="proj-calculate-btn" class="btn-primary" aria-label="Calculate portfolio projection">
             Calculate Projections
           </button>
         </div>
 
         <!-- Results Summary -->
-        <div id="proj-results" class="table-panel hidden">
+        <div id="proj-results" aria-live="polite" class="table-panel hidden">
           <h2>Scenario Summary</h2>
           <div class="table-wrapper">
             <table>
@@ -24977,15 +25012,15 @@ function formatValuationCurrency(num) {
         <div id="proj-chart-section" class="chart-panel hidden">
           <h2>Portfolio Projection</h2>
           <div class="proj-chart-controls">
-            <button id="proj-nominal-btn" class="btn-toggle active">
+            <button id="proj-nominal-btn" class="btn-toggle active" aria-label="Show nominal returns">
               Nominal
             </button>
-            <button id="proj-real-btn" class="btn-toggle">
+            <button id="proj-real-btn" class="btn-toggle" aria-label="Show inflation-adjusted real returns">
               Inflation-Adjusted
             </button>
           </div>
           <div class="canvas-chart">
-            <canvas id="proj-chart-canvas"></canvas>
+            <canvas id="proj-chart-canvas" role="img" aria-label="Portfolio projection chart showing growth scenarios over time"></canvas>
           </div>
           <div class="chart-legend" id="proj-chart-legend"></div>
         </div>
@@ -25066,11 +25101,11 @@ function formatValuationCurrency(num) {
         <div class="calc-form">
           <h2 class="form-section-title">Calculation Type</h2>
           <div class="mode-toggle">
-            <button id="mode-lump" class="btn-toggle active">
+            <button id="mode-lump" class="btn-toggle active" aria-label="Lump sum present value mode">
               Single Future Sum
             </button>
-            <button id="mode-annuity" class="btn-toggle">Annuity</button>
-            <button id="mode-compare" class="btn-toggle">
+            <button id="mode-annuity" class="btn-toggle" aria-label="Annuity present value mode">Annuity</button>
+            <button id="mode-compare" class="btn-toggle" aria-label="Compare lump sum vs annuity mode">
               Lump Sum vs. Annuity
             </button>
           </div>
@@ -25244,7 +25279,7 @@ function formatValuationCurrency(num) {
                 <label for="pv-rate">Discount Rate (%)</label>
                 <input
                   type="number"
-                  id="pv-rate"
+                  id="pv-rate" aria-required="true"
                   placeholder="e.g. 7"
                   min="0"
                   step="any"
@@ -25270,7 +25305,7 @@ function formatValuationCurrency(num) {
                 <label for="pv-periods">Number of Years</label>
                 <input
                   type="number"
-                  id="pv-periods"
+                  id="pv-periods" aria-required="true"
                   placeholder="e.g. 10"
                   min="1"
                   step="1"
@@ -25280,13 +25315,13 @@ function formatValuationCurrency(num) {
             </div>
           </div>
 
-          <button id="pv-calculate-btn" class="btn-primary">
+          <button id="pv-calculate-btn" class="btn-primary" aria-label="Calculate present value">
             Calculate Present Value
           </button>
         </div>
 
         <!-- Results -->
-        <div id="pv-results" class="results-panel hidden">
+        <div id="pv-results" aria-live="polite" class="results-panel hidden">
           <h2>Results</h2>
           <div id="pv-standard-results" class="results-grid">
             <div class="result-item">
@@ -25396,7 +25431,7 @@ function formatValuationCurrency(num) {
         <div id="pv-chart-section" class="chart-panel hidden">
           <h2>Value Over Time</h2>
           <div class="canvas-chart">
-            <canvas id="pv-bar-canvas"></canvas>
+            <canvas id="pv-bar-canvas" role="img" aria-label="Present value breakdown chart"></canvas>
           </div>
           <
           <div class="chart-legend" id="pv-chart-legend">

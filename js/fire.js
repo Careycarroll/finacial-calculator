@@ -1760,6 +1760,24 @@ function displayCoastChart(
 }
 
 // ===================================================================
+// RESIZE HANDLER
+// ===================================================================
+
+let fireResizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(fireResizeTimeout);
+  fireResizeTimeout = setTimeout(() => {
+    const fireChartSection = document.getElementById("fire-chart-section");
+    const coastChartSection = document.getElementById("coast-chart-section");
+    if (fireChartSection && !fireChartSection.classList.contains("hidden")) {
+      fireCalculateBtn.click();
+    } else if (coastChartSection && !coastChartSection.classList.contains("hidden")) {
+      coastCalculateBtn.click();
+    }
+  }, 250);
+});
+
+// ===================================================================
 // FUTURE VALUE INCOME TOGGLE
 // ===================================================================
 
