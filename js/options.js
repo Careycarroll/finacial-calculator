@@ -1,3 +1,10 @@
+import {
+  safeParseFloat, safeParseInt, formatCurrency,
+  createChartContext, getChartDimensions, showChartLoading, hideChartLoading,
+  rafThrottle, validateInputs, showFieldError
+} from "./chart-utils.js";
+import { getReferenceShape } from "./options-reference-shapes.js";
+
 // ===================================================================
 // OPTIONS STRATEGY LAB
 // ===================================================================
@@ -213,13 +220,6 @@ async function renderStrategyButtons() {
 
 function selectStrategy(strategy) {
   activeStrategy = strategy;
-  if (typeof getReferenceShape === "undefined") {
-    const script = document.createElement("script");
-    script.src = "../js/options-reference-shapes.js";
-    script.onload = () => selectStrategy(strategy);
-    document.head.appendChild(script);
-    return;
-  }
   // Show info card
   const section = document.getElementById("strategy-info-section");
   section.classList.remove("hidden");

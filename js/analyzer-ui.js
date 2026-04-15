@@ -1,3 +1,13 @@
+import {
+  formatCurrency, createChartContext, autoScrollTables, rafThrottle
+} from "./chart-utils.js";
+import {
+  formatLargeNumber, formatRatio, formatPct, formatCurrencyShort
+} from "./formatting.js";
+import { getTermDefinition } from "./financial-terms.js";
+import { fetchSECData } from "./sec-api.js";
+import { analyzeFinancials } from "./analyzer.js";
+
 // ===================================================================
 // 10-K ANALYZER UI — Rendering, Charts, Tables, Interactions
 // ===================================================================
@@ -178,16 +188,7 @@ function tt(label, termKey) {
   return `<span class="term-tooltip" data-tooltip="${term.definition}">${label}</span>`;
 }
 
-function formatLargeNumber(value) {
-  if (value === null || value === undefined) return "—";
-  const abs = Math.abs(value);
-  const sign = value < 0 ? "-" : "";
-  if (abs >= 1e12) return `${sign}$${(abs / 1e12).toFixed(2)}T`;
-  if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(2)}B`;
-  if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(2)}M`;
-  if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}K`;
-  return `${sign}$${abs.toFixed(0)}`;
-}
+// formatLargeNumber imported from formatting.js
 
 // Load ticker data on page load
 loadTickerData();

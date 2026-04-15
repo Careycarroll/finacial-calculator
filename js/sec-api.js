@@ -505,7 +505,7 @@ function filterQuarterlyData(dataPoints) {
 // FINANCIAL STATEMENT BUILDER — Assemble normalized statements
 // ===================================================================
 
-function buildFinancialStatements(facts, years, formType) {
+export function buildFinancialStatements(facts, years, formType) {
   const filterFn = formType === "10-Q" ? filterQuarterlyData : filterAnnualData;
   const limit = years || 5;
 
@@ -799,7 +799,7 @@ function buildFinancialStatements(facts, years, formType) {
 // MAIN ENTRY POINT — Fetch and build everything
 // ===================================================================
 
-async function fetchSECData(ticker, years, formType) {
+export async function fetchSECData(ticker, years, formType) {
   years = years || 5;
   formType = formType || "10-K";
 

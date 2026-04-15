@@ -12,7 +12,7 @@
 
 
 // ===== SHARED CONSTANTS =====
-const CONFIG = {
+export const CONFIG = {
   MAX_PROJECTION_MONTHS: 1200,   // 100 years — used in yearsToTarget loops
   SP500_NOMINAL_RETURN: 10.5,    // Historical S&P 500 nominal annual return (%)
   SP500_REAL_RETURN: 7.0,        // Historical S&P 500 real (inflation-adjusted) return (%)
@@ -27,17 +27,17 @@ const CONFIG = {
 // Usage: safeParseFloat(document.getElementById('my-input').value)
 //        safeParseFloat(document.getElementById('my-input').value, 1)
 
-function safeParseFloat(value, fallback = 0) {
+export function safeParseFloat(value, fallback = 0) {
   const n = parseFloat(value);
   return Number.isFinite(n) ? n : fallback;
 }
 
-function safeParseInt(value, fallback = 0) {
+export function safeParseInt(value, fallback = 0) {
   const n = parseInt(value, 10);
   return Number.isFinite(n) ? n : fallback;
 }
 
-function formatCurrency(value) {
+export function formatCurrency(value) {
   if (!Number.isFinite(value)) return '$0.00';
 
   const abs = Math.abs(value);
@@ -70,7 +70,7 @@ function formatCurrency(value) {
 // createChartContext: sets canvas dimensions accounting for device pixel ratio (DPR).
 // Always call this instead of setting canvas.width/height directly.
 // Returns { ctx, width, height, clear } where width/height are DPR-scaled logical pixels.
-function createChartContext(canvas, width, height) {
+export function createChartContext(canvas, width, height) {
   const dpr = window.devicePixelRatio || 1;
 
   canvas.width = width * dpr;
@@ -96,7 +96,7 @@ function createChartContext(canvas, width, height) {
 // Get logical dimensions from a canvas already set up by createChartContext
 // getChartDimensions: returns the current rendered width/height of a canvas element.
 // Use when the canvas size is determined by CSS layout rather than explicit dimensions.
-function getChartDimensions(canvas) {
+export function getChartDimensions(canvas) {
   return {
     width: parseInt(canvas.style.width) || canvas.width,
     height: parseInt(canvas.style.height) || canvas.height,
@@ -107,7 +107,7 @@ function getChartDimensions(canvas) {
 // AUTO-SCROLL TABLES — adds scroll to tables with many rows
 // ===================================================================
 
-function autoScrollTables(maxRows = 25) {
+export function autoScrollTables(maxRows = 25) {
   document.querySelectorAll(".table-wrapper").forEach((wrapper) => {
     const rows = wrapper.querySelectorAll("tbody tr");
     if (rows.length > maxRows) {
@@ -134,7 +134,7 @@ function autoScrollTables(maxRows = 25) {
 // x, y:  anchor point (tip of crosshair or hover point)
 // bounds: { width, height, top, right } — chart bounds for edge clamping
 
-function drawTooltip(ctx, lines, x, y, bounds) {
+export function drawTooltip(ctx, lines, x, y, bounds) {
   if (!lines || lines.length === 0) return;
 
   const normalized = lines.map((l) =>
@@ -188,7 +188,7 @@ function drawTooltip(ctx, lines, x, y, bounds) {
 // options.xLabel: (d) => string
 // options.tooltip: (d) => [line1, line2,...]
 // options.controller: AbortController (optional, managed externally)
-function drawBarChart(canvas, data, options) {
+export function drawBarChart(canvas, data, options) {
   if (!canvas || !data || data.length === 0) return;
 
   const container = canvas.parentElement;
@@ -363,7 +363,7 @@ function drawBarChart(canvas, data, options) {
 // options.xTicks: number            — how many x-axis ticks to show (default 10)
 // options.tooltip: (d) => [line1, line2,...]
 // options.controller: AbortController (optional, managed externally)
-function drawLineChart(canvas, data, options) {
+export function drawLineChart(canvas, data, options) {
   if (!canvas || !data || data.length === 0) return;
 
   const container = canvas.parentElement;
@@ -551,7 +551,7 @@ function drawLineChart(canvas, data, options) {
 // hideChartLoading: removes the spinner.
 // The spinner div is created once and reused on subsequent calls.
 
-function showChartLoading(canvasId) {
+export function showChartLoading(canvasId) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const container = canvas.closest(".canvas-chart");
@@ -567,7 +567,7 @@ function showChartLoading(canvasId) {
   spinner.classList.add("active");
 }
 
-function hideChartLoading(canvasId) {
+export function hideChartLoading(canvasId) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const container = canvas.closest(".canvas-chart");
@@ -580,7 +580,7 @@ function hideChartLoading(canvasId) {
 // Wraps a mousemove callback so it only fires once per animation frame.
 // Prevents redraws faster than the screen refresh rate (60/120/144hz).
 
-function rafThrottle(fn) {
+export function rafThrottle(fn) {
   let pending = false;
   return function(...args) {
     if (pending) return;
@@ -597,7 +597,7 @@ function rafThrottle(fn) {
 // containerSelector: string or element — used to clear errors before validating
 // Returns true if all fields pass, false if any fail (errors shown inline)
 
-function validateInputs(schema, containerSelector) {
+export function validateInputs(schema, containerSelector) {
   if (containerSelector) clearAllErrors(containerSelector);
   let valid = true;
 
@@ -643,7 +643,7 @@ function validateInputs(schema, containerSelector) {
 // clearFieldError: removes error state from a single field
 // clearAllErrors: removes all error states within a container
 
-function showFieldError(fieldId, message) {
+export function showFieldError(fieldId, message) {
   const el = document.getElementById(fieldId);
   if (!el) return;
   el.classList.add("input-error");
@@ -657,7 +657,7 @@ function showFieldError(fieldId, message) {
   msg.style.display = "block";
 }
 
-function clearFieldError(fieldId) {
+export function clearFieldError(fieldId) {
   const el = document.getElementById(fieldId);
   if (!el) return;
   el.classList.remove("input-error");
@@ -665,7 +665,7 @@ function clearFieldError(fieldId) {
   if (msg) msg.style.display = "none";
 }
 
-function clearAllErrors(containerSelector) {
+export function clearAllErrors(containerSelector) {
   const container = typeof containerSelector === "string"
     ? document.querySelector(containerSelector)
     : containerSelector;
@@ -680,7 +680,7 @@ function clearAllErrors(containerSelector) {
 
 // ===== FORM ENTER-KEY DELEGATION =====
 // Single delegated listener on each.calc-form instead of per-input listeners
-function bindFormEnter(callback, containerSelector) {
+export function bindFormEnter(callback, containerSelector) {
   const root = containerSelector
     ? document.querySelector(containerSelector)
     : document;

@@ -1,3 +1,9 @@
+import {
+  safeParseFloat, safeParseInt, formatCurrency,
+  drawBarChart, drawLineChart, showChartLoading, hideChartLoading,
+  validateInputs, showFieldError, bindFormEnter
+} from "./chart-utils.js";
+
 // ===== DOM ELEMENTS =====
 const calculateBtn = document.getElementById("adv-calculate-btn");
 const existingToggle = document.getElementById("adv-existing-toggle");

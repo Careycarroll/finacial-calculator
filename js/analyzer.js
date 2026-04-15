@@ -1,3 +1,5 @@
+import { formatCurrencyShort, formatPct, formatRatio, formatNumber, trendArrow } from "./formatting.js";
+
 // ===================================================================
 // 10-K ANALYZER — Ratios, Scoring, Red Flags, Growth Calculations
 // ===================================================================
@@ -42,7 +44,7 @@ function cagr(endValue, startValue, years) {
 // MARGIN CALCULATIONS
 // ===================================================================
 
-function calculateMargins(incomeStatement) {
+export function calculateMargins(incomeStatement) {
   const rev = incomeStatement.revenue;
 
   return {
@@ -62,7 +64,7 @@ function calculateMargins(incomeStatement) {
 // PROFITABILITY RATIOS
 // ===================================================================
 
-function calculateProfitability(income, balance, prevBalance) {
+export function calculateProfitability(income, balance, prevBalance) {
   const avgEquity = avg(
     balance.totalEquity,
     prevBalance ? prevBalance.totalEquity : null,
@@ -100,7 +102,7 @@ function calculateProfitability(income, balance, prevBalance) {
 // LIQUIDITY RATIOS
 // ===================================================================
 
-function calculateLiquidity(balance) {
+export function calculateLiquidity(balance) {
   const quickAssets =
     balance.currentAssets !== null && balance.inventory !== null
       ? balance.currentAssets - balance.inventory
@@ -117,7 +119,7 @@ function calculateLiquidity(balance) {
 // LEVERAGE RATIOS
 // ===================================================================
 
-function calculateLeverage(income, balance) {
+export function calculateLeverage(income, balance) {
   return {
     debtToEquity: safeDiv(balance.totalDebt, balance.totalEquity),
     debtToAssets: safeDiv(balance.totalLiabilities, balance.totalAssets),
@@ -137,7 +139,7 @@ function calculateLeverage(income, balance) {
 // EFFICIENCY RATIOS
 // ===================================================================
 
-function calculateEfficiency(income, balance, prevBalance) {
+export function calculateEfficiency(income, balance, prevBalance) {
   const avgAssets = avg(
     balance.totalAssets,
     prevBalance ? prevBalance.totalAssets : null,
@@ -182,7 +184,7 @@ function calculateEfficiency(income, balance, prevBalance) {
 // PER SHARE METRICS
 // ===================================================================
 
-function calculatePerShare(income, balance, cashFlow) {
+export function calculatePerShare(income, balance, cashFlow) {
   const shares = income.sharesDiluted || income.sharesBasic;
 
   return {
@@ -205,7 +207,7 @@ function calculatePerShare(income, balance, cashFlow) {
 // CASH FLOW QUALITY
 // ===================================================================
 
-function calculateCashFlowQuality(income, cashFlow) {
+export function calculateCashFlowQuality(income, cashFlow) {
   return {
     ocfToNetIncome: safeDiv(cashFlow.operatingCashFlow, income.netIncome),
     fcfToNetIncome: safeDiv(cashFlow.freeCashFlow, income.netIncome),
@@ -233,7 +235,7 @@ function calculateCashFlowQuality(income, cashFlow) {
 // GROWTH CALCULATIONS
 // ===================================================================
 
-function calculateGrowthRates(statements) {
+export function calculateGrowthRates(statements) {
   const { incomeStatements, balanceSheets, cashFlows } = statements;
 
   // Statements are sorted newest first — reverse for chronological order
@@ -297,7 +299,7 @@ function calculateGrowthRates(statements) {
 // FULL RATIO ANALYSIS — One ratio set per period
 // ===================================================================
 
-function calculateAllRatios(statements) {
+export function calculateAllRatios(statements) {
   const { incomeStatements, balanceSheets, cashFlows } = statements;
   const ratios = [];
 
@@ -329,7 +331,7 @@ function calculateAllRatios(statements) {
 // FINANCIAL HEALTH SCORECARD — 0 to 10 rating
 // ===================================================================
 
-function calculateHealthScore(ratios, growth) {
+export function calculateHealthScore(ratios, growth) {
   const latest = ratios[0];
   if (!latest) return { overall: 0, categories: {} };
 
@@ -505,7 +507,7 @@ function calculateHealthScore(ratios, growth) {
 // RED FLAG & HIGHLIGHT DETECTION
 // ===================================================================
 
-function detectRedFlags(statements, ratios, growth) {
+export function detectRedFlags(statements, ratios, growth) {
   const flags = [];
   const { incomeStatements, balanceSheets, cashFlows } = statements;
 
@@ -872,45 +874,13 @@ function countConsecutiveEnd(arr, predicate) {
 // FORMATTING HELPERS
 // ===================================================================
 
-function formatCurrencyShort(value) {
-  if (value === null || value === undefined) return "—";
-  const abs = Math.abs(value);
-  const sign = value < 0 ? "-" : "";
-  if (abs >= 1e12) return `${sign}$${(abs / 1e12).toFixed(2)}T`;
-  if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(2)}B`;
-  if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(2)}M`;
-  if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}K`;
-  return `${sign}$${abs.toFixed(0)}`;
-}
-
-function formatPct(value) {
-  if (value === null || value === undefined) return "—";
-  return `${(value * 100).toFixed(1)}%`;
-}
-
-function formatRatio(value, decimals) {
-  if (value === null || value === undefined) return "—";
-  decimals = decimals !== undefined ? decimals : 2;
-  return value.toFixed(decimals) + "x";
-}
-
-function formatNumber(value) {
-  if (value === null || value === undefined) return "—";
-  return value.toLocaleString("en-US");
-}
-
-function trendArrow(current, previous) {
-  if (current === null || previous === null) return "";
-  if (current > previous * 1.01) return " ↑";
-  if (current < previous * 0.99) return " ↓";
-  return " →";
-}
+// Formatting functions imported from formatting.js
 
 // ===================================================================
 // MAIN ANALYSIS ENTRY POINT
 // ===================================================================
 
-function analyzeFinancials(secData) {
+export function analyzeFinancials(secData) {
   const statements = {
     incomeStatements: secData.incomeStatements,
     balanceSheets: secData.balanceSheets,

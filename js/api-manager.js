@@ -115,7 +115,7 @@ function getUsage() {
   }
 }
 
-function recordUsage(provider) {
+export function recordUsage(provider) {
   const usage = getUsage();
   if (!usage.providers[provider]) {
     usage.providers[provider] = 0;
@@ -129,13 +129,13 @@ function getProviderUsage(provider) {
   return usage.providers[provider] || 0;
 }
 
-function getRemainingCalls(provider) {
+export function getRemainingCalls(provider) {
   const config = API_PROVIDERS[provider];
   if (!config) return 0;
   return config.dailyLimit - getProviderUsage(provider);
 }
 
-function getUsageSummary() {
+export function getUsageSummary() {
   const usage = getUsage();
   const summary = {};
   Object.keys(API_PROVIDERS).forEach((provider) => {
@@ -156,7 +156,7 @@ function getUsageSummary() {
 // API KEY MANAGEMENT
 // ===================================================================
 
-function getApiKeys() {
+export function getApiKeys() {
   try {
     return JSON.parse(localStorage.getItem(API_KEYS_KEY) || "{}");
   } catch {
@@ -164,19 +164,19 @@ function getApiKeys() {
   }
 }
 
-function saveApiKey(provider, key) {
+export function saveApiKey(provider, key) {
   const keys = getApiKeys();
   keys[provider] = key;
   localStorage.setItem(API_KEYS_KEY, JSON.stringify(keys));
 }
 
-function removeApiKey(provider) {
+export function removeApiKey(provider) {
   const keys = getApiKeys();
   delete keys[provider];
   localStorage.setItem(API_KEYS_KEY, JSON.stringify(keys));
 }
 
-function hasApiKey(provider) {
+export function hasApiKey(provider) {
   const keys = getApiKeys();
   return !!keys[provider];
 }
@@ -286,7 +286,7 @@ async function apiFetch(provider, endpoint, symbol) {
 // UNIFIED DATA FETCHING — Normalize across providers
 // ===================================================================
 
-async function fetchStockData(symbol) {
+export async function fetchStockData(symbol) {
   symbol = symbol.toUpperCase().trim();
 
   const provider = selectProviderForEvaluation();

@@ -1,3 +1,9 @@
+import {
+  safeParseFloat, safeParseInt, formatCurrency,
+  drawBarChart, drawLineChart, showChartLoading, hideChartLoading,
+  validateInputs, bindFormEnter
+} from "./chart-utils.js";
+
 // ===== DOM ELEMENTS =====
 const calculateBtn = document.getElementById("calculate-btn");
 const resultsSection = document.getElementById("results");

@@ -2,7 +2,7 @@
 // FINANCIAL TERMS — Definitions for tooltips
 // ===================================================================
 
-const FINANCIAL_TERMS = {
+export const FINANCIAL_TERMS = {
   // ===== INCOME STATEMENT =====
   revenue: {
     term: "Revenue",
@@ -439,6 +439,6 @@ const FINANCIAL_TERMS = {
   },
 };
 
-function getTermDefinition(key) {
+export function getTermDefinition(key) {
   return FINANCIAL_TERMS[key] || null;
 }

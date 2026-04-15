@@ -1,3 +1,9 @@
+import {
+  CONFIG, safeParseFloat, safeParseInt, formatCurrency,
+  createChartContext, showChartLoading, hideChartLoading,
+  rafThrottle, validateInputs, showFieldError, bindFormEnter
+} from "./chart-utils.js";
+
 // ===== CONSTANTS =====
 // SP500 constants — sourced from CONFIG in chart-utils.js
 const SP500_NOMINAL = CONFIG.SP500_NOMINAL_RETURN;
@@ -466,7 +472,7 @@ function displayChart(projections, inputs, view) {
     ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - radius);
     ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - radius, ty + tooltipHeight, radius);
     ctx.lineTo(tx + radius, ty + tooltipHeight);
-    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - radius, r);
+    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - radius, radius);
     ctx.lineTo(tx, ty + radius);
     ctx.arcTo(tx, ty, tx + radius, ty, radius);
     ctx.closePath();

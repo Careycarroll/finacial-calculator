@@ -1,3 +1,9 @@
+import {
+  CONFIG, safeParseFloat, safeParseInt, formatCurrency,
+  createChartContext, showChartLoading, hideChartLoading,
+  rafThrottle, validateInputs, showFieldError, bindFormEnter
+} from "./chart-utils.js";
+
 // ===== DOM ELEMENTS =====
 const tabFireNumber = document.getElementById("tab-fire-number");
 const tabCoastFire = document.getElementById("tab-coast-fire");

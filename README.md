@@ -17,6 +17,9 @@ A collection of interactive financial calculators built with vanilla JavaScript 
 | 💰 Present Value | Lump sum, annuity, lump sum vs annuity comparison |
 | 📊 NPV / IRR | Net present value, internal rate of return, investment comparison |
 | ⚙️ Options Lab | Payoff diagrams, Black-Scholes pricing, Greeks sensitivity, P&L |
+| 🔍 Stock Evaluator | Multi-method fundamental analysis: DCF, Graham Number, enterprise value, multiples |
+| 📑 10-K Analyzer | SEC EDGAR filing parser with ratio analysis, health scoring, and red flag detection |
+| 📰 News Feed | RSS reader with OPML import, category filtering, bookmarks, and search |
 
 ---
 
@@ -34,6 +37,16 @@ python3 -m http.server 8000
 
 No npm, no build step, no dependencies.
 
+### SEC Data Proxy (required for 10-K Analyzer)
+
+The 10-K Analyzer fetches data from SEC EDGAR via a local HTTP/2 proxy to handle CORS. Start it before using the analyzer:
+
+```bash
+node proxy.js
+# Proxy runs at http://localhost:3001
+# Keep this terminal open while using the 10-K Analyzer
+```
+
 ---
 
 ## Project Structure
@@ -50,24 +63,43 @@ financial-calculator/
 │   ├── npv-irr.html
 │   └── options.html
 ├── js/
-│   ├── chart-utils.js      # Shared utilities — formatting, canvas, validation, charts
+│   ├── chart-utils.js           # Shared canvas, validation, chart utilities (ES module)
+│   ├── formatting.js            # Shared formatting functions (ES module)
+│   ├── financial-terms.js       # Financial term definitions for tooltips
 │   ├── fire.js
 │   ├── projections.js
 │   ├── loan.js
 │   ├── loan-advanced.js
 │   ├── pv.js
 │   ├── npv-irr.js
-│   └── options.js
+│   ├── options.js
+│   ├── options-reference-shapes.js
+│   ├── analyzer.js              # SEC ratio calculations and health scoring
+│   ├── analyzer-ui.js           # 10-K Analyzer UI entry point
+│   ├── valuator.js              # Multi-method stock valuation engine
+│   ├── valuator-ui.js           # Stock Evaluator UI entry point
+│   ├── api-manager.js           # Multi-provider API key management
+│   ├── sec-api.js               # SEC EDGAR data fetcher
+│   ├── news.js                  # RSS news feed reader
+│   └── prefetch.js              # Quicklink prefetching (plain script, not module)
+├── proxy.js                     # Local HTTP/2 CORS proxy for SEC EDGAR
 └── css/
-    ├── base.css             # Global reset and variables
-    ├── common-calculator.css # Shared form, result, chart, table styles
-    └── fire.css             # Tool-specific overrides
+    ├── base.css                 # Global reset and variables
+    ├── common-calculator.css    # Shared form, result, chart, table styles
+    ├── fire.css
+    ├── analyzer.css
+    ├── news.css
+    ├── npv-irr.css
+    ├── options.css
+    ├── projections.css
+    └── valuator.css
 ```
 
 ---
 
 ## Technical Notes
 
+- **ES Modules** — all JS files use native `import`/`export`, no bundler required
 - **No dependencies** — vanilla JS, HTML5 Canvas, CSS custom properties
 - **Charts** — all charts are Canvas 2D with DPI scaling, offscreen caching, and RAF-throttled mousemove
 - **Validation** — \`validateInputs(schema)\` in \`chart-utils.js\` handles all form validation with inline errors

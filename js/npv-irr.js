@@ -1,3 +1,9 @@
+import {
+  safeParseFloat, safeParseInt, formatCurrency,
+  drawBarChart, showChartLoading, hideChartLoading,
+  validateInputs, showFieldError
+} from "./chart-utils.js";
+
 // ===== DOM ELEMENTS =====
 const modeSingleBtn = document.getElementById("mode-single");
 const modeCompareBtn = document.getElementById("mode-compare");

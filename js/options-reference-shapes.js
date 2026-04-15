@@ -1,4 +1,4 @@
-function getReferenceShape(id) {
+export function getReferenceShape(id) {
   const shapes = {
     "long-call": {
       line: [

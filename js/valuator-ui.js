@@ -1,3 +1,12 @@
+import {
+  formatLargeNumberRaw, formatRatioPlain, formatPercent, formatValuationCurrency
+} from "./formatting.js";
+import { evaluateStock } from "./valuator.js";
+import {
+  fetchStockData, getApiKeys, saveApiKey, removeApiKey,
+  getUsageSummary, getRemainingCalls
+} from "./api-manager.js";
+
 // ===================================================================
 // STOCK EVALUATOR — UI Controller
 // ===================================================================
@@ -203,11 +212,13 @@ async function runEvaluation() {
     `Fetching data for ${ticker}...`;
 
   if (getValuatorMode() === "manual") {
+    hideTile("tile-loading");
     runManualEvaluation();
     return;
   }
 
   if (!getApiEnabled()) {
+    hideTile("tile-loading");
     renderResearchLinks(
       ticker,
       `API usage is disabled. Use these research links while you preserve calls for later.`,
@@ -367,94 +378,67 @@ function renderResearchLinks(symbol, message = null) {
     message ||
     `If API access is unavailable or rate limits are reached, use these research sources to continue your analysis.`;
 
-  const links = [
+  const groups = [
     {
-      icon: "📊",
-      site: "Macrotrends",
-      desc: "Financial statements, ratios, charts",
-      url: `https://www.macrotrends.net/stocks/charts/${symbol}/${symbol}/revenue`,
+      label: "📋 Financial Statements",
+      desc: "Best sources for revenue, income, balance sheet, and cash flow data needed for manual entry.",
+      links: [
+        { icon: "📊", site: "Macrotrends", desc: "Historical financials, ratios, and charts going back 10+ years", url: `https://www.macrotrends.net/stocks/charts/${symbol}/${symbol}/revenue` },
+        { icon: "📋", site: "Stock Analysis", desc: "Clean income, balance sheet, and cash flow statements", url: `https://stockanalysis.com/stocks/${symbol.toLowerCase()}/financials/` },
+        { icon: "📈", site: "Yahoo Finance", desc: "Financials, key statistics, and holders", url: `https://finance.yahoo.com/quote/${symbol}/financials/` },
+        { icon: "🏛️", site: "MarketWatch", desc: "Income statement, balance sheet, cash flow", url: `https://www.marketwatch.com/investing/stock/${symbol.toLowerCase()}/financials` },
+        { icon: "💹", site: "Wisesheets", desc: "Structured financial data and ratios", url: `https://wisesheets.io/quote/${symbol}` },
+        { icon: "📱", site: "TIKR", desc: "Institutional-grade financials, free tier available", url: `https://tikr.com/stocks/${symbol}` },
+      ],
     },
     {
-      icon: "📈",
-      site: "Yahoo Finance",
-      desc: "Financials, analysis, holders",
-      url: `https://finance.yahoo.com/quote/${symbol}/financials/`,
+      label: "🏦 Official Filings",
+      desc: "Primary source documents — use these to verify numbers before manual entry.",
+      links: [
+        { icon: "🏦", site: "SEC EDGAR", desc: "10-K, 10-Q, and all official SEC filings", url: `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${symbol}&type=10-K&dateb=&owner=include&count=10` },
+        { icon: "🔎", site: "SEC Full-Text Search", desc: "Search within filings for specific line items", url: `https://efts.sec.gov/LATEST/search-index?q=%22${symbol}%22&dateRange=custom&startdt=2020-01-01&forms=10-K` },
+      ],
     },
     {
-      icon: "🏦",
-      site: "SEC EDGAR",
-      desc: "10-K, 10-Q, official filings",
-      url: `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${symbol}&type=10-K&dateb=&owner=include&count=10`,
+      label: "🧮 Valuation Tools",
+      desc: "Pre-built DCF models, fair value estimates, and valuation multiples.",
+      links: [
+        { icon: "🧮", site: "GuruFocus", desc: "DCF calculator, Graham Number, intrinsic value", url: `https://www.gurufocus.com/stock/${symbol}/dcf` },
+        { icon: "📊", site: "Morningstar", desc: "Analyst fair value estimate and moat rating", url: `https://www.morningstar.com/stocks/xnas/${symbol.toLowerCase()}/quote` },
+        { icon: "🔍", site: "Simply Wall St", desc: "Visual valuation snowflake and DCF", url: `https://simplywall.st/stocks/us/${symbol}` },
+        { icon: "📉", site: "Finviz", desc: "Screener, ratios, and valuation metrics", url: `https://finviz.com/quote.ashx?t=${symbol}` },
+        { icon: "🌐", site: "OpenBB", desc: "Open-source terminal with fundamentals and DCF", url: `https://openbb.co/stocks/${symbol}` },
+      ],
     },
     {
-      icon: "📉",
-      site: "Finviz",
-      desc: "Screener, ratios, charts",
-      url: `https://finviz.com/quote.ashx?t=${symbol}`,
-    },
-    {
-      icon: "💹",
-      site: "Wisesheets",
-      desc: "Financial data, DCF, ratios",
-      url: `https://wisesheets.io/quote/${symbol}`,
-    },
-    {
-      icon: "🔍",
-      site: "Simply Wall St",
-      desc: "Visual valuation, snowflake",
-      url: `https://simplywall.st/stocks/us/${symbol}`,
-    },
-    {
-      icon: "📋",
-      site: "Stock Analysis",
-      desc: "Financials, DCF, forecasts",
-      url: `https://stockanalysis.com/stocks/${symbol.toLowerCase()}/financials/`,
-    },
-    {
-      icon: "🧮",
-      site: "GuruFocus",
-      desc: "DCF, Graham, intrinsic value",
-      url: `https://www.gurufocus.com/stock/${symbol}/dcf`,
-    },
-    {
-      icon: "📰",
-      site: "Seeking Alpha",
-      desc: "Analysis, earnings, news",
-      url: `https://seekingalpha.com/symbol/${symbol}`,
-    },
-    {
-      icon: "🏛️",
-      site: "MarketWatch",
-      desc: "Financials, profile, news",
-      url: `https://www.marketwatch.com/investing/stock/${symbol.toLowerCase()}/financials`,
-    },
-    {
-      icon: "📊",
-      site: "Morningstar",
-      desc: "Fair value, moat rating",
-      url: `https://www.morningstar.com/stocks/xnas/${symbol.toLowerCase()}/quote`,
-    },
-    {
-      icon: "🌐",
-      site: "Google Finance",
-      desc: "Quick overview, news",
-      url: `https://www.google.com/finance/quote/${symbol}:NASDAQ`,
+      label: "📰 News & Analysis",
+      desc: "Qualitative context, earnings coverage, and analyst opinions.",
+      links: [
+        { icon: "📰", site: "Seeking Alpha", desc: "In-depth analysis, earnings transcripts, news", url: `https://seekingalpha.com/symbol/${symbol}` },
+        { icon: "🌐", site: "Google Finance", desc: "Quick overview, recent news, and related stocks", url: `https://www.google.com/finance/quote/${symbol}:NASDAQ` },
+      ],
     },
   ];
 
-  container.innerHTML = links
-    .map(
-      (link) => `
-    <a href="${link.url}" target="_blank" rel="noopener" class="val-link-card">
-      <span class="val-link-icon">${link.icon}</span>
-      <div class="val-link-info">
-        <span class="val-link-site">${link.site}</span>
-        <span class="val-link-desc">${link.desc}</span>
+  container.innerHTML = groups.map(group => `
+    <div class="val-link-group">
+      <div class="val-link-group-header">
+        <span class="val-link-group-title">${group.label}</span>
+        <span class="val-link-group-desc">${group.desc}</span>
       </div>
-    </a>
-  `,
-    )
-    .join("");
+      <div class="val-links-grid">
+        ${group.links.map(link => `
+          <a href="${link.url}" target="_blank" rel="noopener" class="val-link-card">
+            <span class="val-link-icon">${link.icon}</span>
+            <div class="val-link-info">
+              <span class="val-link-site">${link.site}</span>
+              <span class="val-link-desc">${link.desc}</span>
+            </div>
+          </a>
+        `).join("")}
+      </div>
+    </div>
+  `).join("");
 
   showTile("tile-links");
 }

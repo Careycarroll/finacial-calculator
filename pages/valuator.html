@@ -30,18 +30,21 @@
       </header>
 
       <main>
+        <!-- Mode Toggle — always visible -->
+        <div class="calc-form" style="margin-bottom: 1rem; padding: 1rem 2rem;">
+          <div class="val-mode-tabs">
+            <button id="val-mode-api-btn" class="val-mode-tab active" type="button">
+              API Valuation
+            </button>
+            <button id="val-mode-manual-btn" class="val-mode-tab" type="button">
+              Manual Input
+            </button>
+          </div>
+        </div>
+
         <!-- Search & API Settings -->
         <div id="tile-search">
           <div class="calc-form">
-            <div class="val-mode-tabs">
-              <button id="val-mode-api-btn" class="val-mode-tab active" type="button">
-                API Valuation
-              </button>
-              <button id="val-mode-manual-btn" class="val-mode-tab" type="button">
-                Manual Input
-              </button>
-            </div>
-
             <div class="val-api-panel">
               <div class="val-search-row">
                 <div class="val-search-input-wrap">
@@ -436,9 +439,7 @@
     </div>
 
     <!-- Valuator (order matters: api-manager → valuator → ui) -->
-    <script src="../js/api-manager.js"></script>
-    <script src="../js/valuator.js"></script>
-    <script src="../js/valuator-ui.js"></script>
+    <script type="module" src="../js/valuator-ui.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>

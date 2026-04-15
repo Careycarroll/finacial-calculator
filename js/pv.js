@@ -1,3 +1,15 @@
+import {
+  safeParseFloat,
+  safeParseInt,
+  formatCurrency,
+  drawBarChart,
+  showChartLoading,
+  hideChartLoading,
+  validateInputs,
+  showFieldError,
+  bindFormEnter,
+} from "./chart-utils.js";
+
 // ===== DOM ELEMENTS =====
 const calculateBtn = document.getElementById("pv-calculate-btn");
 const modeLumpBtn = document.getElementById("mode-lump");
@@ -66,12 +78,30 @@ function handleCalculate() {
 
   const annualRate = safeParseFloat(document.getElementById("pv-rate").value);
   const years = safeParseInt(document.getElementById("pv-periods").value);
-  const compounding = safeParseInt(document.getElementById("pv-compounding").value);
+  const compounding = safeParseInt(
+    document.getElementById("pv-compounding").value,
+  );
 
-  const valid = validateInputs([
-    { id: "pv-rate",    label: "Discount Rate", required: true, min: 0.01, max: 50  },
-    { id: "pv-periods", label: "Years",         required: true, min: 1,    max: 100, integer: true },
-  ], ".calc-form");
+  const valid = validateInputs(
+    [
+      {
+        id: "pv-rate",
+        label: "Discount Rate",
+        required: true,
+        min: 0.01,
+        max: 50,
+      },
+      {
+        id: "pv-periods",
+        label: "Years",
+        required: true,
+        min: 1,
+        max: 100,
+        integer: true,
+      },
+    ],
+    ".calc-form",
+  );
 
   const ratePerPeriod = annualRate / 100 / compounding;
   const totalPeriods = years * compounding;
@@ -79,7 +109,9 @@ function handleCalculate() {
   let presentValue, futureValue, totalPayments;
 
   if (currentMode === "lump") {
-    futureValue = safeParseFloat(document.getElementById("pv-future-value").value);
+    futureValue = safeParseFloat(
+      document.getElementById("pv-future-value").value,
+    );
 
     if (!futureValue || futureValue <= 0) {
       showFieldError("pv-future-value", "Please enter a valid future value.");
@@ -147,14 +179,18 @@ function handleCalculate() {
 // ===== COMPARE CALCULATION =====
 function handleCompare() {
   const annualRate = safeParseFloat(document.getElementById("pv-rate").value);
-  const compounding = safeParseInt(document.getElementById("pv-compounding").value);
-  const lumpSum = safeParseFloat(document.getElementById("pv-compare-lump").value);
+  const compounding = safeParseInt(
+    document.getElementById("pv-compounding").value,
+  );
+  const lumpSum = safeParseFloat(
+    document.getElementById("pv-compare-lump").value,
+  );
   const annuityPayment = safeParseFloat(
-    document.getElementById("pv-compare-payment").value
-    );
+    document.getElementById("pv-compare-payment").value,
+  );
   const annuityYears = safeParseInt(
-    document.getElementById("pv-compare-years").value
-    );
+    document.getElementById("pv-compare-years").value,
+  );
 
   let valid = true;
 
@@ -167,7 +203,10 @@ function handleCompare() {
     valid = false;
   }
   if (!annuityPayment || annuityPayment <= 0) {
-    showFieldError("pv-compare-payment", "Please enter a valid annuity payment.");
+    showFieldError(
+      "pv-compare-payment",
+      "Please enter a valid annuity payment.",
+    );
     valid = false;
   }
   if (!annuityYears || annuityYears <= 0) {
@@ -184,13 +223,16 @@ function handleCompare() {
 
   if (useTax) {
     lumpTaxRate =
-      (safeParseFloat(document.getElementById("pv-lump-tax-rate").value, 0)) /
+      safeParseFloat(document.getElementById("pv-lump-tax-rate").value, 0) /
       100;
     annuityTaxRate =
-      (safeParseFloat(document.getElementById("pv-annuity-tax-rate").value, 0)) /
+      safeParseFloat(document.getElementById("pv-annuity-tax-rate").value, 0) /
       100;
     investmentTaxRate =
-      (safeParseFloat(document.getElementById("pv-investment-tax-rate").value, 0)) / 100;
+      safeParseFloat(
+        document.getElementById("pv-investment-tax-rate").value,
+        0,
+      ) / 100;
   }
 
   const ratePerPeriod = annualRate / 100 / compounding;
@@ -492,7 +534,8 @@ function displayChart(breakdown) {
   const legend = document.getElementById("pv-chart-legend");
   if (!canvas) return;
 
-  document.querySelector("#pv-chart-section h2").textContent = "Value Over Time";
+  document.querySelector("#pv-chart-section h2").textContent =
+    "Value Over Time";
   legend.innerHTML = `
     <span class="legend-item"><span class="legend-color legend-principal"></span> Present Value Portion</span>
     <span class="legend-item"><span class="legend-color legend-interest"></span> Interest (Discount)</span>
@@ -520,7 +563,8 @@ function displayComparisonChart(breakdown, lumpAfterTax) {
   const legend = document.getElementById("pv-chart-legend");
   if (!canvas) return;
 
-  document.querySelector("#pv-chart-section h2").textContent = "Lump Sum Growth vs. Annuity Payments";
+  document.querySelector("#pv-chart-section h2").textContent =
+    "Lump Sum Growth vs. Annuity Payments";
   legend.innerHTML = `
     <span class="legend-item"><span class="legend-color legend-principal"></span> Lump Sum (Invested)</span>
     <span class="legend-item"><span class="legend-color legend-interest"></span> Annuity (Cumulative Received)</span>
