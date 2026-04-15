@@ -61,7 +61,10 @@ financial-calculator/
 │   ├── loan-advanced.html
 │   ├── pv.html
 │   ├── npv-irr.html
-│   └── options.html
+│   ├── options.html
+│   ├── analyzer.html
+│   ├── valuator.html
+│   └── news.html
 ├── js/
 │   ├── chart-utils.js           # Shared canvas, validation, chart utilities (ES module)
 │   ├── formatting.js            # Shared formatting functions (ES module)
@@ -103,7 +106,7 @@ financial-calculator/
 - **No dependencies** — vanilla JS, HTML5 Canvas, CSS custom properties
 - **Charts** — all charts are Canvas 2D with DPI scaling, offscreen caching, and RAF-throttled mousemove
 - **Validation** — \`validateInputs(schema)\` in \`chart-utils.js\` handles all form validation with inline errors
-- **Shared utilities** — \`chart-utils.js\` exports \`formatCurrency\`, \`safeParseFloat\`, \`createChartContext\`, \`drawBarChart\`, \`drawLineChart\`, \`drawTooltip\`, \`rafThrottle\`, \`validateInputs\`, \`showFieldError\`, \`showChartLoading\`
+- **Shared utilities** — \`chart-utils.js\` exports canvas, validation, and chart functions; \`formatting.js\` exports \`formatCurrency\`, \`formatLargeNumber\`, \`formatRatio\`, \`formatPct\`, \`formatPercent\`, \`formatValuationCurrency\`, \`formatCurrencyShort\`, and growth rate helpers
 - **Storage** — inputs auto-saved to \`localStorage\` per tool, restored on page load
 - **Accessibility** — ARIA labels on all interactive elements, \`aria-live\` on result panels, \`role="img"\` on all canvas charts
 
@@ -129,39 +132,50 @@ Key phases:
 ## Utilities Quick Reference
 
 ```javascript
-// Formatting
-formatCurrency(value)                          // $1.25M, $450,000, -$3.45
+// chart-utils.js — canvas, validation, charts
+import {
+  formatCurrency, safeParseFloat, safeParseInt,
+  createChartContext, drawBarChart, drawLineChart, drawTooltip,
+  rafThrottle, validateInputs, showFieldError, clearAllErrors,
+  showChartLoading, hideChartLoading, bindFormEnter, CONFIG
+} from "./chart-utils.js";
 
-// Input parsing
-safeParseFloat(el.value, fallback)
-safeParseInt(el.value, fallback)
+// formatting.js — shared formatting utilities
+import {
+  formatLargeNumber, formatLargeNumberRaw,
+  formatRatio, formatRatioPlain,
+  formatPct, formatPercent,
+  formatValuationCurrency, formatCurrencyShort,
+  formatNumber, trendArrow,
+  calculateSimpleGrowthRates
+} from "./formatting.js";
 
-// Validation
-validateInputs(schema, containerSelector)      // returns bool, shows inline errors
-showFieldError(fieldId, message)
-clearAllErrors(containerSelector)
+// financial-terms.js
+import { getTermDefinition } from "./financial-terms.js";
 
-// Canvas
-createChartContext(canvas, width, height)      // DPI-scaled context
-drawBarChart(canvas, data, options)
-drawLineChart(canvas, data, options)
-drawTooltip(ctx, lines, x, y, bounds)
+// sec-api.js
+import { fetchSECData } from "./sec-api.js";
 
-// Performance
-rafThrottle(fn)                                // throttle to screen refresh rate
-
-// Loading
-showChartLoading(canvasId)
-hideChartLoading(canvasId)
+// api-manager.js
+import {
+  fetchStockData, getApiKeys, saveApiKey, removeApiKey,
+  getUsageSummary, getRemainingCalls
+} from "./api-manager.js";
 ```
 
 ---
 
 ## Useful Dev Commands
 
-``` bash
+```bash
 # Kill and restart local server
 pkill -f "python.*http" && python3 -m http.server 8000
+
+# Start SEC EDGAR proxy (required for 10-K Analyzer)
+node proxy.js
+
+# Check JS file sizes (to plan audit splits — max 500KB per upload)
+ls -R /Users/$(whoami)/Github\ Projects/financial-calculator/js/ | grep '\.js$' | sed "s|^|/Users/$(whoami)/Github Projects/financial-calculator/js/|" | xargs -I {} wc -c "{}"
 
 # Dump all source files to a single audit file
 for f in **/*.(js|css|html); do
