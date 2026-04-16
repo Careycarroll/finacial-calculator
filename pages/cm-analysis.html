@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contribution Margin Analysis | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/common-calculator.css" />
+    <link rel="stylesheet" href="../css/cm-analysis.css" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-container">
+      <header>
+        <h1>📊 Contribution Margin Analysis</h1>
+        <p class="tagline">Analyze contribution margin, gross profit, breakeven, and optimal product mix under capacity constraints.</p>
+      </header>
+
+      <main>
+        <!-- Tab Navigation -->
+        <div class="cm-tabs">
+          <button id="tab-single" class="cm-tab active" aria-label="Single product analysis">📦 Single Product</button>
+          <button id="tab-multi" class="cm-tab" aria-label="Multi-product bundle analysis">🗂️ Multi-Product</button>
+          <button id="tab-sensitivity" class="cm-tab" aria-label="Sensitivity and what-if analysis">🎛️ Sensitivity</button>
+        </div>
+
+        <!-- ==================== TAB 1: SINGLE PRODUCT ==================== -->
+        <div id="single-tab">
+
+          <!-- How This Works -->
+          <div class="cm-explainer">
+            <button class="cm-explainer-toggle" id="sp-explainer-toggle" aria-expanded="false">
+              💡 How This Works <span class="cm-explainer-chevron">▼</span>
+            </button>
+            <div class="cm-explainer-body hidden" id="sp-explainer-body">
+              <p><strong>Contribution Margin (CM)</strong> is the amount left over after subtracting variable costs from revenue. It contributes first to covering fixed costs, then to profit.</p>
+              <p><strong>Gross Profit (GP)</strong> subtracts only COGS (cost of goods sold) from revenue. The difference: CM uses all variable costs; GP uses only production-related costs you designate as COGS.</p>
+              <p><strong>Breakeven</strong> is the point where total revenue equals total costs — operating income is exactly $0. Below breakeven you lose money; above it you profit.</p>
+              <p><strong>Margin of Safety</strong> is how far your actual (or target) volume is above breakeven — expressed as a percentage. Higher is safer.</p>
+              <p><strong>Known Volume mode</strong> — enter how many units you sold or plan to sell. The tool calculates actual operating income and shows where you stand relative to breakeven.</p>
+              <p><strong>Target Profit mode</strong> — enter a profit goal (or $0 for breakeven). The tool solves for how many units you need to sell to hit that target.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Product Setup</h2>
+
+            <!-- Mode Toggle -->
+            <div class="mode-toggle" style="margin-bottom:1.25rem;">
+              <button id="sp-mode-volume" class="btn-toggle active">📦 Known Volume</button>
+              <button id="sp-mode-target" class="btn-toggle">🎯 Target Profit</button>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sp-price">Selling Price per Unit ($)</label>
+                <input type="number" id="sp-price" aria-required="true" placeholder="e.g. 100" min="0" step="any" />
+              </div>
+              <div class="form-group" id="sp-units-group">
+                <label for="sp-units">Units Sold</label>
+                <input type="number" id="sp-units" placeholder="e.g. 1000" min="0" step="1" />
+                <span class="form-hint">How many units you sold or plan to sell.</span>
+              </div>
+              <div class="form-group hidden" id="sp-target-group">
+                <label for="sp-target-profit">Target Operating Income ($)</label>
+                <input type="number" id="sp-target-profit" placeholder="e.g. 50000 (or 0 for breakeven)" min="0" step="any" />
+                <span class="form-hint">Enter $0 to solve for breakeven units.</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="sp-capacity">Max Capacity (units, optional)</label>
+                <input type="number" id="sp-capacity" placeholder="e.g. 1500" min="0" step="1" />
+                <span class="form-hint">Leave blank if no capacity constraint.</span>
+              </div>
+              <div class="form-group"></div>
+            </div>
+          </div>
+
+          <!-- Variable Costs -->
+          <div class="calc-form">
+            <h2 class="form-section-title">Variable Costs <span class="form-hint" style="font-size:0.8rem; text-transform:none;">(per unit)</span></h2>
+            <div class="cm-explainer">
+              <button class="cm-explainer-toggle" id="vc-explainer-toggle" aria-expanded="false">
+                💡 What are variable costs? <span class="cm-explainer-chevron">▼</span>
+              </button>
+              <div class="cm-explainer-body hidden" id="vc-explainer-body">
+                <p><strong>Variable costs</strong> change in direct proportion to the number of units produced or sold. Common examples:</p>
+                <ul>
+                  <li><strong>Direct Materials</strong> — raw materials used to make each unit</li>
+                  <li><strong>Direct Labor</strong> — wages paid per unit produced</li>
+                  <li><strong>Variable Manufacturing Overhead</strong> — utilities, supplies that vary with production</li>
+                  <li><strong>Variable Selling Costs</strong> — commissions, shipping per unit sold</li>
+                </ul>
+                <p>Check <strong>COGS</strong> for costs that are part of the cost of goods sold (production costs). Leave unchecked for variable selling/admin costs. This determines Gross Profit vs Contribution Margin.</p>
+              </div>
+            </div>
+            <p class="form-hint" style="margin-bottom:1rem;">Add each variable cost line item. Check "COGS" if it should be included in Gross Profit calculation.</p>
+            <div id="sp-variable-costs" class="cost-list"></div>
+            <button id="sp-add-variable" class="btn-add" style="margin-top:0.75rem;">+ Add Variable Cost</button>
+          </div>
+
+          <!-- Fixed Costs -->
+          <div class="calc-form">
+            <h2 class="form-section-title">Fixed Costs <span class="form-hint" style="font-size:0.8rem; text-transform:none;">(total per period)</span></h2>
+            <div class="cm-explainer">
+              <button class="cm-explainer-toggle" id="fc-explainer-toggle" aria-expanded="false">
+                💡 What are fixed costs? <span class="cm-explainer-chevron">▼</span>
+              </button>
+              <div class="cm-explainer-body hidden" id="fc-explainer-body">
+                <p><strong>Fixed costs</strong> remain constant regardless of how many units you produce or sell. Common examples:</p>
+                <ul>
+                  <li><strong>Rent / Lease</strong> — facility costs that don't change with volume</li>
+                  <li><strong>Salaries</strong> — management and administrative staff</li>
+                  <li><strong>Depreciation</strong> — equipment and asset depreciation</li>
+                  <li><strong>Insurance</strong> — fixed premiums</li>
+                  <li><strong>Fixed Overhead</strong> — any production overhead that doesn't vary with output</li>
+                </ul>
+                <p>Fixed costs are what the contribution margin must first cover before any profit is generated. The breakeven point is where CM exactly equals total fixed costs.</p>
+              </div>
+            </div>
+            <div id="sp-fixed-costs" class="cost-list"></div>
+            <button id="sp-add-fixed" class="btn-add" style="margin-top:0.75rem;">+ Add Fixed Cost</button>
+          </div>
+
+          <button id="sp-calculate" class="btn-primary">Calculate</button>
+
+          <!-- Results -->
+          <div id="sp-results" class="results-panel hidden" aria-live="polite">
+            <h2>Results</h2>
+
+            <!-- GP vs CM Comparison -->
+            <div class="cm-comparison">
+              <div class="cm-comparison-col">
+                <h3>Gross Profit</h3>
+                <div class="result-item">
+                  <span class="result-label">Revenue</span>
+                  <span id="sp-revenue" class="result-value">—</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">COGS</span>
+                  <span id="sp-cogs" class="result-value">—</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">Gross Profit</span>
+                  <span id="sp-gp" class="result-value accent">—</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">GP Margin</span>
+                  <span id="sp-gp-margin" class="result-value">—</span>
+                </div>
+              </div>
+              <div class="cm-comparison-col highlight">
+                <h3>Contribution Margin</h3>
+                <div class="result-item">
+                  <span class="result-label">Revenue</span>
+                  <span id="sp-revenue-2" class="result-value">—</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">Variable Costs</span>
+                  <span id="sp-vc-total" class="result-value">—</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">Contribution Margin</span>
+                  <span id="sp-cm" class="result-value accent">—</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">CM Ratio</span>
+                  <span id="sp-cm-ratio" class="result-value">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="results-grid results-grid-3" style="margin-top:1.5rem;">
+              <div class="result-item">
+                <span class="result-label">CM per Unit</span>
+                <span id="sp-cm-unit" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Total Fixed Costs</span>
+                <span id="sp-fc-total" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Operating Income</span>
+                <span id="sp-operating-income" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Breakeven (Units)</span>
+                <span id="sp-be-units" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Breakeven (Revenue)</span>
+                <span id="sp-be-revenue" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Margin of Safety</span>
+                <span id="sp-mos" class="result-value">—</span>
+              </div>
+            </div>
+
+            <!-- Capacity Flag -->
+            <div id="sp-capacity-flag" class="cm-flag hidden"></div>
+          </div>
+
+          <!-- Step-by-Step Calculations -->
+          <div id="sp-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="cm-explainer" style="border-color: var(--accent);">
+              <button class="cm-explainer-toggle" id="sp-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculations <span class="cm-explainer-chevron">▼</span>
+              </button>
+              <div class="cm-explainer-body" id="sp-steps-body">
+                <div id="sp-steps-content" class="cm-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Waterfall Chart -->
+          <div id="sp-waterfall-section" class="chart-panel hidden">
+            <h2>Income Waterfall</h2>
+            <div class="canvas-chart">
+              <canvas id="sp-waterfall-canvas" role="img" aria-label="Income waterfall chart showing revenue, variable costs, contribution margin, fixed costs, and operating income"></canvas>
+            </div>
+          </div>
+
+          <!-- Breakeven Chart -->
+          <div id="sp-breakeven-section" class="chart-panel hidden">
+            <h2>Breakeven Analysis</h2>
+            <div class="canvas-chart">
+              <canvas id="sp-breakeven-canvas" role="img" aria-label="Breakeven chart showing total revenue and total cost lines crossing at breakeven point"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 2: MULTI-PRODUCT ==================== -->
+        <div id="multi-tab" class="hidden">
+
+          <!-- How This Works -->
+          <div class="cm-explainer">
+            <button class="cm-explainer-toggle" id="mp-explainer-toggle" aria-expanded="false">
+              💡 How Multi-Product Analysis Works <span class="cm-explainer-chevron">▼</span>
+            </button>
+            <div class="cm-explainer-body hidden" id="mp-explainer-body">
+              <p><strong>Sales Mix</strong> is the proportion of each product in total sales. If you sell 600 units of Product A and 400 of Product B, the mix is 60%/40%. Mix percentages must sum to 100%.</p>
+              <p><strong>Weighted Average CM</strong> blends each product's CM per unit by its sales mix. This single number represents the average contribution of one "bundle" unit sold.</p>
+              <p><strong>Bundle Breakeven</strong> is the total number of units (across all products) needed to cover fixed costs, assuming the sales mix holds constant.</p>
+              <p><strong>Breakeven Option A</strong> allocates fixed costs to each product by its mix percentage, then solves for that product's individual units. Each product "pays its share" of fixed costs.</p>
+              <p><strong>Breakeven Option B</strong> solves for total bundle units first, then multiplies by each product's mix. This is the standard managerial accounting approach.</p>
+              <p><strong>Capacity Constraint</strong> — when a shared resource (machine hours, labor hours) is limited, you should prioritize products with the highest CM per unit of that resource — not just the highest CM per unit. This is the Theory of Constraints.</p>
+            </div>
+          </div>
+
+          <!-- Products -->
+          <div class="calc-form">
+            <h2 class="form-section-title">Products</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Add each product. Sales mix % must sum to 100%.</p>
+            <div id="mp-products" class="mp-product-list"></div>
+            <button id="mp-add-product" class="btn-secondary" style="margin-top:1rem;">+ Add Product</button>
+          </div>
+
+          <!-- Shared Fixed Costs -->
+          <div class="calc-form">
+            <h2 class="form-section-title">Shared Fixed Costs <span class="form-hint" style="font-size:0.8rem; text-transform:none;">(total per period)</span></h2>
+            <div id="mp-fixed-costs" class="cost-list"></div>
+            <button id="mp-add-fixed" class="btn-add" style="margin-top:0.75rem;">+ Add Fixed Cost</button>
+          </div>
+
+          <!-- Capacity Constraint -->
+          <div class="calc-form">
+            <div class="toggle-header">
+              <h2 class="form-section-title">Capacity Constraint (Optional)</h2>
+              <label class="toggle-switch">
+                <input type="checkbox" id="mp-constraint-toggle" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="form-hint">Enable to rank products by CM per unit of constrained resource (e.g. machine hours, labor hours).</p>
+            <div id="mp-constraint-fields" class="conditional-fields hidden">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="mp-resource-name">Resource Name</label>
+                  <input type="text" id="mp-resource-name" placeholder="e.g. Machine Hours" />
+                </div>
+                <div class="form-group">
+                  <label for="mp-resource-total">Total Available Units</label>
+                  <input type="number" id="mp-resource-total" placeholder="e.g. 500" min="0" step="any" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button id="mp-calculate" class="btn-primary">Calculate</button>
+
+          <!-- Results -->
+          <div id="mp-results" class="results-panel hidden" aria-live="polite">
+            <h2>Bundle Results</h2>
+
+            <!-- Bundle Summary -->
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Weighted CM per Unit</span>
+                <span id="mp-weighted-cm" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Weighted CM Ratio</span>
+                <span id="mp-weighted-cm-ratio" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Total Fixed Costs</span>
+                <span id="mp-fc-total" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Breakeven (Bundle Units)</span>
+                <span id="mp-be-bundle" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Breakeven (Revenue)</span>
+                <span id="mp-be-revenue" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Total Operating Income</span>
+                <span id="mp-operating-income" class="result-value">—</span>
+              </div>
+            </div>
+
+            <!-- Per-Product Table -->
+            <h3 style="margin-top:1.5rem; font-size:1rem; color:var(--accent);">Per-Product Breakdown</h3>
+            <div class="table-wrapper" style="margin-top:0.75rem;">
+              <table id="mp-product-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>VC/Unit</th>
+                    <th>CM/Unit</th>
+                    <th>CM Ratio</th>
+                    <th>Sales Mix</th>
+                    <th>BE Units (A)</th>
+                    <th>BE Units (B)</th>
+                    <th id="mp-constraint-col" class="hidden">CM/Resource Unit</th>
+                    <th id="mp-rank-col" class="hidden">Rank</th>
+                  </tr>
+                </thead>
+                <tbody id="mp-product-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- Capacity Flags -->
+            <div id="mp-capacity-flags" class="cm-flags-list" style="margin-top:1rem;"></div>
+
+            <!-- Constraint Results -->
+            <div id="mp-constraint-results" class="hidden" style="margin-top:1.5rem;">
+              <h3 style="font-size:1rem; color:var(--accent);">Optimal Product Mix (Constraint Ranking)</h3>
+              <div class="table-wrapper" style="margin-top:0.75rem;">
+                <table id="mp-constraint-table">
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Product</th>
+                      <th>CM/Unit</th>
+                      <th id="mp-resource-header">CM/Resource Unit</th>
+                      <th>Resource Units Required</th>
+                      <th>Max Units (Capacity)</th>
+                      <th>Units to Produce</th>
+                      <th>Total CM</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mp-constraint-tbody"></tbody>
+                  <tfoot id="mp-constraint-tfoot"></tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step Calculations -->
+          <div id="mp-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="cm-explainer" style="border-color: var(--accent);">
+              <button class="cm-explainer-toggle" id="mp-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculations <span class="cm-explainer-chevron">▼</span>
+              </button>
+              <div class="cm-explainer-body" id="mp-steps-body">
+                <div id="mp-steps-content" class="cm-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CM by Product Chart -->
+          <div id="mp-chart-section" class="chart-panel hidden">
+            <h2>Contribution Margin by Product</h2>
+            <div class="canvas-chart">
+              <canvas id="mp-chart-canvas" role="img" aria-label="Stacked bar chart showing contribution margin by product"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 3: SENSITIVITY ==================== -->
+        <div id="sensitivity-tab" class="hidden">
+
+          <div class="calc-form">
+            <h2 class="form-section-title">What-If Analysis</h2>
+            <div class="cm-explainer">
+              <button class="cm-explainer-toggle" id="sens-explainer-toggle" aria-expanded="false">
+                💡 How Sensitivity Analysis Works <span class="cm-explainer-chevron">▼</span>
+              </button>
+              <div class="cm-explainer-body hidden" id="sens-explainer-body">
+                <p><strong>Sensitivity analysis</strong> shows how your results change when key assumptions change. This is critical for decision-making under uncertainty.</p>
+                <p><strong>Price sensitivity</strong> — a small price increase often has a large impact on CM because variable costs don't change. This is called <em>operating leverage</em>.</p>
+                <p><strong>Volume sensitivity</strong> — shows how much volume needs to change to hit breakeven or a profit target. Useful for sales planning.</p>
+                <p><strong>Variable cost sensitivity</strong> — models the impact of input cost changes (materials, labor). If your supplier raises prices, how does that affect your breakeven?</p>
+                <p><strong>Fixed cost sensitivity</strong> — models the impact of adding capacity, hiring staff, or signing a new lease.</p>
+                <p>The <strong>sensitivity matrix</strong> shows operating income at every combination of price and volume adjustments simultaneously — giving you a full picture of the risk/reward landscape.</p>
+              </div>
+            </div>
+            <p class="form-hint" style="margin-bottom:1.5rem;">Adjust sliders to see how changes affect contribution margin, breakeven, and operating income. Based on Single Product inputs — calculate that tab first.</p>
+
+            <div id="sensitivity-no-data" class="cm-flag" style="display:block;">
+              ⚠️ Calculate the Single Product tab first to enable sensitivity analysis.
+            </div>
+
+            <div id="sensitivity-controls" class="hidden">
+              <div class="sensitivity-slider-group">
+                <label>Price Adjustment: <span id="sens-price-label" class="sens-value">0%</span></label>
+                <input type="range" id="sens-price" class="sens-slider" min="-30" max="30" value="0" step="1" />
+                <div class="sens-range-labels"><span>-30%</span><span>+30%</span></div>
+              </div>
+              <div class="sensitivity-slider-group">
+                <label>Volume Adjustment: <span id="sens-volume-label" class="sens-value">0%</span></label>
+                <input type="range" id="sens-volume" class="sens-slider" min="-50" max="50" value="0" step="1" />
+                <div class="sens-range-labels"><span>-50%</span><span>+50%</span></div>
+              </div>
+              <div class="sensitivity-slider-group">
+                <label>Variable Cost Adjustment: <span id="sens-vc-label" class="sens-value">0%</span></label>
+                <input type="range" id="sens-vc" class="sens-slider" min="-30" max="30" value="0" step="1" />
+                <div class="sens-range-labels"><span>-30%</span><span>+30%</span></div>
+              </div>
+              <div class="sensitivity-slider-group">
+                <label>Fixed Cost Adjustment: <span id="sens-fc-label" class="sens-value">0%</span></label>
+                <input type="range" id="sens-fc" class="sens-slider" min="-30" max="30" value="0" step="1" />
+                <div class="sens-range-labels"><span>-30%</span><span>+30%</span></div>
+              </div>
+
+              <button id="sens-reset" class="btn-secondary" style="margin-top:1rem;">Reset All</button>
+            </div>
+          </div>
+
+          <!-- Sensitivity Results -->
+          <div id="sensitivity-results" class="results-panel hidden" aria-live="polite">
+            <h2>Adjusted Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">CM per Unit</span>
+                <span id="sens-cm-unit" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">CM Ratio</span>
+                <span id="sens-cm-ratio" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Operating Income</span>
+                <span id="sens-operating-income" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Breakeven (Units)</span>
+                <span id="sens-be-units" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Breakeven (Revenue)</span>
+                <span id="sens-be-revenue" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Margin of Safety</span>
+                <span id="sens-mos" class="result-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Operating Income vs Volume Chart -->
+          <div id="sensitivity-chart-section" class="chart-panel hidden">
+            <h2>Operating Income vs Volume</h2>
+            <div class="canvas-chart">
+              <canvas id="sens-chart-canvas" role="img" aria-label="Line chart showing operating income across a range of volume levels"></canvas>
+            </div>
+          </div>
+
+          <!-- Price x Volume Sensitivity Matrix -->
+          <div id="sensitivity-matrix-section" class="table-panel hidden">
+            <h2>Operating Income Sensitivity Matrix</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Operating income at different combinations of price and volume adjustments.</p>
+            <div class="table-wrapper">
+              <table id="sens-matrix-table">
+                <thead id="sens-matrix-header"></thead>
+                <tbody id="sens-matrix-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script type="module" src="../js/cm-analysis.js"></script>
+    <script src="../js/prefetch.js"></script>
+  </body>
+</html>
