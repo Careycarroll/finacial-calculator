@@ -20,6 +20,7 @@ A collection of interactive financial calculators built with vanilla JavaScript 
 | 🔍 Stock Evaluator | Multi-method fundamental analysis: DCF, Graham Number, enterprise value, multiples |
 | 📑 10-K Analyzer | SEC EDGAR filing parser with ratio analysis, health scoring, and red flag detection |
 | 📰 News Feed | RSS reader with OPML import, category filtering, bookmarks, and search |
+| 📊 CM Analysis | Contribution margin, gross profit, breakeven, multi-product mix, capacity constraints |
 
 ---
 
@@ -64,7 +65,8 @@ financial-calculator/
 │   ├── options.html
 │   ├── analyzer.html
 │   ├── valuator.html
-│   └── news.html
+│   ├── news.html
+│   └── cm-analysis.html
 ├── js/
 │   ├── chart-utils.js           # Shared canvas, validation, chart utilities (ES module)
 │   ├── formatting.js            # Shared formatting functions (ES module)
@@ -84,6 +86,7 @@ financial-calculator/
 │   ├── api-manager.js           # Multi-provider API key management
 │   ├── sec-api.js               # SEC EDGAR data fetcher
 │   ├── news.js                  # RSS news feed reader
+│   ├── cm-analysis.js           # Contribution margin analysis entry point
 │   └── prefetch.js              # Quicklink prefetching (plain script, not module)
 ├── proxy.js                     # Local HTTP/2 CORS proxy for SEC EDGAR
 └── css/
@@ -95,7 +98,8 @@ financial-calculator/
     ├── npv-irr.css
     ├── options.css
     ├── projections.css
-    └── valuator.css
+    ├── valuator.css
+    └── cm-analysis.css
 ```
 
 ---
