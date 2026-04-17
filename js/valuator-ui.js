@@ -1,5 +1,5 @@
 import {
-  formatLargeNumberRaw, formatRatioPlain, formatPercent, formatValuationCurrency
+  formatLargeNumberRaw, formatRatio, formatRatioPlain, formatPercent, formatValuationCurrency
 } from "./formatting.js";
 import { evaluateStock } from "./valuator.js";
 import {

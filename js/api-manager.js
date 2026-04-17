@@ -152,6 +152,70 @@ export function getUsageSummary() {
   return summary;
 }
 
+
+// ===================================================================
+// STOCK DATA CACHE — IndexedDB, 24h TTL, keyed by symbol
+// ===================================================================
+
+const STOCK_CACHE_DB_NAME = "stock_data_cache";
+const STOCK_CACHE_STORE = "stocks";
+const STOCK_CACHE_TTL = 86400000; // 24 hours in ms
+
+function openStockCache() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(STOCK_CACHE_DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STOCK_CACHE_STORE)) {
+        db.createObjectStore(STOCK_CACHE_STORE, { keyPath: "symbol" });
+      }
+    };
+    req.onsuccess = (e) => resolve(e.target.result);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+async function getCachedStock(symbol) {
+  try {
+    const db = await openStockCache();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STOCK_CACHE_STORE, "readonly");
+      const req = tx.objectStore(STOCK_CACHE_STORE).get(symbol);
+      req.onsuccess = (e) => {
+        const result = e.target.result;
+        if (!result) return resolve(null);
+        const age = Date.now() - result.timestamp;
+        if (age > STOCK_CACHE_TTL) {
+          console.log(`Stock cache expired for ${symbol} (${(age / 3600000).toFixed(1)}h old)`);
+          return resolve(null);
+        }
+        console.log(`Stock cache hit for ${symbol} (${(age / 3600000).toFixed(1)}h old)`);
+        resolve(result.data);
+      };
+      req.onerror = () => resolve(null);
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function setCachedStock(symbol, data) {
+  try {
+    const db = await openStockCache();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STOCK_CACHE_STORE, "readwrite");
+      tx.objectStore(STOCK_CACHE_STORE).put({ symbol, data, timestamp: Date.now() });
+      tx.oncomplete = () => {
+        console.log(`Stock data cached for ${symbol}`);
+        resolve();
+      };
+      tx.onerror = () => resolve();
+    });
+  } catch {
+    // Cache write failure is non-fatal
+  }
+}
+
 // ===================================================================
 // API KEY MANAGEMENT
 // ===================================================================
@@ -289,6 +353,10 @@ async function apiFetch(provider, endpoint, symbol) {
 export async function fetchStockData(symbol) {
   symbol = symbol.toUpperCase().trim();
 
+  // Return cached data if fresh (24h TTL)
+  const cached = await getCachedStock(symbol);
+  if (cached) return cached;
+
   const provider = selectProviderForEvaluation();
 
   if (!provider) {
@@ -396,6 +464,9 @@ export async function fetchStockData(symbol) {
       console.warn("Fallback quote fetch failed:", e.message);
     }
   }
+
+  // Cache the normalized result for 24h
+  await setCachedStock(symbol, result);
 
   return result;
 }
