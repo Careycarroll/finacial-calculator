@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Supply & Demand | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/common-calculator.css" />
+    <link rel="stylesheet" href="../css/micro-econ.css" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-container">
+      <header>
+        <h1>📉 Supply & Demand</h1>
+        <p class="tagline">Define linear supply and demand curves, solve for market equilibrium, and explore how shifts affect the market.</p>
+      </header>
+
+      <main>
+        <!-- Tab Navigation -->
+        <div class="micro-tabs">
+          <button id="tab-equilibrium" class="micro-tab active" aria-label="Market equilibrium tab">⚖️ Equilibrium</button>
+          <button id="tab-shifters" class="micro-tab" aria-label="Curve shifters tab">🎛️ Curve Shifters</button>
+        </div>
+
+        <!-- ==================== TAB 1: EQUILIBRIUM ==================== -->
+        <div id="equilibrium-tab">
+
+          <!-- Input Mode Toggle -->
+          <div class="calc-form">
+            <h2 class="form-section-title">Input Method</h2>
+            <div class="mode-toggle" style="margin-bottom:1.25rem;">
+              <button id="mode-equation" class="btn-toggle active">𝑓(x) Equation</button>
+              <button id="mode-points" class="btn-toggle">📍 Two Points</button>
+            </div>
+
+            <!-- Equation Mode -->
+            <div id="equation-inputs">
+              <div class="micro-curve-inputs">
+
+                <!-- Demand -->
+                <div class="micro-curve-block demand">
+                  <h3 class="micro-curve-title demand-title">📉 Demand Curve</h3>
+                  <p class="form-hint" style="margin-bottom:0.75rem;">Enter the constant, the market price coefficient, and any additional variables.</p>
+
+                  <div class="micro-var-row micro-var-header">
+                    <span>Variable Name</span>
+                    <span>Coefficient</span>
+                    <span>Current Value</span>
+                    <span></span>
+                  </div>
+
+                  <!-- Constant -->
+                  <div class="micro-var-row">
+                    <span class="micro-var-label">Constant</span>
+                    <input type="number" id="eq-demand-const" class="micro-var-coef" placeholder="e.g. 0.0003" step="any" />
+                    <span class="micro-var-fixed">—</span>
+                    <span></span>
+                  </div>
+
+                  <!-- Market Price P -->
+                  <div class="micro-var-row">
+                    <input type="text" id="eq-demand-p-name" class="micro-var-name" value="p" placeholder="Price variable name" />
+                    <input type="number" id="eq-demand-p-coef" class="micro-var-coef" placeholder="e.g. -0.004" step="any" />
+                    <span class="micro-var-fixed micro-var-market">← market price</span>
+                    <span></span>
+                  </div>
+
+                  <!-- Additional variables -->
+                  <div id="demand-extra-vars"></div>
+                  <button id="demand-add-var" class="btn-add micro-add-var-btn">+ Add Variable</button>
+
+                  <div class="micro-equation-preview" id="demand-eq-preview">q = const + coef·P +...</div>
+                </div>
+
+                <!-- Supply -->
+                <div class="micro-curve-block supply">
+                  <h3 class="micro-curve-title supply-title">📈 Supply Curve</h3>
+                  <p class="form-hint" style="margin-bottom:0.75rem;">Enter the constant, the market price coefficient, and any additional variables.</p>
+
+                  <div class="micro-var-row micro-var-header">
+                    <span>Variable Name</span>
+                    <span>Coefficient</span>
+                    <span>Current Value</span>
+                    <span></span>
+                  </div>
+
+                  <!-- Constant -->
+                  <div class="micro-var-row">
+                    <span class="micro-var-label">Constant</span>
+                    <input type="number" id="eq-supply-const" class="micro-var-coef" placeholder="e.g. 0.15" step="any" />
+                    <span class="micro-var-fixed">—</span>
+                    <span></span>
+                  </div>
+
+                  <!-- Market Price P -->
+                  <div class="micro-var-row">
+                    <input type="text" id="eq-supply-p-name" class="micro-var-name" value="p" placeholder="Price variable name" />
+                    <input type="number" id="eq-supply-p-coef" class="micro-var-coef" placeholder="e.g. 3" step="any" />
+                    <span class="micro-var-fixed micro-var-market">← market price</span>
+                    <span></span>
+                  </div>
+
+                  <!-- Additional variables -->
+                  <div id="supply-extra-vars"></div>
+                  <button id="supply-add-var" class="btn-add micro-add-var-btn">+ Add Variable</button>
+
+                  <div class="micro-equation-preview" id="supply-eq-preview">q = const + coef·P +...</div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Two Points Mode -->
+            <div id="points-inputs" class="hidden">
+              <div class="micro-curve-inputs">
+                <div class="micro-curve-block demand">
+                  <h3 class="micro-curve-title demand-title">📉 Demand Curve — Two Points</h3>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Point 1: Price (P₁)</label>
+                      <input type="number" id="pt-demand-p1" placeholder="e.g. 10" step="any" />
+                    </div>
+                    <div class="form-group">
+                      <label>Point 1: Quantity (Q₁)</label>
+                      <input type="number" id="pt-demand-q1" placeholder="e.g. 80" step="any" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Point 2: Price (P₂)</label>
+                      <input type="number" id="pt-demand-p2" placeholder="e.g. 20" step="any" />
+                    </div>
+                    <div class="form-group">
+                      <label>Point 2: Quantity (Q₂)</label>
+                      <input type="number" id="pt-demand-q2" placeholder="e.g. 60" step="any" />
+                    </div>
+                  </div>
+                  <div class="micro-equation-preview" id="demand-pts-preview">Enter two points to derive equation</div>
+                </div>
+
+                <div class="micro-curve-block supply">
+                  <h3 class="micro-curve-title supply-title">📈 Supply Curve — Two Points</h3>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Point 1: Price (P₁)</label>
+                      <input type="number" id="pt-supply-p1" placeholder="e.g. 5" step="any" />
+                    </div>
+                    <div class="form-group">
+                      <label>Point 1: Quantity (Q₁)</label>
+                      <input type="number" id="pt-supply-q1" placeholder="e.g. 35" step="any" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Point 2: Price (P₂)</label>
+                      <input type="number" id="pt-supply-p2" placeholder="e.g. 15" step="any" />
+                    </div>
+                    <div class="form-group">
+                      <label>Point 2: Quantity (Q₂)</label>
+                      <input type="number" id="pt-supply-q2" placeholder="e.g. 65" step="any" />
+                    </div>
+                  </div>
+                  <div class="micro-equation-preview" id="supply-pts-preview">Enter two points to derive equation</div>
+                </div>
+              </div>
+            </div>
+
+            <button id="eq-calculate" class="btn-primary">Find Equilibrium</button>
+          </div>
+
+          <!-- Results -->
+          <div id="eq-results" class="results-panel hidden" aria-live="polite">
+            <h2>Market Equilibrium</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Equilibrium Price (P*)</span>
+                <span id="eq-price" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Equilibrium Quantity (Q*)</span>
+                <span id="eq-quantity" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Market Status</span>
+                <span id="eq-status" class="result-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="eq-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="micro-explainer" style="border-color: var(--accent);">
+              <button class="micro-explainer-toggle" id="eq-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Solution <span class="micro-explainer-chevron">▼</span>
+              </button>
+              <div class="micro-explainer-body" id="eq-steps-body">
+                <div id="eq-steps-content" class="micro-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graph -->
+          <div id="eq-chart-section" class="chart-panel hidden">
+            <h2>Supply & Demand Graph</h2>
+            <div class="canvas-chart">
+              <canvas id="eq-chart-canvas" role="img" aria-label="Supply and demand graph showing equilibrium"></canvas>
+            </div>
+            <div class="micro-chart-legend">
+              <span class="legend-item"><span class="legend-color" style="background:#f472b6"></span> Demand</span>
+              <span class="legend-item"><span class="legend-color" style="background:#2dd4bf"></span> Supply</span>
+              <span class="legend-item"><span class="legend-color" style="background:#f59e0b; border-radius:50%;"></span> Equilibrium (P*, Q*)</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 2: CURVE SHIFTERS ==================== -->
+        <div id="shifters-tab" class="hidden">
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Curve Shifters</h2>
+            <p class="form-hint" style="margin-bottom:1.5rem;">
+              Adjust the sliders to shift the demand and supply curves. The graph updates in real time showing the new equilibrium and the original equilibrium as a reference point.
+              Calculate equilibrium first to set the baseline.
+            </p>
+
+            <div id="shifters-no-data" class="micro-flag" style="display:block;">
+              ⚠️ Calculate equilibrium in the first tab to enable curve shifters.
+            </div>
+
+            <div id="shifters-controls" class="hidden">
+              <div class="micro-curve-inputs">
+                <!-- Demand Sliders -->
+                <div class="micro-curve-block demand">
+                  <h3 class="micro-curve-title demand-title">📉 Demand Shifters</h3>
+                  <div class="micro-slider-group">
+                    <label>a (intercept): <span id="slider-a-label" class="micro-slider-value">—</span></label>
+                    <input type="range" id="slider-a" class="micro-slider" min="0" max="200" step="1" />
+                    <div class="micro-slider-hint">Shifts demand curve left (↓) or right (↑)</div>
+                  </div>
+                  <div class="micro-slider-group">
+                    <label>b (slope): <span id="slider-b-label" class="micro-slider-value">—</span></label>
+                    <input type="range" id="slider-b" class="micro-slider" min="0.1" max="10" step="0.1" />
+                    <div class="micro-slider-hint">Flattens (↓) or steepens (↑) demand curve</div>
+                  </div>
+                </div>
+
+                <!-- Supply Sliders -->
+                <div class="micro-curve-block supply">
+                  <h3 class="micro-curve-title supply-title">📈 Supply Shifters</h3>
+                  <div class="micro-slider-group">
+                    <label>c (intercept): <span id="slider-c-label" class="micro-slider-value">—</span></label>
+                    <input type="range" id="slider-c" class="micro-slider" min="-100" max="100" step="1" />
+                    <div class="micro-slider-hint">Shifts supply curve left (↓) or right (↑)</div>
+                  </div>
+                  <div class="micro-slider-group">
+                    <label>d (slope): <span id="slider-d-label" class="micro-slider-value">—</span></label>
+                    <input type="range" id="slider-d" class="micro-slider" min="0.1" max="10" step="0.1" />
+                    <div class="micro-slider-hint">Flattens (↓) or steepens (↑) supply curve</div>
+                  </div>
+                </div>
+              </div>
+
+              <button id="shifters-reset" class="btn-secondary" style="margin-top:1rem;">Reset to Original</button>
+            </div>
+          </div>
+
+          <!-- Shifters Results -->
+          <div id="shifters-results" class="results-panel hidden" aria-live="polite">
+            <h2>Shifted Equilibrium</h2>
+            <div class="micro-equilibrium-compare">
+              <div class="micro-eq-col">
+                <h3>Original</h3>
+                <div class="result-item">
+                  <span class="result-label">Price (P*)</span>
+                  <span id="orig-price" class="result-value">—</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">Quantity (Q*)</span>
+                  <span id="orig-quantity" class="result-value">—</span>
+                </div>
+              </div>
+              <div class="micro-eq-arrow">→</div>
+              <div class="micro-eq-col highlight">
+                <h3>New</h3>
+                <div class="result-item">
+                  <span class="result-label">Price (P*)</span>
+                  <span id="new-price" class="result-value accent">—</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">Quantity (Q*)</span>
+                  <span id="new-quantity" class="result-value accent">—</span>
+                </div>
+              </div>
+              <div class="micro-eq-col">
+                <h3>Change</h3>
+                <div class="result-item">
+                  <span class="result-label">ΔPrice</span>
+                  <span id="delta-price" class="result-value">—</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">ΔQuantity</span>
+                  <span id="delta-quantity" class="result-value">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shifters Graph -->
+          <div id="shifters-chart-section" class="chart-panel hidden">
+            <h2>Supply & Demand — Shifted</h2>
+            <div class="canvas-chart">
+              <canvas id="shifters-chart-canvas" role="img" aria-label="Supply and demand graph showing curve shifts and new equilibrium"></canvas>
+            </div>
+            <div class="micro-chart-legend">
+              <span class="legend-item"><span class="legend-color" style="background:#f472b6; opacity:0.4;"></span> Original Demand</span>
+              <span class="legend-item"><span class="legend-color" style="background:#f472b6"></span> New Demand</span>
+              <span class="legend-item"><span class="legend-color" style="background:#2dd4bf; opacity:0.4;"></span> Original Supply</span>
+              <span class="legend-item"><span class="legend-color" style="background:#2dd4bf"></span> New Supply</span>
+              <span class="legend-item"><span class="legend-color" style="background:#94a3b8; border-radius:50%;"></span> Original Eq.</span>
+              <span class="legend-item"><span class="legend-color" style="background:#f59e0b; border-radius:50%;"></span> New Eq.</span>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script type="module" src="../js/micro-econ.js"></script>
+    <script src="../js/prefetch.js"></script>
+  </body>
+</html>

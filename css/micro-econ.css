@@ -1,0 +1,319 @@
+/* ===================================================================
+   MICROECONOMICS — Supply & Demand
+   =================================================================== */
+
+/* ===== TABS ===== */.micro-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border);
+}.micro-tab {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -2px;
+  font-family: inherit;
+}.micro-tab:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}.micro-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ===== CURVE INPUT BLOCKS ===== */.micro-curve-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+}.micro-curve-block {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+}.micro-curve-block.demand {
+  border-left: 3px solid #f472b6;
+}.micro-curve-block.supply {
+  border-left: 3px solid #2dd4bf;
+}.micro-curve-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}.demand-title {
+  color: #f472b6;
+}.supply-title {
+  color: #2dd4bf;
+}
+
+/* ===== EQUATION PREVIEW ===== */.micro-equation-preview {
+  margin-top: 0.75rem;
+  padding: 0.6rem 1rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.9rem;
+  color: var(--accent);
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+}
+
+/* ===== EXPLAINER ===== */.micro-explainer {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}.micro-explainer-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-primary);
+  border: none;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}.micro-explainer-toggle:hover {
+  background-color: rgba(45, 212, 191, 0.05);
+}.micro-explainer-chevron {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}.micro-explainer-toggle[aria-expanded="true"].micro-explainer-chevron {
+  transform: rotate(180deg);
+}.micro-explainer-body {
+  padding: 1rem 1.25rem;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border);
+}
+
+/* ===== STEP-BY-STEP ===== */.micro-steps-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  line-height: 1.8;
+}.micro-step-section {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}.micro-step-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}.micro-step-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}.micro-step {
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}.micro-step strong {
+  color: var(--accent);
+}.micro-step.result {
+  color: var(--text-primary);
+  font-weight: 700;
+}.micro-step.demand-color {
+  color: #f472b6;
+}.micro-step.supply-color {
+  color: #2dd4bf;
+}.micro-step.eq-color {
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+/* ===== FLAGS ===== */.micro-flag {
+  background-color: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: #f59e0b;
+  margin-bottom: 1rem;
+}
+
+/* ===== SLIDERS ===== */.micro-slider-group {
+  margin-bottom: 1.25rem;
+}.micro-slider-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}.micro-slider-value {
+  color: var(--accent);
+  font-weight: 700;
+}.micro-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}.micro-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg-secondary);
+  box-shadow: 0 0 6px rgba(45, 212, 191, 0.4);
+}.micro-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg-secondary);
+}.micro-slider-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+}
+
+/* ===== EQUILIBRIUM COMPARE ===== */.micro-equilibrium-compare {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}.micro-eq-col {
+  flex: 1;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+}.micro-eq-col.highlight {
+  border-color: var(--accent);
+  background-color: rgba(45, 212, 191, 0.03);
+}.micro-eq-col h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}.micro-eq-col.highlight h3 {
+  color: var(--accent);
+}.micro-eq-arrow {
+  font-size: 1.5rem;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ===== CHART LEGEND ===== */.micro-chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {.micro-curve-inputs {
+    grid-template-columns: 1fr;
+  }.micro-equilibrium-compare {
+    flex-direction: column;
+  }.micro-eq-arrow {
+    transform: rotate(90deg);
+  }.micro-tab {
+    font-size: 0.85rem;
+    padding: 0.75rem 0.5rem;
+  }
+}
+
+/* ===== MULTI-VARIABLE INPUT ROWS ===== */.micro-var-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}.micro-var-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+}.micro-var-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}.micro-var-name {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  outline: none;
+  width: 100%;
+}.micro-var-name:focus {
+  border-color: var(--accent);
+}.micro-var-coef {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  outline: none;
+  width: 100%;
+}.micro-var-coef:focus {
+  border-color: var(--accent);
+}.micro-var-value {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  outline: none;
+  width: 100%;
+}.micro-var-value:focus {
+  border-color: var(--accent);
+}.micro-var-fixed {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}.micro-var-market {
+  color: var(--accent);
+  font-style: normal;
+  font-weight: 600;
+}.micro-var-remove {
+  background: none;
+  border: none;
+  color: #f472b6;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.2rem;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}.micro-var-remove:hover {
+  color: #fb7185;
+}.micro-add-var-btn {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+}
