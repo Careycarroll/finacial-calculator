@@ -607,6 +607,7 @@ function displayChart(yearly) {
       `Balance: ${formatCurrency(d.balance)}`,
     ],
     controller: advBarController,
+    legendEl: "adv-bar-legend",
   });
 }
 
@@ -724,6 +725,7 @@ function displayCumulativeChart(schedule) {
       `Balance: ${formatCurrency(d.balance)}`,
     ],
     controller: advLineController,
+    legendEl: "adv-line-legend",
   });
 }
 

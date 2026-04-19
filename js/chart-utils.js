@@ -287,6 +287,18 @@ export function drawBarChart(canvas, data, options) {
 
   drawStatic();
 
+  // Legend
+  if (options.legendEl) {
+    const legendEl = document.getElementById(options.legendEl);
+    if (legendEl) {
+      legendEl.innerHTML = series.map((s) =>
+        `<span class="legend-item">` +
+        `<span class="legend-color" style="background:${s.color}"></span>` +
+        `${s.label}</span>`
+      ).join("");
+    }
+  }
+
   function drawChart(highlightIndex) {
     ctx.clearRect(0, 0, chart.width, chart.height);
     ctx.drawImage(offscreen, 0, 0);
@@ -479,6 +491,20 @@ export function drawLineChart(canvas, data, options) {
   }
 
   drawStatic();
+
+  // Legend
+  if (options.legendEl) {
+    const legendEl = document.getElementById(options.legendEl);
+    if (legendEl) {
+      legendEl.innerHTML = series.map((s) =>
+        `<span class="legend-item">` +
+        (s.fill
+          ? `<span class="legend-color" style="background:${s.color}"></span>`
+          : `<span class="legend-color" style="background:${s.color}"></span>`) +
+        `${s.label}</span>`
+      ).join("");
+    }
+  }
 
   function drawChart(highlightIndex) {
     ctx.clearRect(0, 0, chart.width, chart.height);
@@ -694,6 +720,47 @@ export function bindFormEnter(callback, containerSelector) {
       }
     });
   });
+}
+
+// ===================================================================
+// LABEL WITH BACKGROUND — draws a rounded rect backing behind text
+// ===================================================================
+
+export function drawLabelWithBackground(ctx, text, x, y, options = {}) {
+  const {
+    color = "#e2e8f0",
+    font = "10px sans-serif",
+    background = "rgba(15, 23, 42, 0.85)",
+    border = "rgba(148, 163, 184, 0.25)",
+    padding = { h: 6, v: 3 },
+    radius = 4,
+    align = "left",
+  } = options;
+
+  ctx.font = font;
+  const measured = ctx.measureText(text).width;
+  const boxW = measured + padding.h * 2;
+  const boxH = parseInt(font) + padding.v * 2;
+
+  let bx = x;
+  if (align === "center") bx = x - boxW / 2;
+  else if (align === "right") bx = x - boxW;
+
+  const by = y - parseInt(font) - padding.v + 1;
+
+  ctx.beginPath();
+  ctx.roundRect(bx, by, boxW, boxH, radius);
+  ctx.fillStyle = background;
+  ctx.fill();
+  if (border) {
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = color;
+  ctx.textAlign = align === "center" ? "center" : align === "right" ? "right" : "left";
+  ctx.fillText(text, align === "left" ? bx + padding.h : align === "right" ? bx + boxW - padding.h : x, y);
 }
 
 // ===== PAGE PERFORMANCE METRIC =====

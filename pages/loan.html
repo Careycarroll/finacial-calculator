@@ -74,30 +74,7 @@
         <!-- Cumulative Chart -->
         <div id="item-cumulative">
           <div id="cumulative-chart-section" class="chart-panel hidden">
-            <div class="line-chart-legend">
-              <span class="legend-item"
-                ><span class="legend-color legend-principal"></span>
-                Principal</span
-              >
-              <span class="legend-item"
-                ><span class="legend-color legend-interest"></span>
-                Interest</span
-              >
-              <span class="legend-item"
-                ><span
-                  class="legend-color"
-                  style="background-color: #8b5cf6"
-                ></span>
-                Balance</span
-              >
-              <span class="legend-item"
-                ><span
-                  class="legend-color"
-                  style="background-color: #38bdf8"
-                ></span>
-                Total Paid</span
-              >
-            </div>
+            <div class="line-chart-legend" id="loan-line-legend"></div>
             <div class="canvas-chart">
               <canvas id="loan-line-canvas" role="img" aria-label="Cumulative interest vs principal chart over loan term"></canvas>
             </div>
@@ -110,16 +87,7 @@
             <div class="canvas-chart">
               <canvas id="loan-bar-canvas" role="img" aria-label="Yearly principal and interest breakdown bar chart"></canvas>
             </div>
-            <div class="chart-legend">
-              <span class="legend-item"
-                ><span class="legend-color legend-principal"></span>
-                Principal</span
-              >
-              <span class="legend-item"
-                ><span class="legend-color legend-interest"></span>
-                Interest</span
-              >
-            </div>
+            <div class="chart-legend" id="loan-bar-legend"></div>
           </div>
         </div>
 

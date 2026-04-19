@@ -174,6 +174,7 @@ function displayChart(yearly) {
       `Balance: ${formatCurrency(d.balance)}`,
     ],
     controller: loanBarController,
+    legendEl: "loan-bar-legend",
   });
 }
 
@@ -214,6 +215,7 @@ function displayCumulativeChart(schedule) {
       `Balance: ${formatCurrency(d.balance)}`,
     ],
     controller: loanLineController,
+    legendEl: "loan-line-legend",
   });
 }
 
