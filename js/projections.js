@@ -1,7 +1,7 @@
 import {
   CONFIG, safeParseFloat, safeParseInt, formatCurrency,
   createChartContext, showChartLoading, hideChartLoading,
-  rafThrottle, validateInputs, showFieldError, bindFormEnter
+  rafThrottle, validateInputs, showFieldError, bindFormEnter, drawLabelWithBackground
 } from "./chart-utils.js";
 
 // ===== CONSTANTS =====
@@ -389,12 +389,10 @@ function displayChart(projections, inputs, view) {
     offCtxProj.stroke();
   }
 
-  offCtxProj.fillStyle = "#94a3b8";
-  offCtxProj.font = "12px sans-serif";
-  offCtxProj.fillText(
+  drawLabelWithBackground(offCtxProj,
     view === "real" ? "Years (Inflation-Adjusted)" : "Years",
     chart.width / 2, chart.height - 5,
-  );
+    { color: "#94a3b8", font: "12px sans-serif", align: "center" });
 
   adjustedProjections.forEach((proj) => {
     offCtxProj.strokeStyle = proj.color;

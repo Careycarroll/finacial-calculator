@@ -9,6 +9,7 @@ import {
   validateInputs,
   showFieldError,
   bindFormEnter,
+  drawLabelWithBackground,
 } from "./chart-utils.js";
 import { formatPct } from "./formatting.js";
 
@@ -714,10 +715,8 @@ function drawBreakevenChart(
     ctx.lineTo(toX(maxUnits), toY(totalFC));
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = "#f59e0b";
-    ctx.font = "10px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText(`Fixed Costs: ${formatCurrency(totalFC)}`, padding.left + 5, toY(totalFC) - 6);
+    drawLabelWithBackground(ctx, `Fixed Costs: ${formatCurrency(totalFC)}`, padding.left + 5, toY(totalFC) - 6,
+      { color: "#f59e0b", font: "10px sans-serif", align: "left" });
 
     // Total cost line
     ctx.strokeStyle = "#f472b6";
@@ -726,9 +725,8 @@ function drawBreakevenChart(
     ctx.moveTo(toX(0), toY(totalFC));
     ctx.lineTo(toX(maxUnits), toY(totalFC + vcPerUnit * maxUnits));
     ctx.stroke();
-    ctx.fillStyle = "#f472b6";
-    ctx.textAlign = "right";
-    ctx.fillText("Total Cost", chart.width - padding.right - 5, toY(totalFC + vcPerUnit * maxUnits) - 6);
+    drawLabelWithBackground(ctx, "Total Cost", chart.width - padding.right - 5, toY(totalFC + vcPerUnit * maxUnits) - 6,
+      { color: "#f472b6", font: "10px sans-serif", align: "right" });
 
     // Revenue line
     ctx.strokeStyle = "#2dd4bf";
@@ -737,8 +735,8 @@ function drawBreakevenChart(
     ctx.moveTo(toX(0), toY(0));
     ctx.lineTo(toX(maxUnits), toY(price * maxUnits));
     ctx.stroke();
-    ctx.fillStyle = "#2dd4bf";
-    ctx.fillText("Revenue", chart.width - padding.right - 5, toY(price * maxUnits) - 6);
+    drawLabelWithBackground(ctx, "Revenue", chart.width - padding.right - 5, toY(price * maxUnits) - 6,
+      { color: "#2dd4bf", font: "10px sans-serif", align: "right" });
 
     // Breakeven point
     if (beUnits !== Infinity && beUnits <= maxUnits) {
@@ -759,10 +757,8 @@ function drawBreakevenChart(
       ctx.strokeStyle = "#2dd4bf";
       ctx.lineWidth = 2.5;
       ctx.stroke();
-      ctx.fillStyle = "#e2e8f0";
-      ctx.font = "bold 11px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(`BE: ${Math.ceil(beUnits).toLocaleString()} units`, bx, padding.top - 8);
+      drawLabelWithBackground(ctx, `BE: ${Math.ceil(beUnits).toLocaleString()} units`, bx, padding.top - 8,
+        { color: "#e2e8f0", font: "bold 11px sans-serif", align: "center" });
     }
 
     // Capacity line
@@ -776,10 +772,8 @@ function drawBreakevenChart(
       ctx.lineTo(cx, padding.top + chartHeight);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = "#a855f7";
-      ctx.font = "10px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(`Capacity: ${capacity.toLocaleString()}`, cx, padding.top + 12);
+      drawLabelWithBackground(ctx, `Capacity: ${capacity.toLocaleString()}`, cx, padding.top + 12,
+        { color: "#a855f7", font: "10px sans-serif", align: "center" });
     }
 
     // Actual units marker
@@ -792,10 +786,8 @@ function drawBreakevenChart(
     ctx.lineTo(ax, padding.top + chartHeight);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = "#60a5fa";
-    ctx.font = "10px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(`Actual: ${actualUnits.toLocaleString()}`, ax, padding.top + 24);
+    drawLabelWithBackground(ctx, `Actual: ${actualUnits.toLocaleString()}`, ax, padding.top + 24,
+      { color: "#60a5fa", font: "10px sans-serif", align: "center" });
 
     if (hoverUnits === null || hoverUnits < 0 || hoverUnits > maxUnits) return;
 
@@ -1718,10 +1710,8 @@ function drawSensitivityChart(adjPrice, adjVC, adjFC, capacity) {
     ctx.strokeStyle = "#0f172a";
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.fillStyle = "#f59e0b";
-    ctx.font = "bold 10px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(`BE: ${Math.ceil(beUnits).toLocaleString()}`, bx, by - 10);
+    drawLabelWithBackground(ctx, `BE: ${Math.ceil(beUnits).toLocaleString()}`, bx, by - 10,
+      { color: "#f59e0b", font: "bold 10px sans-serif", align: "center" });
   }
 }
 

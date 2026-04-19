@@ -1,7 +1,7 @@
 import {
   safeParseFloat, safeParseInt, formatCurrency,
   createChartContext, getChartDimensions, showChartLoading, hideChartLoading,
-  rafThrottle, validateInputs, showFieldError
+  rafThrottle, validateInputs, showFieldError, drawLabelWithBackground
 } from "./chart-utils.js";
 import { getReferenceShape } from "./options-reference-shapes.js";
 
@@ -180,6 +180,7 @@ function calculateGreeks(S, K, T, r, sigma, q) {
 let activeStrategy = null;
 
 let payoffMode = "expiration";
+let payoffLineMode = "both";
 let lastPayoffData = null;
 let lastPayoffLegs = null;
 let lastPayoffStockPrice = null;
@@ -396,10 +397,8 @@ function drawReferenceChart(strategy) {
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      ctx.fillStyle = "#f59e0b";
-      ctx.font = "9px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(be.label, bx, cy + 16);
+      drawLabelWithBackground(ctx, be.label, bx, cy + 16,
+        { color: "#f59e0b", font: "9px sans-serif", align: "center" });
     });
   }
 
@@ -453,10 +452,8 @@ function drawReferenceChart(strategy) {
     shape.annotations.forEach((ann) => {
       const ax = toX(ann.x);
       const ay = toY(ann.y);
-      ctx.fillStyle = ann.color || "#e2e8f0";
-      ctx.font = ann.bold ? "bold 10px sans-serif" : "10px sans-serif";
-      ctx.textAlign = ann.align || "center";
-      ctx.fillText(ann.text, ax, ay);
+      drawLabelWithBackground(ctx, ann.text, ax, ay,
+        { color: ann.color || "#e2e8f0", font: ann.bold ? "bold 10px sans-serif" : "10px sans-serif", align: ann.align || "center" });
     });
   }
 }
@@ -1137,9 +1134,8 @@ function drawMultiCurvePayoff(
   ctx.lineTo(stockX, padding.top + chartHeight);
   ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = "#60a5fa";
-  ctx.font = "10px sans-serif";
-  ctx.fillText("Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8);
+  drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
+    { color: "#60a5fa", font: "10px sans-serif", align: "center" });
 
   // Draw each curve
   curves.forEach((curve) => {
@@ -1439,6 +1435,22 @@ function bindMultiCurveMouse(
 // PAYOFF CALCULATION
 // ===================================================================
 
+function calculatePayoffIntrinsic(stockPrice, legs) {
+  let total = 0;
+  legs.forEach((leg) => {
+    const qty = leg.qty || 1;
+    const multiplier = leg.action === "buy" ? 1 : -1;
+    if (leg.type === "stock") {
+      total += (stockPrice - leg.strike) * multiplier * qty * 100;
+    } else if (leg.type === "call") {
+      total += Math.max(0, stockPrice - leg.strike) * multiplier * qty * 100;
+    } else if (leg.type === "put") {
+      total += Math.max(0, leg.strike - stockPrice) * multiplier * qty * 100;
+    }
+  });
+  return total;
+}
+
 function calculatePayoff(stockPrice, legs) {
   let totalPnL = 0;
 
@@ -1550,7 +1562,8 @@ function handlePayoffCalculate() {
   for (let i = 0; i <= steps; i++) {
     const price = priceMin + i * stepSize;
     const pnl = calculatePayoff(price, legs);
-    payoffData.push({ price, pnl });
+    const payoff = calculatePayoffIntrinsic(price, legs);
+    payoffData.push({ price, pnl, payoff });
     if (pnl > maxProfit) maxProfit = pnl;
     if (pnl < maxLoss) maxLoss = pnl;
   }
@@ -1659,8 +1672,12 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
   const priceMin = payoffData[0].price;
   const priceMax = payoffData[payoffData.length - 1].price;
   const pnlValues = payoffData.map((d) => d.pnl);
-  const pnlMin = Math.min(...pnlValues);
-  const pnlMax = Math.max(...pnlValues);
+  const payoffValues = payoffData.map((d) => d.payoff ?? d.pnl);
+  const allValues = payoffLineMode === "both"
+    ? [...pnlValues, ...payoffValues]
+    : payoffValues;
+  const pnlMin = Math.min(...allValues);
+  const pnlMax = Math.max(...allValues);
   const pnlPadding = Math.max(Math.abs(pnlMax), Math.abs(pnlMin)) * 0.15;
   const yMin = Math.min(pnlMin - pnlPadding, -pnlPadding);
   const yMax = Math.max(pnlMax + pnlPadding, pnlPadding);
@@ -1747,10 +1764,8 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    ctx.fillStyle = "#60a5fa";
-    ctx.font = "10px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8);
+    drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
+      { color: "#60a5fa", font: "10px sans-serif", align: "center" });
 
     // Profit zone (green fill above zero)
     ctx.beginPath();
@@ -1791,17 +1806,33 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
     ctx.fillStyle = "rgba(244, 114, 182, 0.08)";
     ctx.fill();
 
-    // Payoff line
+    // P&L line (teal) — always shown unless payoff-only
+    if (payoffLineMode === "both") {
+      ctx.beginPath();
+      payoffData.forEach((point, i) => {
+        const x = toX(point.price);
+        const y = toY(point.pnl);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = "#2dd4bf";
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+
+    // Payoff line (amber dashed) — always shown
     ctx.beginPath();
     payoffData.forEach((point, i) => {
       const x = toX(point.price);
-      const y = toY(point.pnl);
+      const y = toY(point.payoff ?? point.pnl);
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = "#2dd4bf";
+    ctx.strokeStyle = "#f59e0b";
     ctx.lineWidth = 2.5;
+    ctx.setLineDash(payoffLineMode === "both" ? [6, 4] : []);
     ctx.stroke();
+    ctx.setLineDash([]);
 
     // Breakeven dots
     breakevens.forEach((be) => {
@@ -1815,10 +1846,8 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      ctx.fillStyle = "#f59e0b";
-      ctx.font = "10px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("BE: $" + be.toFixed(2), bx, by - 12);
+      drawLabelWithBackground(ctx, "BE: $" + be.toFixed(2), bx, by - 12,
+        { color: "#f59e0b", font: "10px sans-serif", align: "center" });
     });
 
     // Hover
@@ -1847,11 +1876,18 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.stroke();
 
       // Tooltip
-      const tooltipLines = [
-        `Stock: $${highlightPrice.toFixed(2)}`,
-        `P&L: ${formatCurrency(pnl)}`,
-        pnl >= 0 ? "✅ Profit" : "❌ Loss",
-      ];
+      const intrinsic = calculatePayoffIntrinsic(highlightPrice, legs);
+      const tooltipLines = payoffLineMode === "both"
+        ? [
+            `Stock: $${highlightPrice.toFixed(2)}`,
+            `Payoff: ${formatCurrency(intrinsic)}`,
+            `P&L: ${formatCurrency(pnl)}`,
+            pnl >= 0 ? "✅ Profit" : "❌ Loss",
+          ]
+        : [
+            `Stock: $${highlightPrice.toFixed(2)}`,
+            `Payoff: ${formatCurrency(intrinsic)}`,
+          ];
 
       ctx.font = "12px sans-serif";
       const tooltipWidth =
@@ -1904,10 +1940,26 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
 
       ctx.font = "12px sans-serif";
-      ctx.fillStyle = pnl >= 0 ? "#4ade80" : "#f472b6";
-      ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
-      ctx.fillText(tooltipLines[2], tx + 12, ty + 58);
+      if (payoffLineMode === "both") {
+        ctx.fillStyle = "#f59e0b";
+        ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
+        ctx.fillStyle = pnl >= 0 ? "#4ade80" : "#f472b6";
+        ctx.fillText(tooltipLines[2], tx + 12, ty + 58);
+        ctx.fillText(tooltipLines[3], tx + 12, ty + 78);
+      } else {
+        ctx.fillStyle = "#f59e0b";
+        ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
+      }
     }
+  }
+
+  // Legend
+  const legend = document.getElementById("payoff-chart-legend");
+  if (legend) {
+    legend.innerHTML = payoffLineMode === "both"
+      ? `<span class="legend-item"><span class="legend-swatch" style="background:#2dd4bf"></span>P&amp;L</span>
+         <span class="legend-item"><span class="legend-swatch legend-swatch-dashed" style="border-color:#f59e0b"></span>Payoff</span>`
+      : `<span class="legend-item"><span class="legend-swatch" style="background:#f59e0b"></span>Payoff</span>`;
   }
 
   // Initial draw
@@ -2057,9 +2109,8 @@ function drawPayoffDirect(
   ctx.lineTo(stockX, padding.top + chartHeight);
   ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = "#60a5fa";
-  ctx.font = "10px sans-serif";
-  ctx.fillText("Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8);
+  drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
+    { color: "#60a5fa", font: "10px sans-serif", align: "center" });
 
   // Profit fill
   ctx.beginPath();
@@ -2091,17 +2142,33 @@ function drawPayoffDirect(
   ctx.fillStyle = "rgba(244, 114, 182, 0.08)";
   ctx.fill();
 
-  // Payoff line
+  // P&L line (teal) — shown in both mode only
+  if (payoffLineMode === "both") {
+    ctx.beginPath();
+    payoffData.forEach((point, i) => {
+      const x = toX(point.price);
+      const y = toY(point.pnl);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = "#2dd4bf";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  }
+
+  // Payoff line (amber) — always shown
   ctx.beginPath();
   payoffData.forEach((point, i) => {
     const x = toX(point.price);
-    const y = toY(point.pnl);
+    const y = toY(point.payoff ?? point.pnl);
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
-  ctx.strokeStyle = "#2dd4bf";
+  ctx.strokeStyle = "#f59e0b";
   ctx.lineWidth = 2.5;
+  ctx.setLineDash(payoffLineMode === "both" ? [6, 4] : []);
   ctx.stroke();
+  ctx.setLineDash([]);
 
   // Breakevens
   breakevens.forEach((be) => {
@@ -2113,10 +2180,8 @@ function drawPayoffDirect(
     ctx.strokeStyle = "#0f172a";
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.fillStyle = "#f59e0b";
-    ctx.font = "10px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("BE: $" + be.toFixed(2), bx, zeroY - 12);
+    drawLabelWithBackground(ctx, "BE: $" + be.toFixed(2), bx, zeroY - 12,
+      { color: "#f59e0b", font: "10px sans-serif", align: "center" });
   });
 
   // Hover
@@ -2142,11 +2207,18 @@ function drawPayoffDirect(
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    const tooltipLines = [
-      `Stock: $${highlightPrice.toFixed(2)}`,
-      `P&L: ${formatCurrency(pnl)}`,
-      pnl >= 0 ? "✅ Profit" : "❌ Loss",
-    ];
+    const intrinsic = calculatePayoffIntrinsic(highlightPrice, legs);
+    const tooltipLines = payoffLineMode === "both"
+      ? [
+          `Stock: $${highlightPrice.toFixed(2)}`,
+          `Payoff: ${formatCurrency(intrinsic)}`,
+          `P&L: ${formatCurrency(pnl)}`,
+          pnl >= 0 ? "✅ Profit" : "❌ Loss",
+        ]
+      : [
+          `Stock: $${highlightPrice.toFixed(2)}`,
+          `Payoff: ${formatCurrency(intrinsic)}`,
+        ];
 
     ctx.font = "12px sans-serif";
     const tooltipWidth =
@@ -2190,9 +2262,16 @@ function drawPayoffDirect(
     ctx.fillStyle = "#e2e8f0";
     ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
     ctx.font = "12px sans-serif";
-    ctx.fillStyle = pnl >= 0 ? "#4ade80" : "#f472b6";
-    ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
-    ctx.fillText(tooltipLines[2], tx + 12, ty + 58);
+    if (payoffLineMode === "both") {
+      ctx.fillStyle = "#f59e0b";
+      ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
+      ctx.fillStyle = pnl >= 0 ? "#4ade80" : "#f472b6";
+      ctx.fillText(tooltipLines[2], tx + 12, ty + 58);
+      ctx.fillText(tooltipLines[3], tx + 12, ty + 78);
+    } else {
+      ctx.fillStyle = "#f59e0b";
+      ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
+    }
   }
 }
 
