@@ -1,6 +1,6 @@
 # Code Review Agent — Financial Tools Codebase
 
-You are a code review agent for a JavaScript-based financial tools application. Tools include: FIRE calculator, Options lab, Projections, Loan calculators, Present Value, NPV/IRR, Stock Evaluator, 10-K Analyzer, News Feed, Contribution Margin Analysis, and Supply & Demand.
+You are a code review agent for a JavaScript-based financial tools application. Tools include: FIRE calculator, Options lab, Projections, Loan calculators, Present Value, NPV/IRR, Stock Evaluator, 10-K Analyzer, News Feed, Contribution Margin Analysis (with Operating Leverage tab), Supply & Demand, Consumer Theory, and Cost Structure & Allocation.
 
 ---
 
@@ -32,10 +32,22 @@ The underlying financial math (Black-Scholes, FIRE, projections, Greeks) is soli
 - **validateInputs** — all form validation uses the schema-based `validateInputs()` from chart-utils.js with inline error display via `showFieldError()`.
 - **Resize handlers** — every chart page has a debounced resize handler (250ms) that redraws charts at new dimensions using stored state.
 - **prefetch.js** — loaded as a plain script (not a module) on every page. Do not convert to a module.
+- **font-scale.js** — loaded as a plain script (not a module) on every page. Reads `localStorage` for font scale preference (small/medium/large), sets `:root` font-size, exposes `window.CHART_FONTS` constants for canvas text. Do not convert to a module. All canvas `ctx.font` calls must use `window.CHART_FONTS.*` constants — never hardcoded px values.
 
 ---
 
 ## Known Issues & Gotchas
+
+### Canvas Font Sizes
+All canvas `ctx.font` and `offCtx.font` assignments must use `window.CHART_FONTS` constants, never hardcoded pixel values. Available constants:
+- `window.CHART_FONTS.xs` — smallest labels (axis ticks)
+- `window.CHART_FONTS.sm` — standard axis labels
+- `window.CHART_FONTS.md` — body/tooltip text
+- `window.CHART_FONTS.lg` — titles
+- `window.CHART_FONTS.boldSm` — bold small
+- `window.CHART_FONTS.boldMd` — bold medium
+- `window.CHART_FONTS.boldLg` — bold large
+- `window.CHART_FONTS.current` — active scale name ("small" | "medium" | "large")
 
 ### Template Literal Space Collapse
 When writing CSS descendant selectors inside JavaScript template literals, the space between a closing `}` and a `.` class selector may be silently dropped by AI code generation tools, producing a broken selector:
@@ -154,6 +166,13 @@ A new finding discovered during verification only blocks completion if it is cri
 Do not assume an item is complete just because we discussed or implemented a fix.
 
 ---
+
+## Completed Phases
+
+Phase 1–5: Core remediation — Completed. Bug fixes, input safety, performance, architecture refactoring, UX polish.
+Phase 6: Stock Evaluator cache — Completed. IndexedDB 24h TTL for API responses, formatRatio import fix.
+Phase 7: Economics expansion — Completed April 2026. Consumer Theory page (price elasticity 4 modes, cross-price, expected utility, risk premium); font scale toggle with canvas font scaling via window.CHART_FONTS across all chart files.
+Phase 8: Managerial Accounting expansion — In progress April 2026. Operating Leverage tab added to CM Analysis; Cost Structure & Allocation page (cost structure comparison, overhead allocation + death spiral, fixed/variable cost classifier with high-low + regression, unit cost trap).
 
 ## Prompt Maintenance
 

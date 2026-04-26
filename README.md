@@ -8,20 +8,22 @@ A collection of interactive financial calculators built with vanilla JavaScript 
 
 ## Calculators
 
-| Tool                     | Description                                                                                    |
-| ------------------------ | ---------------------------------------------------------------------------------------------- |
-| 🔥 FIRE Dashboard        | FIRE number, Coast FIRE, retirement lifecycle projection                                       |
-| 📈 Portfolio Projections | Multi-scenario growth with inflation adjustment                                                |
-| 🏦 Loan Calculator       | Amortization, payoff schedule, interest breakdown                                              |
-| 🏦 Advanced Loan         | Extra payments, recurring ranges, one-time payments                                            |
-| 💰 Present Value         | Lump sum, annuity, lump sum vs annuity comparison                                              |
-| 📊 NPV / IRR             | Net present value, internal rate of return, investment comparison                              |
-| ⚙️ Options Lab           | Payoff diagrams, Black-Scholes pricing, Greeks sensitivity, P&L                                |
-| 🔍 Stock Evaluator       | Multi-method fundamental analysis: DCF, Graham Number, enterprise value, multiples             |
-| 📑 10-K Analyzer         | SEC EDGAR filing parser with ratio analysis, health scoring, and red flag detection            |
-| 📰 News Feed             | RSS reader with OPML import, category filtering, bookmarks, and search                         |
-| 📊 CM Analysis           | Contribution margin, gross profit, breakeven, multi-product mix, capacity constraints          |
-| 📉 Supply & Demand       | Linear supply/demand equilibrium, multi-variable equations, curve shifters, interactive graphs |
+| Tool                          | Description                                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 🔥 FIRE Dashboard             | FIRE number, Coast FIRE, retirement lifecycle projection                                                     |
+| 📈 Portfolio Projections      | Multi-scenario growth with inflation adjustment                                                              |
+| 🏦 Loan Calculator            | Amortization, payoff schedule, interest breakdown                                                            |
+| 🏦 Advanced Loan              | Extra payments, recurring ranges, one-time payments                                                          |
+| 💰 Present Value              | Lump sum, annuity, lump sum vs annuity comparison                                                            |
+| 📊 NPV / IRR                  | Net present value, internal rate of return, investment comparison                                            |
+| ⚙️ Options Lab                | Payoff diagrams, Black-Scholes pricing, Greeks sensitivity, P&L                                              |
+| 🔍 Stock Evaluator            | Multi-method fundamental analysis: DCF, Graham Number, enterprise value, multiples                           |
+| 📑 10-K Analyzer              | SEC EDGAR filing parser with ratio analysis, health scoring, and red flag detection                          |
+| 📰 News Feed                  | RSS reader with OPML import, category filtering, bookmarks, and search                                       |
+| 📊 CM Analysis                | Contribution margin, gross profit, breakeven, multi-product mix, capacity constraints, operating leverage    |
+| 📉 Supply & Demand            | Linear supply/demand equilibrium, multi-variable equations, curve shifters, interactive graphs               |
+| 📐 Consumer Theory            | Price elasticity (4 modes), cross-price elasticity, expected utility, risk premium                           |
+| 🏗️ Cost Structure & Allocation | Cost structure comparison, overhead allocation, fixed/variable cost classifier, unit cost trap               |
 
 ---
 
@@ -69,7 +71,9 @@ financial-calculator/
 │   ├── valuator.html
 │   ├── news.html
 │   ├── cm-analysis.html
-│   └── micro-econ.html
+│   ├── micro-econ.html
+│   ├── consumer-theory.html
+│   └── cost-structure.html
 ├── js/
 │   ├── chart-utils.js           # Shared canvas, validation, chart utilities (ES module)
 │   ├── formatting.js            # Shared formatting functions (ES module)
@@ -91,6 +95,9 @@ financial-calculator/
 │   ├── news.js                  # RSS news feed reader
 │   ├── cm-analysis.js           # Contribution margin analysis entry point
 │   ├── micro-econ.js            # Supply & demand microeconomics entry point
+│   ├── consumer-theory.js       # Consumer theory: elasticity, expected utility, risk premium
+│   ├── cost-structure.js        # Cost structure & allocation entry point
+│   ├── font-scale.js            # Persistent font scale toggle (plain script, not module)
 │   └── prefetch.js              # Quicklink prefetching (plain script, not module)
 ├── proxy.js                     # Local HTTP/2 CORS proxy for SEC EDGAR
 ├──.vscode/
@@ -106,7 +113,9 @@ financial-calculator/
     ├── projections.css
     ├── valuator.css
     ├── cm-analysis.css
-    └── micro-econ.css
+    ├── micro-econ.css
+    ├── consumer-theory.css
+    └── cost-structure.css
 ```
 
 ---
@@ -140,6 +149,8 @@ Key phases:
 - **Phase 4** — Architecture: `drawTooltip` utility, `CONFIG` constants, dead code removal, documentation
 - **Phase 5** — UX polish: loading spinners, `normCDF` documentation, accessibility pass
 - **Phase 6** — Stock Evaluator: IndexedDB cache for API responses (24h TTL), `formatRatio` import fix
+- **Phase 7** — Economics expansion: Consumer Theory page (price elasticity 4 modes, cross-price elasticity, expected utility, risk premium); font scale toggle (A⁻/A/A⁺) with canvas font scaling across all chart files
+- **Phase 8 (in progress)** — Managerial Accounting expansion: Operating Leverage tab added to CM Analysis; new Cost Structure & Allocation page (cost structure comparison, overhead allocation + death spiral, fixed/variable cost classifier with high-low and regression, unit cost trap)
 
 ---
 
@@ -224,5 +235,6 @@ done > audit.txt
 ## Future / Planned
 
 - **Cloudflare Worker proxy** — replace `proxy.js` with a hosted edge function so the 10-K Analyzer works on the live GitHub Pages site without any local setup required
+- **Cost Structure & Allocation** — complete remaining tabs: cost structure comparison, overhead allocation with death spiral demo, fixed/variable cost classifier, unit cost trap
 
 ---

@@ -1,6 +1,6 @@
 ============================================================
  CODEBASE EXPORT
- Generated: Sat Apr 25 15:20:55 EDT 2026
+ Generated: Sat Apr 25 20:40:50 EDT 2026
  Directory: /Users/careycarroll/Github Projects/financial-calculator
 ============================================================
 
@@ -773,6 +773,7 @@ body main {
 
 /* ===== DESIGN TOKENS ===== */
 :root {
+  font-size: 17px;
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-card: #1e293b;
@@ -788,6 +789,25 @@ body main {
 /* ===== UTILITY ===== */
 .hidden {
   display: none !important;
+}
+
+
+/* ===== FONT SCALE TOGGLE ===== */.font-scale-btn {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}.font-scale-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ===== BODY ===== */
@@ -2612,6 +2632,309 @@ select.input-error,.form-group input.input-error,.form-group select.input-error 
 
   .table-controls {
     flex-direction: column;
+  }
+}
+
+
+============================================================
+ FILE: /Users/careycarroll/Github Projects/financial-calculator/css/consumer-theory.css
+============================================================
+
+/* ===================================================================
+   CONSUMER THEORY — Price Elasticity, Cross-Price, Expected Utility, Risk Premium
+   =================================================================== */
+
+/* ===== TABS ===== */.ct-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border);
+}.ct-tab {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -2px;
+  font-family: inherit;
+}.ct-tab:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}.ct-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ===== CLASSIFICATION BADGE ===== */.ct-badge {
+  display: inline-block;
+  padding: 0.35rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}.ct-badge.elastic {
+  background-color: rgba(244, 114, 182, 0.15);
+  border: 1px solid #f472b6;
+  color: #f472b6;
+}.ct-badge.inelastic {
+  background-color: rgba(45, 212, 191, 0.15);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}.ct-badge.unit-elastic {
+  background-color: rgba(245, 158, 11, 0.15);
+  border: 1px solid #f59e0b;
+  color: #f59e0b;
+}.ct-badge.substitute {
+  background-color: rgba(74, 222, 128, 0.15);
+  border: 1px solid #4ade80;
+  color: #4ade80;
+}.ct-badge.complement {
+  background-color: rgba(244, 114, 182, 0.15);
+  border: 1px solid #f472b6;
+  color: #f472b6;
+}.ct-badge.independent {
+  background-color: rgba(148, 163, 184, 0.15);
+  border: 1px solid #94a3b8;
+  color: #94a3b8;
+}
+
+/* ===== REVENUE IMPACT ===== */.ct-revenue-impact {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+}.ct-revenue-impact.up {
+  background-color: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  color: var(--accent);
+}.ct-revenue-impact.down {
+  background-color: rgba(244, 114, 182, 0.08);
+  border: 1px solid rgba(244, 114, 182, 0.3);
+  color: #f472b6;
+}.ct-revenue-impact.neutral {
+  background-color: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+/* ===== UTILITY FUNCTION SELECTOR ===== */.ct-utility-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}.ct-utility-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}.ct-utility-btn:hover {
+  border-color: #a855f7;
+  color: var(--text-primary);
+}.ct-utility-btn.active {
+  background-color: rgba(168, 85, 247, 0.15);
+  border-color: #a855f7;
+  color: #a855f7;
+}
+
+/* ===== OUTCOME ROWS (Expected Utility) ===== */.ct-option-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}.ct-option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}.ct-option-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+}.ct-outcome-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}.ct-outcome-row input {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  outline: none;
+  width: 100%;
+}.ct-outcome-row input:focus {
+  border-color: var(--accent);
+}.ct-outcome-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}.ct-outcome-header span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}.ct-outcome-remove {
+  background: none;
+  border: none;
+  color: #f472b6;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.2rem;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}.ct-outcome-remove:hover {
+  color: #fb7185;
+}.ct-prob-warning {
+  font-size: 0.78rem;
+  color: #f59e0b;
+  margin-top: 0.35rem;
+}.ct-prob-ok {
+  font-size: 0.78rem;
+  color: var(--accent);
+  margin-top: 0.35rem;
+}
+
+/* ===== EU RESULTS COMPARISON ===== */.ct-eu-comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}.ct-eu-col {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+}.ct-eu-col.winner {
+  border-color: var(--accent);
+  background-color: rgba(45, 212, 191, 0.03);
+}.ct-eu-col h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}.ct-eu-col.winner h3 {
+  color: var(--accent);
+}
+
+/* ===== STEP-BY-STEP (replicates micro-econ pattern) ===== */.ct-steps-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.8;
+}.ct-step-section {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}.ct-step-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}.ct-step-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}.ct-step {
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}.ct-step strong {
+  color: var(--accent);
+}.ct-step.result {
+  color: var(--text-primary);
+  font-weight: 700;
+}.ct-step.highlight {
+  color: #a855f7;
+  font-weight: 700;
+}.ct-step.positive {
+  color: var(--accent);
+}.ct-step.negative {
+  color: #f472b6;
+}
+
+/* ===== EXPLAINER (replicates micro-econ pattern) ===== */.ct-explainer {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}.ct-explainer-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-primary);
+  border: none;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}.ct-explainer-toggle:hover {
+  background-color: rgba(45, 212, 191, 0.05);
+}.ct-explainer-chevron {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}.ct-explainer-toggle[aria-expanded="true"].ct-explainer-chevron {
+  transform: rotate(180deg);
+}.ct-explainer-body {
+  padding: 1rem 1.25rem;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}.ct-explainer-body p {
+  margin-bottom: 0.75rem;
+}.ct-explainer-body p:last-child {
+  margin-bottom: 0;
+}.ct-explainer-body strong {
+  color: var(--text-primary);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {.ct-tab {
+    font-size: 0.85rem;
+    padding: 0.75rem 0.5rem;
+  }.ct-eu-comparison {
+    grid-template-columns: 1fr;
+  }.ct-outcome-row {
+    grid-template-columns: 1fr 1fr auto;
+  }
+}
+@media (max-width: 600px) {.ct-utility-selector {
+    gap: 0.35rem;
+  }.ct-utility-btn {
+    font-size: 0.78rem;
+    padding: 0.4rem 0.75rem;
   }
 }
 
@@ -5753,6 +6076,11 @@ select.input-error,.form-group input.input-error,.form-group select.input-error 
               <h3>Supply & Demand</h3>
               <p>Define linear supply and demand curves by equation or two points, solve for market equilibrium with step-by-step algebra, and explore curve shifts interactively.</p>
             </a>
+            <a href="pages/consumer-theory.html" class="card">
+              <div class="card-icon">📐</div>
+              <h3>Consumer Theory</h3>
+              <p>Price elasticity, cross-price effects, expected utility, and risk premium — interactive tools for economics.</p>
+            </a>
           </div>
         </section>
       </main>
@@ -5762,6 +6090,7 @@ select.input-error,.form-group input.input-error,.form-group select.input-error 
       </footer>
     </div>
 
+    <script src="js/font-scale.js"></script>
     <script src="js/prefetch.js"></script>
   </body>
 </html>
@@ -7102,7 +7431,7 @@ function drawChart(
   const allValues = datasets.flatMap((d) => d.data.filter((v) => v !== null));
   if (allValues.length === 0) {
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "14px sans-serif";
+    ctx.font = window.CHART_FONTS.lg;
     ctx.textAlign = "center";
     ctx.fillText(
       "No data available for this chart",
@@ -7148,12 +7477,12 @@ function drawChart(
 
   // Title
   ctx.fillStyle = "#e2e8f0";
-  ctx.font = "bold 13px sans-serif";
+  ctx.font = window.CHART_FONTS.boldMd;
   ctx.textAlign = "left";
   ctx.fillText(title, padding.left, padding.top - 15);
 
   // Grid lines and Y-axis labels
-  ctx.font = "11px sans-serif";
+  ctx.font = window.CHART_FONTS.sm;
   ctx.textAlign = "right";
 
   for (let i = 0; i <= tickCount; i++) {
@@ -7184,15 +7513,15 @@ function drawChart(
 
   // X-axis labels
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "11px sans-serif";
+  ctx.font = window.CHART_FONTS.sm;
   ctx.textAlign = "center";
   labels.forEach((label, i) => {
     if (hoverIndex === i) {
       ctx.fillStyle = "#e2e8f0";
-      ctx.font = "bold 11px sans-serif";
+      ctx.font = window.CHART_FONTS.boldSm;
     } else {
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
+      ctx.font = window.CHART_FONTS.sm;
     }
     ctx.fillText(label, toX(i), chart.height - padding.bottom + 20);
   });
@@ -7286,7 +7615,7 @@ function drawChart(
       tooltipLines.push(`${d.label}: ${formatYAxisLabel(val, yAxisFormat)}`);
     });
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth =
       Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 28;
     const tooltipHeight = tooltipLines.length * 22 + 16;
@@ -7333,12 +7662,12 @@ function drawChart(
       if (i === 0) {
         // Header (year)
         ctx.fillStyle = "#e2e8f0";
-        ctx.font = "bold 12px sans-serif";
+        ctx.font = window.CHART_FONTS.boldMd;
       } else {
         // Find matching dataset for color
         const matchingDataset = datasets.find((d) => line.startsWith(d.label));
         ctx.fillStyle = matchingDataset ? matchingDataset.color : "#94a3b8";
-        ctx.font = "12px sans-serif";
+        ctx.font = window.CHART_FONTS.md;
       }
       ctx.textAlign = "left";
       ctx.fillText(line, tx + 14, ty + 20 + i * 22);
@@ -7346,7 +7675,7 @@ function drawChart(
   }
 
   // Legend — draw at bottom center
-  ctx.font = "11px sans-serif";
+  ctx.font = window.CHART_FONTS.sm;
   ctx.globalAlpha = 1;
   const legendItems = datasets.map((d) => ({
     label: d.label,
@@ -9364,7 +9693,7 @@ export function drawTooltip(ctx, lines, x, y, bounds) {
     typeof l === "string" ? { text: l, color: null, bold: false } : l
   );
 
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   const tooltipWidth = Math.max(...normalized.map((l) => ctx.measureText(l.text).width)) + 24;
   const tooltipHeight = normalized.length * 20 + 16;
 
@@ -9400,7 +9729,7 @@ export function drawTooltip(ctx, lines, x, y, bounds) {
   ctx.textAlign = "left";
   normalized.forEach((line, i) => {
     ctx.fillStyle = line.color || (i === 0 ? "#e2e8f0" : "#94a3b8");
-    ctx.font = (line.bold || i === 0) ? "bold 12px sans-serif" : "12px sans-serif";
+    ctx.font = (line.bold || i === 0) ? window.CHART_FONTS.boldMd : window.CHART_FONTS.md;
     ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
   });
 }
@@ -9449,7 +9778,7 @@ export function drawBarChart(canvas, data, options) {
     offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
 
     // Y-axis grid + labels
-    offCtx.font = "11px sans-serif";
+    offCtx.font = window.CHART_FONTS.sm;
     offCtx.textAlign = "right";
     const ySteps = 5;
     for (let i = 0; i <= ySteps; i++) {
@@ -9489,7 +9818,7 @@ export function drawBarChart(canvas, data, options) {
 
       // X-axis label
       offCtx.fillStyle = "#94a3b8";
-      offCtx.font = "10px sans-serif";
+      offCtx.font = window.CHART_FONTS.xs;
       offCtx.textAlign = "center";
       offCtx.fillText(
         options.xLabel ? options.xLabel(d) : String(i),
@@ -9641,7 +9970,7 @@ export function drawLineChart(canvas, data, options) {
     offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
 
     // Y-axis grid + labels
-    offCtx.font = "11px sans-serif";
+    offCtx.font = window.CHART_FONTS.sm;
     offCtx.textAlign = "right";
     const ySteps = 5;
     for (let i = 0; i <= ySteps; i++) {
@@ -9668,7 +9997,7 @@ export function drawLineChart(canvas, data, options) {
     for (let i = 0; i < data.length; i += step) {
       const x = toX(i);
       offCtx.fillStyle = "#94a3b8";
-      offCtx.font = "10px sans-serif";
+      offCtx.font = window.CHART_FONTS.xs;
       offCtx.fillText(
         options.xLabel ? options.xLabel(data[i], i) : String(i),
         x, padding.top + chartHeight + 16
@@ -9952,7 +10281,7 @@ export function bindFormEnter(callback, containerSelector) {
 export function drawLabelWithBackground(ctx, text, x, y, options = {}) {
   const {
     color = "#e2e8f0",
-    font = "10px sans-serif",
+    font = window.CHART_FONTS.xs,
     background = "rgba(15, 23, 42, 0.85)",
     border = "rgba(148, 163, 184, 0.25)",
     padding = { h: 6, v: 3 },
@@ -10549,7 +10878,7 @@ function drawWaterfallChart(revenue, totalVC, cm, totalFC, opIncome) {
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(val), padding.left - 8, y + 4);
   }
@@ -10600,14 +10929,14 @@ function drawWaterfallChart(revenue, totalVC, cm, totalFC, opIncome) {
 
     // Value label
     ctx.fillStyle = bar.color;
-    ctx.font = "bold 11px sans-serif";
+    ctx.font = window.CHART_FONTS.boldSm;
     ctx.textAlign = "center";
     const labelY = barY - 6;
     ctx.fillText(formatCurrency(Math.abs(bar.value)), x + w / 2, labelY);
 
     // X-axis label
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "10px sans-serif";
+    ctx.font = window.CHART_FONTS.xs;
     const lineLabels = bar.label.split("\n");
     lineLabels.forEach((line, li) => {
       ctx.fillText(line, x + w / 2, chart.height - padding.bottom + 16 + li * 14);
@@ -10699,7 +11028,7 @@ function drawBreakevenChart(
       ctx.lineTo(chart.width - padding.right, y);
       ctx.stroke();
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
+      ctx.font = window.CHART_FONTS.sm;
       ctx.textAlign = "right";
       ctx.fillText(formatCurrency(val), padding.left - 8, y + 4);
     }
@@ -10707,11 +11036,11 @@ function drawBreakevenChart(
     for (let i = 0; i <= 6; i++) {
       const u = (maxUnits / 6) * i;
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "10px sans-serif";
+      ctx.font = window.CHART_FONTS.xs;
       ctx.fillText(Math.round(u).toLocaleString(), toX(u), chart.height - padding.bottom + 16);
     }
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     ctx.fillText("Units", chart.width / 2, chart.height - 5);
 
     // Fixed cost line
@@ -10724,7 +11053,7 @@ function drawBreakevenChart(
     ctx.stroke();
     ctx.setLineDash([]);
     drawLabelWithBackground(ctx, `Fixed Costs: ${formatCurrency(totalFC)}`, padding.left + 5, toY(totalFC) - 6,
-      { color: "#f59e0b", font: "10px sans-serif", align: "left" });
+      { color: "#f59e0b", font: window.CHART_FONTS.xs, align: "left" });
 
     // Total cost line
     ctx.strokeStyle = "#f472b6";
@@ -10734,7 +11063,7 @@ function drawBreakevenChart(
     ctx.lineTo(toX(maxUnits), toY(totalFC + vcPerUnit * maxUnits));
     ctx.stroke();
     drawLabelWithBackground(ctx, "Total Cost", chart.width - padding.right - 5, toY(totalFC + vcPerUnit * maxUnits) - 6,
-      { color: "#f472b6", font: "10px sans-serif", align: "right" });
+      { color: "#f472b6", font: window.CHART_FONTS.xs, align: "right" });
 
     // Revenue line
     ctx.strokeStyle = "#2dd4bf";
@@ -10744,7 +11073,7 @@ function drawBreakevenChart(
     ctx.lineTo(toX(maxUnits), toY(price * maxUnits));
     ctx.stroke();
     drawLabelWithBackground(ctx, "Revenue", chart.width - padding.right - 5, toY(price * maxUnits) - 6,
-      { color: "#2dd4bf", font: "10px sans-serif", align: "right" });
+      { color: "#2dd4bf", font: window.CHART_FONTS.xs, align: "right" });
 
     // Breakeven point
     if (beUnits !== Infinity && beUnits <= maxUnits) {
@@ -10766,7 +11095,7 @@ function drawBreakevenChart(
       ctx.lineWidth = 2.5;
       ctx.stroke();
       drawLabelWithBackground(ctx, `BE: ${Math.ceil(beUnits).toLocaleString()} units`, bx, padding.top - 8,
-        { color: "#e2e8f0", font: "bold 11px sans-serif", align: "center" });
+        { color: "#e2e8f0", font: window.CHART_FONTS.boldSm, align: "center" });
     }
 
     // Capacity line
@@ -10781,7 +11110,7 @@ function drawBreakevenChart(
       ctx.stroke();
       ctx.setLineDash([]);
       drawLabelWithBackground(ctx, `Capacity: ${capacity.toLocaleString()}`, cx, padding.top + 12,
-        { color: "#a855f7", font: "10px sans-serif", align: "center" });
+        { color: "#a855f7", font: window.CHART_FONTS.xs, align: "center" });
     }
 
     // Actual units marker
@@ -10795,7 +11124,7 @@ function drawBreakevenChart(
     ctx.stroke();
     ctx.setLineDash([]);
     drawLabelWithBackground(ctx, `Actual: ${actualUnits.toLocaleString()}`, ax, padding.top + 24,
-      { color: "#60a5fa", font: "10px sans-serif", align: "center" });
+      { color: "#60a5fa", font: window.CHART_FONTS.xs, align: "center" });
 
     if (hoverUnits === null || hoverUnits < 0 || hoverUnits > maxUnits) return;
 
@@ -10853,7 +11182,7 @@ function drawBreakevenChart(
       });
     }
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth = Math.max(...tooltipLines.map(l => ctx.measureText(l.text).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
     let tx = hx + 15;
@@ -10882,7 +11211,7 @@ function drawBreakevenChart(
     ctx.textAlign = "left";
     tooltipLines.forEach((line, i) => {
       ctx.fillStyle = line.color || "#e2e8f0";
-      ctx.font = line.bold ? "bold 12px sans-serif" : "12px sans-serif";
+      ctx.font = line.bold ? window.CHART_FONTS.boldMd : window.CHART_FONTS.md;
       ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
     });
   }
@@ -11479,7 +11808,7 @@ function drawMultiProductChart(products, beBundleUnits) {
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(val), padding.left - 8, y + 4);
   }
@@ -11499,12 +11828,12 @@ function drawMultiProductChart(products, beBundleUnits) {
     ctx.fill();
 
     ctx.fillStyle = color;
-    ctx.font = "bold 11px sans-serif";
+    ctx.font = window.CHART_FONTS.boldSm;
     ctx.textAlign = "center";
     ctx.fillText(formatCurrency(totalProductCM), x + w / 2, barY - 6);
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.fillText(p.name, x + w / 2, chart.height - padding.bottom + 16);
     ctx.fillText(
       `${(p.mix * 100).toFixed(0)}% mix`,
@@ -11515,7 +11844,7 @@ function drawMultiProductChart(products, beBundleUnits) {
 
   // Title
   ctx.fillStyle = "#e2e8f0";
-  ctx.font = "bold 12px sans-serif";
+  ctx.font = window.CHART_FONTS.boldMd;
   ctx.textAlign = "left";
   ctx.fillText(
     "Total CM Contribution by Product (at breakeven bundle volume)",
@@ -11661,7 +11990,7 @@ function drawSensitivityChart(adjPrice, adjVC, adjFC, capacity) {
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(val), padding.left - 8, y + 4);
   }
@@ -11671,7 +12000,7 @@ function drawSensitivityChart(adjPrice, adjVC, adjFC, capacity) {
   for (let i = 0; i <= 6; i++) {
     const u = (maxUnits / 6) * i;
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "10px sans-serif";
+    ctx.font = window.CHART_FONTS.xs;
     ctx.fillText(
       Math.round(u).toLocaleString(),
       toX(u),
@@ -11679,7 +12008,7 @@ function drawSensitivityChart(adjPrice, adjVC, adjFC, capacity) {
     );
   }
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   ctx.fillText("Units", chart.width / 2, chart.height - 5);
 
   // Zero line
@@ -11719,7 +12048,7 @@ function drawSensitivityChart(adjPrice, adjVC, adjFC, capacity) {
     ctx.lineWidth = 2;
     ctx.stroke();
     drawLabelWithBackground(ctx, `BE: ${Math.ceil(beUnits).toLocaleString()}`, bx, by - 10,
-      { color: "#f59e0b", font: "bold 10px sans-serif", align: "center" });
+      { color: "#f59e0b", font: window.CHART_FONTS.boldSm, align: "center" });
   }
 }
 
@@ -11785,6 +12114,2368 @@ window.addEventListener("resize", () => {
     }
   }, 250);
 });
+
+
+============================================================
+ FILE: /Users/careycarroll/Github Projects/financial-calculator/js/consumer-theory.js
+============================================================
+
+import {
+  safeParseFloat,
+  createChartContext,
+  rafThrottle,
+  validateInputs,
+  showFieldError,
+  bindFormEnter,
+  drawLabelWithBackground,
+} from "./chart-utils.js";
+
+// ===================================================================
+// STATE
+// ===================================================================
+
+let euUtilityFn = "sqrt";
+let rpUtilityFn = "sqrt";
+let euOptionCount = 0;
+let rpOutcomeCount = 0;
+let lastElasData = null;
+let lastCrossData = null;
+let lastEUData = null;
+let lastRPData = null;
+let elasChartController = null;
+let crossChartController = null;
+let euChartController = null;
+let rpChartController = null;
+
+// ===================================================================
+// TAB SWITCHING
+// ===================================================================
+
+const tabs = {
+  elasticity: {
+    tab: document.getElementById("tab-elasticity"),
+    panel: document.getElementById("elasticity-tab"),
+  },
+  "cross-price": {
+    tab: document.getElementById("tab-cross-price"),
+    panel: document.getElementById("cross-price-tab"),
+  },
+  eu: {
+    tab: document.getElementById("tab-eu"),
+    panel: document.getElementById("eu-tab"),
+  },
+  "risk-premium": {
+    tab: document.getElementById("tab-risk-premium"),
+    panel: document.getElementById("risk-premium-tab"),
+  },
+};
+
+Object.keys(tabs).forEach((key) => {
+  tabs[key].tab.addEventListener("click", () => {
+    Object.keys(tabs).forEach((k) => {
+      tabs[k].tab.classList.remove("active");
+      tabs[k].panel.classList.add("hidden");
+    });
+    tabs[key].tab.classList.add("active");
+    tabs[key].panel.classList.remove("hidden");
+  });
+});
+
+// ===================================================================
+// EXPLAINER TOGGLES
+// ===================================================================
+
+function initExplainer(toggleId, bodyId) {
+  const toggle = document.getElementById(toggleId);
+  const body = document.getElementById(bodyId);
+  if (!toggle || !body) return;
+  toggle.addEventListener("click", () => {
+    const expanded = toggle.getAttribute("aria-expanded") === "true";
+    toggle.setAttribute("aria-expanded", String(!expanded));
+    body.classList.toggle("hidden", expanded);
+  });
+}
+
+initExplainer("elas-explainer-toggle", "elas-explainer-body");
+initExplainer("cross-explainer-toggle", "cross-explainer-body");
+initExplainer("eu-explainer-toggle", "eu-explainer-body");
+initExplainer("rp-explainer-toggle", "rp-explainer-body");
+initExplainer("elas-steps-toggle", "elas-steps-body");
+initExplainer("cross-steps-toggle", "cross-steps-body");
+initExplainer("eu-steps-toggle", "eu-steps-body");
+initExplainer("rp-steps-toggle", "rp-steps-body");
+
+// ===================================================================
+// UTILITY FUNCTIONS
+// ===================================================================
+
+function applyUtility(x, fn) {
+  if (x <= 0 && (fn === "sqrt" || fn === "log")) return null;
+  switch (fn) {
+    case "sqrt":
+      return Math.sqrt(x);
+    case "log":
+      return Math.log(x);
+    case "linear":
+      return x;
+    case "square":
+      return x * x;
+    default:
+      return x;
+  }
+}
+
+function inverseUtility(u, fn) {
+  switch (fn) {
+    case "sqrt":
+      return u * u;
+    case "log":
+      return Math.exp(u);
+    case "linear":
+      return u;
+    case "square":
+      return Math.sqrt(Math.max(0, u));
+    default:
+      return u;
+  }
+}
+
+function utilityFnLabel(fn) {
+  switch (fn) {
+    case "sqrt":
+      return "u(x) = √x";
+    case "log":
+      return "u(x) = ln(x)";
+    case "linear":
+      return "u(x) = x";
+    case "square":
+      return "u(x) = x²";
+    default:
+      return fn;
+  }
+}
+
+// ===================================================================
+// ELASTICITY MODE TOGGLE
+// ===================================================================
+
+let elasticityMode = "equation";
+let elasticitySolveMode = "solveQ";
+
+// ===== MODE BUTTONS =====
+const elasModes = ["equation", "point", "solve", "arc"];
+const elasPanels = {
+  equation: "elas-equation-inputs",
+  point: "elas-point-inputs",
+  solve: "elas-solve-inputs",
+  arc: "elas-arc-inputs",
+};
+const elasBtns = {
+  equation: "elas-mode-equation",
+  point: "elas-mode-point",
+  solve: "elas-mode-solve",
+  arc: "elas-mode-arc",
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  elasModes.forEach((mode) => {
+    document.getElementById(elasBtns[mode]).addEventListener("click", () => {
+      elasticityMode = mode;
+      elasModes.forEach((m) => {
+        document
+          .getElementById(elasBtns[m])
+          .classList.toggle("active", m === mode);
+        document
+          .getElementById(elasPanels[m])
+          .classList.toggle("hidden", m !== mode);
+      });
+    });
+  });
+
+  document.getElementById("elas-solve-q-btn").addEventListener("click", () => {
+    elasticitySolveMode = "solveQ";
+    document.getElementById("elas-solve-q-btn").classList.add("active");
+    document.getElementById("elas-solve-p-btn").classList.remove("active");
+    document.getElementById("elas-solve-p-group").classList.remove("hidden");
+    document.getElementById("elas-solve-q-group").classList.add("hidden");
+  });
+
+  document.getElementById("elas-solve-p-btn").addEventListener("click", () => {
+    elasticitySolveMode = "solveP";
+    document.getElementById("elas-solve-p-btn").classList.add("active");
+    document.getElementById("elas-solve-q-btn").classList.remove("active");
+    document.getElementById("elas-solve-q-group").classList.remove("hidden");
+    document.getElementById("elas-solve-p-group").classList.add("hidden");
+  });
+
+  [
+    "elas-eq-d-const",
+    "elas-eq-d-coef",
+    "elas-eq-s-const",
+    "elas-eq-s-coef",
+  ].forEach((id) => {
+    document
+      .getElementById(id)
+      .addEventListener("input", updateElasEquationPreviews);
+  });
+});
+
+function updateElasEquationPreviews() {
+  const dConst = document.getElementById("elas-eq-d-const").value;
+  const dCoef = document.getElementById("elas-eq-d-coef").value;
+  const sConst = document.getElementById("elas-eq-s-const").value;
+  const sCoef = document.getElementById("elas-eq-s-coef").value;
+  const dC = dConst !== "" ? dConst : "a";
+  const dB = dCoef !== "" ? dCoef : "b";
+  const sC = sConst !== "" ? sConst : "c";
+  const sD = sCoef !== "" ? sCoef : "d";
+  document.getElementById("elas-eq-demand-preview").textContent =
+    "Q_d = " + dC + " + (" + dB + ")·P";
+  document.getElementById("elas-eq-supply-preview").textContent =
+    "Q_s = " + sC + " + (" + sD + ")·P";
+}
+
+// ===================================================================
+// TAB 1 — PRICE ELASTICITY
+// ===================================================================
+
+document
+  .getElementById("elas-calculate")
+  .addEventListener("click", handleElasticityCalculate);
+bindFormEnter(() => handleElasticityCalculate(), "#elasticity-tab");
+
+function classifyElasticity(absEps) {
+  if (absEps > 1.001) return "elastic";
+  if (absEps < 0.999) return "inelastic";
+  return "unit-elastic";
+}
+
+function applyRevenueImpact(el, classification, curveType, absEps) {
+  if (curveType === "demand") {
+    if (classification === "elastic") {
+      el.className = "ct-revenue-impact down";
+      el.textContent =
+        "📉 Price increase → Revenue FALLS (elastic demand: quantity drops more than price rises)";
+    } else if (classification === "inelastic") {
+      el.className = "ct-revenue-impact up";
+      el.textContent =
+        "📈 Price increase → Revenue RISES (inelastic demand: quantity drops less than price rises)";
+    } else {
+      el.className = "ct-revenue-impact neutral";
+      el.textContent =
+        "➡️ Price increase → Revenue UNCHANGED (unit elastic: effects exactly cancel)";
+    }
+  } else {
+    el.className = "ct-revenue-impact neutral";
+    el.textContent =
+      "Supply elasticity: " +
+      absEps.toFixed(4) +
+      ". " +
+      (absEps > 1
+        ? "Elastic supply — quantity responds strongly to price."
+        : absEps < 1
+          ? "Inelastic supply — quantity responds weakly to price."
+          : "Unit elastic supply.");
+  }
+}
+
+function handleElasticityCalculate() {
+  let epsilon, p, q, curveType;
+
+  if (elasticityMode === "equation") {
+    const valid = validateInputs(
+      [
+        { id: "elas-eq-d-const", label: "Demand constant", required: true },
+        {
+          id: "elas-eq-d-coef",
+          label: "Demand price coefficient",
+          required: true,
+        },
+        { id: "elas-eq-s-const", label: "Supply constant", required: true },
+        {
+          id: "elas-eq-s-coef",
+          label: "Supply price coefficient",
+          required: true,
+        },
+      ],
+      "#elasticity-tab",
+    );
+    if (!valid) return;
+
+    const dA = safeParseFloat(document.getElementById("elas-eq-d-const").value);
+    const dB = safeParseFloat(document.getElementById("elas-eq-d-coef").value);
+    const sC = safeParseFloat(document.getElementById("elas-eq-s-const").value);
+    const sD = safeParseFloat(document.getElementById("elas-eq-s-coef").value);
+
+    const denom = dB - sD;
+    if (Math.abs(denom) < 1e-10) {
+      showFieldError(
+        "elas-eq-d-coef",
+        "Curves are parallel — no equilibrium exists.",
+      );
+      return;
+    }
+
+    const pStar = (sC - dA) / denom;
+    const qStar = dA + dB * pStar;
+
+    if (pStar <= 0 || qStar <= 0) {
+      showFieldError(
+        "elas-eq-d-const",
+        "Equilibrium has non-positive P* or Q* — check your equations.",
+      );
+      return;
+    }
+
+    const epsilonD = dB * (pStar / qStar);
+    const epsilonS = sD * (pStar / qStar);
+
+    lastElasData = {
+      mode: "equation",
+      dA,
+      dB,
+      sC,
+      sD,
+      pStar,
+      qStar,
+      epsilonD,
+      epsilonS,
+    };
+
+    const absD = Math.abs(epsilonD);
+    const absS = Math.abs(epsilonS);
+    const clsD = classifyElasticity(absD);
+    const clsS = classifyElasticity(absS);
+    const labels = {
+      elastic: "Elastic",
+      inelastic: "Inelastic",
+      "unit-elastic": "Unit Elastic",
+    };
+
+    document.getElementById("elas-value").textContent =
+      "εd = " + epsilonD.toFixed(4) + "  |  εs = " + epsilonS.toFixed(4);
+    document.getElementById("elas-abs").textContent =
+      "|εd| = " + absD.toFixed(4) + "  |  |εs| = " + absS.toFixed(4);
+    document.getElementById("elas-badge").innerHTML =
+      '<span class="ct-badge ' +
+      clsD +
+      '" style="margin-right:0.5rem;">Demand: ' +
+      labels[clsD] +
+      "</span>" +
+      '<span class="ct-badge ' +
+      clsS +
+      '">Supply: ' +
+      labels[clsS] +
+      "</span>";
+
+    applyRevenueImpact(
+      document.getElementById("elas-revenue-impact"),
+      clsD,
+      "demand",
+      absD,
+    );
+    renderElasticitySteps(lastElasData);
+    document.getElementById("elas-results").classList.remove("hidden");
+    document.getElementById("elas-steps-section").classList.remove("hidden");
+    document.getElementById("elas-chart-section").classList.remove("hidden");
+    requestAnimationFrame(() => drawElasticityChart(lastElasData));
+    document
+      .getElementById("elas-results")
+      .scrollIntoView({ behavior: "smooth" });
+    return;
+  }
+
+  if (elasticityMode === "point") {
+    const valid = validateInputs(
+      [
+        { id: "elas-dqdp", label: "∂q/∂p", required: true },
+        { id: "elas-p", label: "Price", required: true, min: 0.001 },
+        { id: "elas-q", label: "Quantity", required: true, min: 0.001 },
+      ],
+      "#elasticity-tab",
+    );
+    if (!valid) return;
+
+    curveType = document.getElementById("elas-curve-type").value;
+    const dqdp = safeParseFloat(document.getElementById("elas-dqdp").value);
+    p = safeParseFloat(document.getElementById("elas-p").value);
+    q = safeParseFloat(document.getElementById("elas-q").value);
+    epsilon = dqdp * (p / q);
+    lastElasData = { mode: "point", dqdp, p, q, epsilon, curveType };
+  } else if (elasticityMode === "solve") {
+    const baseIds = [
+      { id: "elas-solve-eps", label: "Target Elasticity", required: true },
+      { id: "elas-solve-dqdp", label: "∂q/∂p", required: true },
+    ];
+    if (elasticitySolveMode === "solveQ") {
+      baseIds.push({
+        id: "elas-solve-p",
+        label: "Price",
+        required: true,
+        min: 0.001,
+      });
+    } else {
+      baseIds.push({
+        id: "elas-solve-q",
+        label: "Quantity",
+        required: true,
+        min: 0.001,
+      });
+    }
+    const valid = validateInputs(baseIds, "#elasticity-tab");
+    if (!valid) return;
+
+    curveType = document.getElementById("elas-solve-curve-type").value;
+    const targetEps = safeParseFloat(
+      document.getElementById("elas-solve-eps").value,
+    );
+    const dqdp = safeParseFloat(
+      document.getElementById("elas-solve-dqdp").value,
+    );
+
+    if (elasticitySolveMode === "solveQ") {
+      p = safeParseFloat(document.getElementById("elas-solve-p").value);
+      if (Math.abs(targetEps) < 1e-10) {
+        showFieldError(
+          "elas-solve-eps",
+          "Target elasticity cannot be zero when solving for Q.",
+        );
+        return;
+      }
+      q = (dqdp * p) / targetEps;
+      epsilon = targetEps;
+      lastElasData = {
+        mode: "solve",
+        solveFor: "Q",
+        dqdp,
+        p,
+        q,
+        epsilon,
+        curveType,
+        targetEps,
+      };
+    } else {
+      q = safeParseFloat(document.getElementById("elas-solve-q").value);
+      if (Math.abs(dqdp) < 1e-10) {
+        showFieldError(
+          "elas-solve-dqdp",
+          "∂q/∂p cannot be zero when solving for P.",
+        );
+        return;
+      }
+      p = (targetEps * q) / dqdp;
+      epsilon = targetEps;
+      lastElasData = {
+        mode: "solve",
+        solveFor: "P",
+        dqdp,
+        p,
+        q,
+        epsilon,
+        curveType,
+        targetEps,
+      };
+    }
+  } else {
+    curveType = document.getElementById("elas-arc-curve-type").value;
+    const valid = validateInputs(
+      [
+        { id: "elas-p1", label: "Price 1", required: true, min: 0.001 },
+        { id: "elas-q1", label: "Quantity 1", required: true, min: 0.001 },
+        { id: "elas-p2", label: "Price 2", required: true, min: 0.001 },
+        { id: "elas-q2", label: "Quantity 2", required: true, min: 0.001 },
+      ],
+      "#elasticity-tab",
+    );
+    if (!valid) return;
+
+    const p1 = safeParseFloat(document.getElementById("elas-p1").value);
+    const q1 = safeParseFloat(document.getElementById("elas-q1").value);
+    const p2 = safeParseFloat(document.getElementById("elas-p2").value);
+    const q2 = safeParseFloat(document.getElementById("elas-q2").value);
+
+    if (p1 === p2) {
+      showFieldError("elas-p2", "Price 1 and Price 2 must be different.");
+      return;
+    }
+
+    const deltaQ = q2 - q1;
+    const deltaP = p2 - p1;
+    const avgQ = (q1 + q2) / 2;
+    const avgP = (p1 + p2) / 2;
+    epsilon = deltaQ / avgQ / (deltaP / avgP);
+    p = avgP;
+    q = avgQ;
+    lastElasData = {
+      mode: "arc",
+      p1,
+      q1,
+      p2,
+      q2,
+      avgP,
+      avgQ,
+      deltaQ,
+      deltaP,
+      epsilon,
+      curveType,
+    };
+  }
+
+  const absEps = Math.abs(epsilon);
+  const classification = classifyElasticity(absEps);
+  const labels = {
+    elastic: "Elastic",
+    inelastic: "Inelastic",
+    "unit-elastic": "Unit Elastic",
+  };
+
+  document.getElementById("elas-value").textContent = epsilon.toFixed(4);
+  document.getElementById("elas-abs").textContent = absEps.toFixed(4);
+  document.getElementById("elas-badge").innerHTML =
+    '<span class="ct-badge ' +
+    classification +
+    '">' +
+    labels[classification] +
+    "</span>";
+  applyRevenueImpact(
+    document.getElementById("elas-revenue-impact"),
+    classification,
+    curveType,
+    absEps,
+  );
+
+  renderElasticitySteps(lastElasData);
+  document.getElementById("elas-results").classList.remove("hidden");
+  document.getElementById("elas-steps-section").classList.remove("hidden");
+  document.getElementById("elas-chart-section").classList.remove("hidden");
+  requestAnimationFrame(() => drawElasticityChart(lastElasData));
+  document
+    .getElementById("elas-results")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+function renderElasticitySteps(data) {
+  const container = document.getElementById("elas-steps-content");
+  const { mode } = data;
+
+  function sec(title, ...items) {
+    return `<div class="ct-step-section"><div class="ct-step-section-title">${title}</div>${items.join("")}</div>`;
+  }
+  function step(text, cls2 = "") {
+    return `<div class="ct-step ${cls2}">${text}</div>`;
+  }
+
+  const sections = [];
+  const clsLabels = {
+    elastic: "Elastic (|ε| > 1)",
+    inelastic: "Inelastic (|ε| < 1)",
+    "unit-elastic": "Unit Elastic (|ε| = 1)",
+  };
+
+  if (mode === "equation") {
+    const { dA, dB, sC, sD, pStar, qStar, epsilonD, epsilonS } = data;
+    const denom = dB - sD;
+    const absD = Math.abs(epsilonD);
+    const absS = Math.abs(epsilonS);
+    const clsD = classifyElasticity(absD);
+    const clsS = classifyElasticity(absS);
+
+    sections.push(
+      sec(
+        "Step 1 — Full Equations",
+        step(
+          `<span style="color:#f472b6;">Demand: Q_d = ${dA} + (${dB})·P</span>`,
+        ),
+        step(
+          `<span style="color:#2dd4bf;">Supply: Q_s = ${sC} + (${sD})·P</span>`,
+        ),
+      ),
+    );
+
+    sections.push(
+      sec(
+        "Step 2 — Solve for Equilibrium (Set Q_d = Q_s)",
+        step(`${dA} + (${dB})·P = ${sC} + (${sD})·P`),
+        step(`${dA} − ${sC} = (${sD})·P − (${dB})·P`),
+        step(`${(dA - sC).toFixed(4)} = (${(sD - dB).toFixed(4)})·P`),
+        step(`P* = ${(dA - sC).toFixed(4)} ÷ ${(sD - dB).toFixed(4)}`),
+        step(`<strong>P* = ${pStar.toFixed(4)}</strong>`, "result"),
+      ),
+    );
+
+    sections.push(
+      sec(
+        "Step 3 — Solve for Q*",
+        step(`Q* = ${dA} + (${dB}) × ${pStar.toFixed(4)}`),
+        step(`<strong>Q* = ${qStar.toFixed(4)}</strong>`, "result"),
+      ),
+    );
+
+    sections.push(
+      sec(
+        "Step 4 — Demand Elasticity at Equilibrium",
+        step("ε_d = (∂Q_d/∂P) × (P*/Q*)"),
+        step(`= ${dB} × (${pStar.toFixed(4)} / ${qStar.toFixed(4)})`),
+        step(`<strong>ε_d = ${epsilonD.toFixed(4)}</strong>`, "result"),
+        step(
+          `<strong>${clsLabels[clsD]}</strong>`,
+          clsD === "elastic"
+            ? "negative"
+            : clsD === "inelastic"
+              ? "positive"
+              : "highlight",
+        ),
+      ),
+    );
+
+    sections.push(
+      sec(
+        "Step 5 — Supply Elasticity at Equilibrium",
+        step("ε_s = (∂Q_s/∂P) × (P*/Q*)"),
+        step(`= ${sD} × (${pStar.toFixed(4)} / ${qStar.toFixed(4)})`),
+        step(`<strong>ε_s = ${epsilonS.toFixed(4)}</strong>`, "result"),
+        step(
+          `<strong>${clsLabels[clsS]}</strong>`,
+          clsS === "elastic"
+            ? "positive"
+            : clsS === "inelastic"
+              ? "highlight"
+              : "highlight",
+        ),
+      ),
+    );
+
+    sections.push(
+      sec(
+        "Step 6 — Revenue Impact (Demand)",
+        step("Revenue = Price × Quantity"),
+        clsD === "elastic"
+          ? step(
+              "Elastic demand: a price ↑ causes a larger quantity ↓ → Revenue FALLS",
+              "negative",
+            )
+          : clsD === "inelastic"
+            ? step(
+                "Inelastic demand: a price ↑ causes a smaller quantity ↓ → Revenue RISES",
+                "positive",
+              )
+            : step(
+                "Unit elastic: price ↑ and quantity ↓ exactly offset → Revenue UNCHANGED",
+                "highlight",
+              ),
+      ),
+    );
+  } else if (mode === "point") {
+    const { dqdp, p, q, epsilon, curveType } = data;
+    const absEps = Math.abs(epsilon);
+    const cls = classifyElasticity(absEps);
+
+    sections.push(
+      sec(
+        "Formula",
+        step("Point Price Elasticity = (∂q/∂p) × (p/q)"),
+        step(`= ${dqdp} × (${p} / ${q})`),
+        step(`= ${dqdp} × ${(p / q).toFixed(4)}`),
+        step(`<strong>ε = ${epsilon.toFixed(4)}</strong>`, "result"),
+      ),
+    );
+
+    sections.push(
+      sec(
+        "Classification",
+        step(`|ε| = ${absEps.toFixed(4)}`),
+        step(
+          `<strong>${clsLabels[cls]}</strong>`,
+          cls === "elastic"
+            ? "negative"
+            : cls === "inelastic"
+              ? "positive"
+              : "highlight",
+        ),
+      ),
+    );
+
+    if (curveType === "demand") {
+      sections.push(
+        sec(
+          "Revenue Impact (Demand)",
+          step("Revenue = Price × Quantity"),
+          cls === "elastic"
+            ? step("Elastic demand: price ↑ → Revenue FALLS", "negative")
+            : cls === "inelastic"
+              ? step("Inelastic demand: price ↑ → Revenue RISES", "positive")
+              : step("Unit elastic: Revenue UNCHANGED", "highlight"),
+        ),
+      );
+    }
+  } else if (mode === "solve") {
+    const { dqdp, p, q, epsilon, curveType, targetEps, solveFor } = data;
+    const absEps = Math.abs(epsilon);
+    const cls = classifyElasticity(absEps);
+
+    if (solveFor === "Q") {
+      sections.push(
+        sec(
+          "Solving for Q",
+          step("ε = (∂q/∂p) × (P/Q)  →  rearrange for Q:"),
+          step("Q = (∂q/∂p × P) / ε"),
+          step(`Q = (${dqdp} × ${p}) / ${targetEps}`),
+          step(`<strong>Q = ${q.toFixed(4)}</strong>`, "result"),
+          step(
+            `At price P = ${p}, elasticity ε = ${targetEps} holds when Q = ${q.toFixed(4)}.`,
+          ),
+        ),
+      );
+    } else {
+      sections.push(
+        sec(
+          "Solving for P",
+          step("ε = (∂q/∂p) × (P/Q)  →  rearrange for P:"),
+          step("P = (ε × Q) / (∂q/∂p)"),
+          step(`P = (${targetEps} × ${q}) / ${dqdp}`),
+          step(`<strong>P = ${p.toFixed(4)}</strong>`, "result"),
+          step(
+            `At quantity Q = ${q}, elasticity ε = ${targetEps} holds when P = ${p.toFixed(4)}.`,
+          ),
+        ),
+      );
+    }
+
+    sections.push(
+      sec(
+        "Verification",
+        step(
+          `ε = ${dqdp} × (${p.toFixed(4)} / ${q.toFixed(4)}) = ${epsilon.toFixed(4)} ✅`,
+        ),
+      ),
+    );
+  } else {
+    const { p1, q1, p2, q2, avgP, avgQ, deltaQ, deltaP, epsilon, curveType } =
+      data;
+    const absEps = Math.abs(epsilon);
+    const cls = classifyElasticity(absEps);
+
+    sections.push(
+      sec(
+        "Arc Elasticity — Midpoint Formula",
+        step("ε = (ΔQ / Q̄) ÷ (ΔP / P̄)"),
+        step(`ΔQ = ${q2} − ${q1} = ${deltaQ.toFixed(4)}`),
+        step(`ΔP = ${p2} − ${p1} = ${deltaP.toFixed(4)}`),
+        step(`Q̄ = (${q1} + ${q2}) / 2 = ${avgQ.toFixed(4)}`),
+        step(`P̄ = (${p1} + ${p2}) / 2 = ${avgP.toFixed(4)}`),
+        step(
+          `ε = (${deltaQ.toFixed(4)} / ${avgQ.toFixed(4)}) ÷ (${deltaP.toFixed(4)} / ${avgP.toFixed(4)})`,
+        ),
+        step(`= ${(deltaQ / avgQ).toFixed(4)} ÷ ${(deltaP / avgP).toFixed(4)}`),
+        step(`<strong>ε = ${epsilon.toFixed(4)}</strong>`, "result"),
+      ),
+    );
+
+    sections.push(
+      sec(
+        "Classification",
+        step(`|ε| = ${absEps.toFixed(4)}`),
+        step(
+          `<strong>${clsLabels[cls]}</strong>`,
+          cls === "elastic"
+            ? "negative"
+            : cls === "inelastic"
+              ? "positive"
+              : "highlight",
+        ),
+      ),
+    );
+
+    if (curveType === "demand") {
+      sections.push(
+        sec(
+          "Revenue Impact (Demand)",
+          step("Revenue = Price × Quantity"),
+          cls === "elastic"
+            ? step("Elastic demand: price ↑ → Revenue FALLS", "negative")
+            : cls === "inelastic"
+              ? step("Inelastic demand: price ↑ → Revenue RISES", "positive")
+              : step("Unit elastic: Revenue UNCHANGED", "highlight"),
+        ),
+      );
+    }
+  }
+
+  container.innerHTML = sections.join("");
+  document
+    .getElementById("elas-steps-toggle")
+    .setAttribute("aria-expanded", "true");
+  document.getElementById("elas-steps-body").classList.remove("hidden");
+}
+
+function drawElasticityChart(data) {
+  const canvas = document.getElementById("elas-chart-canvas");
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() => drawElasticityChart(data));
+    return;
+  }
+
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 40, right: 60, bottom: 60, left: 80 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+
+  // ── Resolve curves from data ──
+  let refP, refQ, epsilon, curveType;
+  let demandSlope, demandIntercept, supplySlope, supplyIntercept;
+  const hasEquation = data.mode === "equation";
+
+  if (hasEquation) {
+    refP = data.pStar;
+    refQ = data.qStar;
+    epsilon = data.epsilonD;
+    curveType = "demand";
+    demandSlope = data.dB;
+    demandIntercept = data.dA;
+    supplySlope = data.sD;
+    supplyIntercept = data.sC;
+  } else if (data.mode === "point" || data.mode === "solve") {
+    refP = data.p;
+    refQ = data.q;
+    epsilon = data.epsilon;
+    curveType = data.curveType;
+  } else {
+    refP = data.avgP;
+    refQ = data.avgQ;
+    epsilon = data.epsilon;
+    curveType = data.curveType;
+  }
+
+  // For non-equation modes, reconstruct a single curve from elasticity
+  if (!hasEquation) {
+    const s = curveType === "demand"
+      ? -Math.abs(epsilon) * (refQ / refP)
+      : Math.abs(epsilon) * (refQ / refP);
+    const ic = refQ - s * refP;
+    if (curveType === "demand") {
+      demandSlope = s; demandIntercept = ic;
+    } else {
+      supplySlope = s; supplyIntercept = ic;
+    }
+  }
+
+  // ── Axis bounds — same logic as micro-econ getChartBounds ──
+  const pMin = 0;
+  const qMin = 0;
+  let qMax, pMax;
+
+  if (hasEquation) {
+    // Use intercepts and equilibrium to set natural bounds
+    const dIntAbs = Math.abs(demandIntercept);
+    const pZeroDemand = demandSlope !== 0 ? Math.abs(-demandIntercept / demandSlope) : 0;
+    qMax = Math.max(dIntAbs, Math.abs(refQ) * 1.6, 1);
+    pMax = Math.max(pZeroDemand, Math.abs(refP) * 1.8, 1);
+  } else {
+    // Single curve — use ref point to set bounds
+    const slope = demandSlope !== undefined ? demandSlope : supplySlope;
+    const intercept = demandSlope !== undefined ? demandIntercept : supplyIntercept;
+    const pZero = slope !== 0 ? Math.abs(-intercept / slope) : refP * 2;
+    qMax = Math.max(Math.abs(intercept), Math.abs(refQ) * 1.6, 1);
+    pMax = Math.max(pZero, Math.abs(refP) * 1.8, 1);
+  }
+
+  function toX(q) { return padding.left + (q / qMax) * chartWidth; }
+  function toY(p) { return padding.top + chartHeight - (p / pMax) * chartHeight; }
+  function fromX(x) { return ((x - padding.left) / chartWidth) * qMax; }
+
+  const absEps = Math.abs(epsilon);
+  const cls = classifyElasticity(absEps);
+  const clsColors = { elastic: "#f472b6", inelastic: "#2dd4bf", "unit-elastic": "#f59e0b" };
+
+  // ── Offscreen static layer — must match DPR scaling of main canvas ──
+  const dpr = window.devicePixelRatio || 1;
+  const offscreen = document.createElement("canvas");
+  offscreen.width = chart.width * dpr;
+  offscreen.height = chart.height * dpr;
+  offscreen.style.width = chart.width + "px";
+  offscreen.style.height = chart.height + "px";
+  const offCtx = offscreen.getContext("2d");
+  offCtx.scale(dpr, dpr);
+
+  function drawStatic() {
+    offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
+
+    // Grid — 6 steps matching micro-econ style
+    for (let i = 0; i <= 6; i++) {
+      const p = (pMax / 6) * i;
+      const y = toY(p);
+      offCtx.strokeStyle = "rgba(148,163,184,0.12)";
+      offCtx.lineWidth = 1;
+      offCtx.beginPath();
+      offCtx.moveTo(padding.left, y);
+      offCtx.lineTo(chart.width - padding.right, y);
+      offCtx.stroke();
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.font = window.CHART_FONTS.md;
+      offCtx.textAlign = "right";
+      offCtx.fillText(p.toFixed(2), padding.left - 8, y + 4);
+    }
+    for (let i = 0; i <= 6; i++) {
+      const q = (qMax / 6) * i;
+      const x = toX(q);
+      offCtx.strokeStyle = "rgba(148,163,184,0.12)";
+      offCtx.lineWidth = 1;
+      offCtx.beginPath();
+      offCtx.moveTo(x, padding.top);
+      offCtx.lineTo(x, padding.top + chartHeight);
+      offCtx.stroke();
+      offCtx.fillStyle = "#94a3b8";
+      offCtx.font = window.CHART_FONTS.md;
+      offCtx.textAlign = "center";
+      offCtx.fillText(q.toFixed(2), x, offscreen.height - padding.bottom + 18);
+    }
+
+    // Axis labels
+    offCtx.fillStyle = "#94a3b8";
+    offCtx.font = window.CHART_FONTS.md;
+    offCtx.textAlign = "center";
+    offCtx.fillText("Quantity (Q)", chart.width / 2, chart.height - 8);
+    offCtx.save();
+    offCtx.translate(14, chart.height / 2);
+    offCtx.rotate(-Math.PI / 2);
+    offCtx.fillText("Price (P)", 0, 0);
+    offCtx.restore();
+
+    // Axes
+    offCtx.strokeStyle = "rgba(148,163,184,0.3)";
+    offCtx.lineWidth = 1;
+    offCtx.beginPath();
+    offCtx.moveTo(padding.left, padding.top);
+    offCtx.lineTo(padding.left, padding.top + chartHeight);
+    offCtx.lineTo(chart.width - padding.right, padding.top + chartHeight);
+    offCtx.stroke();
+
+    // Demand curve
+    if (demandSlope !== undefined) {
+      offCtx.strokeStyle = "#f472b6";
+      offCtx.lineWidth = 2.5;
+      offCtx.beginPath();
+      let started = false;
+      for (let p = pMin; p <= pMax; p += pMax / 300) {
+        const q = demandIntercept + demandSlope * p;
+        if (q < 0 || q > qMax * 1.02) continue;
+        if (!started) { offCtx.moveTo(toX(q), toY(p)); started = true; }
+        else offCtx.lineTo(toX(q), toY(p));
+      }
+      offCtx.stroke();
+      // Label with background box
+      const dLabelQ = qMax * 0.05;
+      const dLabelP = (dLabelQ - demandIntercept) / demandSlope;
+      if (dLabelP > 0 && dLabelP <= pMax) {
+        const dLX = toX(dLabelQ) + 5;
+        const dLY = toY(dLabelP) - 4;
+        offCtx.font = window.CHART_FONTS.boldMd;
+        const dLW = offCtx.measureText("Demand").width + 12;
+        offCtx.fillStyle = "rgba(15,23,42,0.92)";
+        offCtx.beginPath();
+        offCtx.roundRect(dLX - 4, dLY - 14, dLW, 18, 3);
+        offCtx.fill();
+        offCtx.fillStyle = "#f472b6";
+        offCtx.textAlign = "left";
+        offCtx.fillText("Demand", dLX, dLY);
+      }
+    }
+
+    // Supply curve
+    if (supplySlope !== undefined) {
+      offCtx.strokeStyle = "#2dd4bf";
+      offCtx.lineWidth = 2.5;
+      offCtx.beginPath();
+      let started = false;
+      for (let p = pMin; p <= pMax; p += pMax / 300) {
+        const q = supplyIntercept + supplySlope * p;
+        if (q < 0 || q > qMax * 1.02) continue;
+        if (!started) { offCtx.moveTo(toX(q), toY(p)); started = true; }
+        else offCtx.lineTo(toX(q), toY(p));
+      }
+      offCtx.stroke();
+      // Label — find a visible point in the upper-left region of the supply curve
+      // Try several candidate Q positions and use the first one that fits in bounds
+      const sCandidates = [qMax * 0.55, qMax * 0.45, qMax * 0.35, qMax * 0.65];
+      for (const sLabelQ of sCandidates) {
+        if (Math.abs(supplySlope) < 1e-10) break;
+        const sLabelP = (sLabelQ - supplyIntercept) / supplySlope;
+        if (sLabelP > pMax * 0.1 && sLabelP <= pMax * 0.85 && sLabelQ >= 0 && sLabelQ <= qMax) {
+          const sLX = toX(sLabelQ) + 5;
+          const sLY = toY(sLabelP) - 4;
+          offCtx.font = window.CHART_FONTS.boldMd;
+          const sLW = offCtx.measureText("Supply").width + 12;
+          offCtx.fillStyle = "rgba(15,23,42,0.92)";
+          offCtx.beginPath();
+          offCtx.roundRect(sLX - 4, sLY - 14, sLW, 18, 3);
+          offCtx.fill();
+          offCtx.fillStyle = "#2dd4bf";
+          offCtx.textAlign = "left";
+          offCtx.fillText("Supply", sLX, sLY);
+          break;
+        }
+      }
+    }
+
+    // Equilibrium point (equation mode)
+    if (hasEquation) {
+      const eqX = toX(refQ);
+      const eqY = toY(refP);
+      offCtx.strokeStyle = "rgba(245,158,11,0.5)";
+      offCtx.lineWidth = 1;
+      offCtx.setLineDash([4, 4]);
+      offCtx.beginPath();
+      offCtx.moveTo(eqX, padding.top + chartHeight);
+      offCtx.lineTo(eqX, eqY);
+      offCtx.moveTo(padding.left, eqY);
+      offCtx.lineTo(eqX, eqY);
+      offCtx.stroke();
+      offCtx.setLineDash([]);
+      offCtx.beginPath();
+      offCtx.arc(eqX, eqY, 7, 0, Math.PI * 2);
+      offCtx.fillStyle = "#f59e0b";
+      offCtx.fill();
+      offCtx.strokeStyle = "#0f172a";
+      offCtx.lineWidth = 2;
+      offCtx.stroke();
+      // P* Q* labels with background boxes like micro-econ
+      offCtx.fillStyle = "#f59e0b";
+      offCtx.font = window.CHART_FONTS.boldSm;
+      offCtx.textAlign = "right";
+      offCtx.fillText("P*=" + refP.toFixed(3), padding.left - 4, eqY + 4);
+      offCtx.textAlign = "center";
+      offCtx.fillText("Q*=" + refQ.toFixed(3), eqX, padding.top + chartHeight + 32);
+      // E label with smart positioning
+      offCtx.font = window.CHART_FONTS.boldSm;
+      const eqLabel = "E(" + refQ.toFixed(3) + ", " + refP.toFixed(3) + ")";
+      const eqLabelW = offCtx.measureText(eqLabel).width;
+      const eqLabelH = 14;
+      const eqPad = 4;
+      const eqInRight = eqX > padding.left + chartWidth * 0.6;
+      const eqLabelX = eqInRight ? eqX - eqLabelW - 14 : eqX + 12;
+      const eqNearTop = eqY < padding.top + chartHeight * 0.25;
+      const eqLabelY = eqNearTop ? eqY + 20 : eqY - 10;
+      offCtx.fillStyle = "rgba(15,23,42,0.85)";
+      offCtx.beginPath();
+      offCtx.roundRect(eqLabelX - eqPad, eqLabelY - eqLabelH, eqLabelW + eqPad * 2, eqLabelH + eqPad, 4);
+      offCtx.fill();
+      offCtx.fillStyle = "#f59e0b";
+      offCtx.textAlign = "left";
+      offCtx.fillText(eqLabel, eqLabelX, eqLabelY - 2);
+    }
+
+    // Arc mode: two observed points
+    if (data.mode === "arc") {
+      [[data.q1, data.p1], [data.q2, data.p2]].forEach(([q, p]) => {
+        offCtx.beginPath();
+        offCtx.arc(toX(q), toY(p), 5, 0, Math.PI * 2);
+        offCtx.fillStyle = "#60a5fa";
+        offCtx.fill();
+      });
+    }
+
+    // Reference point for non-equation modes
+    if (!hasEquation) {
+      const refX = toX(refQ);
+      const refY2 = toY(refP);
+      offCtx.strokeStyle = "rgba(245,158,11,0.4)";
+      offCtx.lineWidth = 1;
+      offCtx.setLineDash([4, 4]);
+      offCtx.beginPath();
+      offCtx.moveTo(refX, padding.top + chartHeight);
+      offCtx.lineTo(refX, refY2);
+      offCtx.moveTo(padding.left, refY2);
+      offCtx.lineTo(refX, refY2);
+      offCtx.stroke();
+      offCtx.setLineDash([]);
+      offCtx.beginPath();
+      offCtx.arc(refX, refY2, 7, 0, Math.PI * 2);
+      offCtx.fillStyle = "#f59e0b";
+      offCtx.fill();
+      offCtx.strokeStyle = "#0f172a";
+      offCtx.lineWidth = 2;
+      offCtx.stroke();
+      drawLabelWithBackground(offCtx, "ε = " + epsilon.toFixed(3), refX + 12, refY2 - 10,
+        { color: clsColors[cls], font: window.CHART_FONTS.boldSm, align: "left" });
+    }
+  }
+
+  drawStatic();
+
+  // ── Interactive overlay ──
+  function drawOverlay(hoverQ) {
+    ctx.clearRect(0, 0, chart.width, chart.height);
+    ctx.drawImage(offscreen, 0, 0, chart.width, chart.height);
+
+    if (hoverQ === null || hoverQ < qMin || hoverQ > qMax) return;
+
+    const hx = toX(hoverQ);
+
+    // Crosshair
+    ctx.strokeStyle = "rgba(148,163,184,0.4)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(hx, padding.top);
+    ctx.lineTo(hx, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const tooltipLines = [];
+
+    // Demand hover
+    if (demandSlope !== undefined) {
+      const hP = (hoverQ - demandIntercept) / demandSlope;
+      if (hP >= pMin && hP <= pMax) {
+        const hEps = demandSlope * (hP / hoverQ);
+        const hAbs = Math.abs(hEps);
+        const hCls = classifyElasticity(hAbs);
+        const hy = toY(hP);
+        ctx.beginPath();
+        ctx.arc(hx, hy, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#f472b6";
+        ctx.fill();
+        ctx.strokeStyle = "#0f172a";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        tooltipLines.push({ text: "Demand", color: "#f472b6", bold: true });
+        tooltipLines.push({ text: "P = " + hP.toFixed(3), color: "#e2e8f0" });
+        tooltipLines.push({ text: "Q = " + hoverQ.toFixed(3), color: "#e2e8f0" });
+        tooltipLines.push({ text: "εd = " + hEps.toFixed(3), color: clsColors[hCls], bold: true });
+        tooltipLines.push({ text: hCls === "elastic" ? "Elastic" : hCls === "inelastic" ? "Inelastic" : "Unit Elastic", color: clsColors[hCls] });
+      }
+    }
+
+    // Supply hover
+    if (supplySlope !== undefined) {
+      const hP = (hoverQ - supplyIntercept) / supplySlope;
+      if (hP >= pMin && hP <= pMax) {
+        const hEps = supplySlope * (hP / hoverQ);
+        const hAbs = Math.abs(hEps);
+        const hCls = classifyElasticity(hAbs);
+        const hy = toY(hP);
+        ctx.beginPath();
+        ctx.arc(hx, hy, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#2dd4bf";
+        ctx.fill();
+        ctx.strokeStyle = "#0f172a";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        if (tooltipLines.length > 0) tooltipLines.push({ text: "─────────", color: "#334155" });
+        tooltipLines.push({ text: "Supply", color: "#2dd4bf", bold: true });
+        tooltipLines.push({ text: "P = " + hP.toFixed(3), color: "#e2e8f0" });
+        tooltipLines.push({ text: "Q = " + hoverQ.toFixed(3), color: "#e2e8f0" });
+        tooltipLines.push({ text: "εs = " + hEps.toFixed(3), color: "#2dd4bf", bold: true });
+        tooltipLines.push({ text: hCls === "elastic" ? "Elastic" : hCls === "inelastic" ? "Inelastic" : "Unit Elastic", color: clsColors[hCls] });
+      }
+    }
+
+    if (tooltipLines.length === 0) return;
+
+    // Tooltip box
+    ctx.font = window.CHART_FONTS.md;
+    const tooltipWidth = Math.max(...tooltipLines.map(l => ctx.measureText(l.text).width)) + 24;
+    const tooltipHeight = tooltipLines.length * 20 + 12;
+    let tx = hx + 15;
+    let ty = padding.top + 10;
+    if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
+    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
+
+    const rad = 6;
+    ctx.fillStyle = "rgba(15,23,42,0.95)";
+    ctx.strokeStyle = "rgba(148,163,184,0.3)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tx + rad, ty);
+    ctx.lineTo(tx + tooltipWidth - rad, ty);
+    ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + rad, rad);
+    ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - rad);
+    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - rad, ty + tooltipHeight, rad);
+    ctx.lineTo(tx + rad, ty + tooltipHeight);
+    ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - rad, rad);
+    ctx.lineTo(tx, ty + rad);
+    ctx.arcTo(tx, ty, tx + rad, ty, rad);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = "left";
+    tooltipLines.forEach((line, i) => {
+      ctx.fillStyle = line.color || "#e2e8f0";
+      ctx.font = line.bold ? window.CHART_FONTS.boldMd : window.CHART_FONTS.md;
+      ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
+    });
+  }
+
+  drawOverlay(null);
+
+  // Bind mouse events
+  if (canvas._elasController) canvas._elasController.abort();
+  canvas._elasController = new AbortController();
+  const { signal } = canvas._elasController;
+
+  canvas.addEventListener("mousemove", rafThrottle((e) => {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = chart.width / r.width;
+    const hoverQ = fromX((e.clientX - r.left) * scaleX);
+    if (hoverQ >= qMin && hoverQ <= qMax) {
+      canvas.style.cursor = "crosshair";
+      drawOverlay(hoverQ);
+    } else {
+      canvas.style.cursor = "default";
+      drawOverlay(null);
+    }
+  }), { signal });
+
+  canvas.addEventListener("mouseleave", () => {
+    canvas.style.cursor = "default";
+    drawOverlay(null);
+  }, { signal });
+}
+
+// ===================================================================
+// TAB 2 — CROSS-PRICE ELASTICITY
+// ===================================================================
+
+document
+  .getElementById("cross-calculate")
+  .addEventListener("click", handleCrossPriceCalculate);
+bindFormEnter(() => handleCrossPriceCalculate(), "#cross-price-tab");
+
+function handleCrossPriceCalculate() {
+  const valid = validateInputs(
+    [
+      {
+        id: "cross-pj1",
+        label: "Price of Good j (Point 1)",
+        required: true,
+        min: 0.001,
+      },
+      {
+        id: "cross-qi1",
+        label: "Quantity of Good i (Point 1)",
+        required: true,
+        min: 0.001,
+      },
+      {
+        id: "cross-pj2",
+        label: "Price of Good j (Point 2)",
+        required: true,
+        min: 0.001,
+      },
+      {
+        id: "cross-qi2",
+        label: "Quantity of Good i (Point 2)",
+        required: true,
+        min: 0.001,
+      },
+    ],
+    "#cross-price-tab",
+  );
+  if (!valid) return;
+
+  const pj1 = safeParseFloat(document.getElementById("cross-pj1").value);
+  const qi1 = safeParseFloat(document.getElementById("cross-qi1").value);
+  const pj2 = safeParseFloat(document.getElementById("cross-pj2").value);
+  const qi2 = safeParseFloat(document.getElementById("cross-qi2").value);
+  const goodI =
+    document.getElementById("cross-good-i").value.trim() || "Good i";
+  const goodJ =
+    document.getElementById("cross-good-j").value.trim() || "Good j";
+
+  if (pj1 === pj2) {
+    showFieldError("cross-pj2", "Price points must be different.");
+    return;
+  }
+
+  const deltaQi = qi2 - qi1;
+  const deltaPj = pj2 - pj1;
+  const avgQi = (qi1 + qi2) / 2;
+  const avgPj = (pj1 + pj2) / 2;
+  const epsilon = deltaQi / avgQi / (deltaPj / avgPj);
+
+  let classification, interpretation;
+  if (epsilon > 0.05) {
+    classification = "substitute";
+    interpretation = `When ${goodJ} price rises, consumers buy more ${goodI} — they are substitutes.`;
+  } else if (epsilon < -0.05) {
+    classification = "complement";
+    interpretation = `When ${goodJ} price rises, consumers buy less ${goodI} — they are complements.`;
+  } else {
+    classification = "independent";
+    interpretation = `${goodI} and ${goodJ} appear to be independent goods.`;
+  }
+
+  lastCrossData = {
+    pj1,
+    qi1,
+    pj2,
+    qi2,
+    avgQi,
+    avgPj,
+    deltaQi,
+    deltaPj,
+    epsilon,
+    classification,
+    goodI,
+    goodJ,
+  };
+
+  document.getElementById("cross-value").textContent = epsilon.toFixed(4);
+  const clsLabels = {
+    substitute: "Substitutes",
+    complement: "Complements",
+    independent: "Independent",
+  };
+  document.getElementById("cross-badge").innerHTML =
+    `<span class="ct-badge ${classification}">${clsLabels[classification]}</span>`;
+  document.getElementById("cross-interpretation").textContent = interpretation;
+
+  renderCrossPriceSteps(lastCrossData);
+
+  document.getElementById("cross-results").classList.remove("hidden");
+  document.getElementById("cross-steps-section").classList.remove("hidden");
+  document.getElementById("cross-chart-section").classList.remove("hidden");
+
+  requestAnimationFrame(() => drawCrossPriceChart(lastCrossData));
+  document
+    .getElementById("cross-results")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+function renderCrossPriceSteps(data) {
+  const {
+    pj1,
+    qi1,
+    pj2,
+    qi2,
+    avgQi,
+    avgPj,
+    deltaQi,
+    deltaPj,
+    epsilon,
+    classification,
+    goodI,
+    goodJ,
+  } = data;
+  const container = document.getElementById("cross-steps-content");
+
+  function sec(title, ...items) {
+    return `<div class="ct-step-section"><div class="ct-step-section-title">${title}</div>${items.join("")}</div>`;
+  }
+  function step(text, cls = "") {
+    return `<div class="ct-step ${cls}">${text}</div>`;
+  }
+
+  const clsColor = {
+    substitute: "positive",
+    complement: "negative",
+    independent: "highlight",
+  };
+  const clsLabel = {
+    substitute: "Substitutes (ε > 0)",
+    complement: "Complements (ε < 0)",
+    independent: "Independent (ε ≈ 0)",
+  };
+
+  container.innerHTML = [
+    sec(
+      "Cross-Price Elasticity — Midpoint Formula",
+      step(
+        `ε(${goodI}, ${goodJ}) = (ΔQ${goodI} / Q̄${goodI}) ÷ (ΔP${goodJ} / P̄${goodJ})`,
+      ),
+      step(`ΔQ${goodI} = ${qi2} − ${qi1} = ${deltaQi.toFixed(4)}`),
+      step(`ΔP${goodJ} = ${pj2} − ${pj1} = ${deltaPj.toFixed(4)}`),
+      step(`Q̄${goodI} = (${qi1} + ${qi2}) / 2 = ${avgQi.toFixed(4)}`),
+      step(`P̄${goodJ} = (${pj1} + ${pj2}) / 2 = ${avgPj.toFixed(4)}`),
+      step(
+        `ε = (${deltaQi.toFixed(4)} / ${avgQi.toFixed(4)}) ÷ (${deltaPj.toFixed(4)} / ${avgPj.toFixed(4)})`,
+      ),
+      step(`<strong>ε = ${epsilon.toFixed(4)}</strong>`, "result"),
+    ),
+    sec(
+      "Classification",
+      step(`ε = ${epsilon.toFixed(4)}`),
+      step(
+        `<strong>${clsLabel[classification]}</strong>`,
+        clsColor[classification],
+      ),
+    ),
+  ].join("");
+
+  document
+    .getElementById("cross-steps-toggle")
+    .setAttribute("aria-expanded", "true");
+  document.getElementById("cross-steps-body").classList.remove("hidden");
+}
+
+function drawCrossPriceChart(data) {
+  const canvas = document.getElementById("cross-chart-canvas");
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() => drawCrossPriceChart(data));
+    return;
+  }
+
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 40, right: 40, bottom: 60, left: 80 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+
+  const { pj1, qi1, pj2, qi2, epsilon, classification, goodI, goodJ } = data;
+
+  const pMin = Math.min(pj1, pj2) * 0.5;
+  const pMax = Math.max(pj1, pj2) * 1.8;
+  const slope = (qi2 - qi1) / (pj2 - pj1);
+  const intercept = qi1 - slope * pj1;
+  const qAtPMin = intercept + slope * pMin;
+  const qAtPMax = intercept + slope * pMax;
+  const qMin = Math.min(qAtPMin, qAtPMax, qi1, qi2) * 0.7;
+  const qMax = Math.max(qAtPMin, qAtPMax, qi1, qi2) * 1.3;
+
+  function toX(p) {
+    return padding.left + ((p - pMin) / (pMax - pMin)) * chartWidth;
+  }
+  function toY(q) {
+    return (
+      padding.top + chartHeight - ((q - qMin) / (qMax - qMin)) * chartHeight
+    );
+  }
+
+  chart.clear();
+
+  for (let i = 0; i <= 5; i++) {
+    const p = pMin + ((pMax - pMin) / 5) * i;
+    const x = toX(p);
+    ctx.strokeStyle = "rgba(148,163,184,0.12)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, padding.top);
+    ctx.lineTo(x, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = window.CHART_FONTS.sm;
+    ctx.textAlign = "center";
+    ctx.fillText(p.toFixed(2), x, chart.height - padding.bottom + 18);
+  }
+  for (let i = 0; i <= 5; i++) {
+    const q = qMin + ((qMax - qMin) / 5) * i;
+    const y = toY(q);
+    ctx.strokeStyle = "rgba(148,163,184,0.12)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(padding.left + chartWidth, y);
+    ctx.stroke();
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = window.CHART_FONTS.sm;
+    ctx.textAlign = "right";
+    ctx.fillText(q.toFixed(1), padding.left - 8, y + 4);
+  }
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = window.CHART_FONTS.md;
+  ctx.textAlign = "center";
+  ctx.fillText(`Price of ${goodJ}`, chart.width / 2, chart.height - 8);
+  ctx.save();
+  ctx.translate(14, chart.height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(`Quantity of ${goodI}`, 0, 0);
+  ctx.restore();
+
+  ctx.strokeStyle = "rgba(148,163,184,0.3)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding.left, padding.top);
+  ctx.lineTo(padding.left, padding.top + chartHeight);
+  ctx.lineTo(padding.left + chartWidth, padding.top + chartHeight);
+  ctx.stroke();
+
+  const lineColor =
+    classification === "substitute"
+      ? "#4ade80"
+      : classification === "complement"
+        ? "#f472b6"
+        : "#94a3b8";
+  ctx.strokeStyle = lineColor;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(toX(pMin), toY(intercept + slope * pMin));
+  ctx.lineTo(toX(pMax), toY(intercept + slope * pMax));
+  ctx.stroke();
+
+  [
+    { p: pj1, q: qi1 },
+    { p: pj2, q: qi2 },
+  ].forEach(({ p, q }) => {
+    ctx.beginPath();
+    ctx.arc(toX(p), toY(q), 6, 0, Math.PI * 2);
+    ctx.fillStyle = lineColor;
+    ctx.fill();
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+
+  const clsLabels = {
+    substitute: "Substitutes",
+    complement: "Complements",
+    independent: "Independent",
+  };
+  drawLabelWithBackground(
+    ctx,
+    `ε = ${epsilon.toFixed(3)} (${clsLabels[classification]})`,
+    toX((pj1 + pj2) / 2),
+    toY((qi1 + qi2) / 2) - 16,
+    { color: lineColor, font: window.CHART_FONTS.boldSm, align: "center" },
+  );
+}
+
+// ===================================================================
+// TAB 3 — EXPECTED UTILITY
+// ===================================================================
+
+document
+  .getElementById("eu-utility-selector")
+  .addEventListener("click", (e) => {
+    const btn = e.target.closest(".ct-utility-btn");
+    if (!btn) return;
+    document
+      .getElementById("eu-utility-selector")
+      .querySelectorAll(".ct-utility-btn")
+      .forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    euUtilityFn = btn.dataset.fn;
+  });
+
+document.getElementById("eu-add-option").addEventListener("click", () => {
+  if (euOptionCount >= 3) return;
+  addEUOption();
+});
+
+document
+  .getElementById("eu-calculate")
+  .addEventListener("click", handleEUCalculate);
+
+function addEUOption(name = "") {
+  euOptionCount++;
+  const id = euOptionCount;
+  const colors = ["var(--accent)", "#60a5fa", "#a855f7"];
+  const color = colors[(id - 1) % 3];
+  const defaultName = name || `Option ${id}`;
+
+  const card = document.createElement("div");
+  card.className = "ct-option-card";
+  card.dataset.optionId = id;
+  card.innerHTML = `
+    <div class="ct-option-header">
+      <span class="ct-option-title" style="color:${color};">${defaultName}</span>
+      <button class="cost-remove eu-remove-option" aria-label="Remove option">✕ Remove</button>
+    </div>
+    <div class="ct-outcome-header">
+      <span>Probability (0–1)</span>
+      <span>Payoff ($K)</span>
+      <span></span>
+    </div>
+    <div class="eu-outcomes-${id}"></div>
+    <button class="btn-secondary eu-add-outcome" data-option="${id}" style="font-size:0.8rem; margin-top:0.5rem;">+ Add Outcome</button>
+    <div class="eu-prob-status-${id}" style="margin-top:0.35rem;"></div>
+  `;
+
+  card.querySelector(".eu-remove-option").addEventListener("click", () => {
+    card.remove();
+    euOptionCount = Math.max(0, euOptionCount - 1);
+  });
+
+  card.querySelector(".eu-add-outcome").addEventListener("click", () => {
+    addEUOutcomeRow(id);
+  });
+
+  document.getElementById("eu-options-list").appendChild(card);
+  addEUOutcomeRow(id);
+  addEUOutcomeRow(id);
+}
+
+function addEUOutcomeRow(optionId) {
+  const container = document.querySelector(`.eu-outcomes-${optionId}`);
+  if (!container) return;
+  const row = document.createElement("div");
+  row.className = "ct-outcome-row";
+  row.innerHTML = `
+    <input type="number" class="eu-prob" placeholder="e.g. 0.5" min="0" max="1" step="any" />
+    <input type="number" class="eu-payoff" placeholder="e.g. 100" step="any" />
+    <button class="ct-outcome-remove" aria-label="Remove outcome">✕</button>
+  `;
+  row.querySelector(".ct-outcome-remove").addEventListener("click", () => {
+    row.remove();
+    updateProbStatus(optionId);
+  });
+  row
+    .querySelectorAll("input")
+    .forEach((inp) =>
+      inp.addEventListener("input", () => updateProbStatus(optionId)),
+    );
+  container.appendChild(row);
+  updateProbStatus(optionId);
+}
+
+function updateProbStatus(optionId) {
+  const container = document.querySelector(`.eu-outcomes-${optionId}`);
+  const statusEl = document.querySelector(`.eu-prob-status-${optionId}`);
+  if (!container || !statusEl) return;
+  const probs = Array.from(container.querySelectorAll(".eu-prob")).map((i) =>
+    safeParseFloat(i.value, 0),
+  );
+  const total = probs.reduce((s, p) => s + p, 0);
+  if (Math.abs(total - 1) < 0.001) {
+    statusEl.className = "ct-prob-ok";
+    statusEl.textContent = "✅ Probabilities sum to 1.0";
+  } else {
+    statusEl.className = "ct-prob-warning";
+    statusEl.textContent = `⚠️ Probabilities sum to ${total.toFixed(3)} — must equal 1.0`;
+  }
+}
+
+function getEUOptionData(optionId) {
+  const container = document.querySelector(`.eu-outcomes-${optionId}`);
+  if (!container) return null;
+  const rows = container.querySelectorAll(".ct-outcome-row");
+  const outcomes = Array.from(rows)
+    .map((row) => ({
+      prob: safeParseFloat(row.querySelector(".eu-prob").value, 0),
+      payoff: safeParseFloat(row.querySelector(".eu-payoff").value, 0),
+    }))
+    .filter((o) => o.prob > 0);
+  if (outcomes.length === 0) return null;
+  const totalProb = outcomes.reduce((s, o) => s + o.prob, 0);
+  if (Math.abs(totalProb - 1) > 0.01) return null;
+  return outcomes;
+}
+
+function handleEUCalculate() {
+  const optionCards = document.querySelectorAll(
+    "#eu-options-list.ct-option-card",
+  );
+  if (optionCards.length === 0) {
+    return;
+  }
+
+  const results = [];
+  let hasError = false;
+
+  optionCards.forEach((card) => {
+    const id = card.dataset.optionId;
+    const outcomes = getEUOptionData(id);
+    const title = card.querySelector(".ct-option-title").textContent;
+    if (!outcomes) {
+      hasError = true;
+      return;
+    }
+    const expectedPayoff = outcomes.reduce((s, o) => s + o.prob * o.payoff, 0);
+    const expectedUtility = outcomes.reduce((s, o) => {
+      const u = applyUtility(o.payoff, euUtilityFn);
+      return u !== null ? s + o.prob * u : s;
+    }, 0);
+    results.push({ id, title, outcomes, expectedPayoff, expectedUtility });
+  });
+
+  if (hasError || results.length === 0) {
+    return;
+  }
+
+  const winner = results.reduce(
+    (best, r) => (r.expectedUtility > best.expectedUtility ? r : best),
+    results[0],
+  );
+  lastEUData = { results, winner, fn: euUtilityFn };
+
+  const compEl = document.getElementById("eu-comparison");
+  compEl.innerHTML = results
+    .map(
+      (r) => `
+    <div class="ct-eu-col ${r.id === winner.id ? "winner" : ""}">
+      <h3>${r.title}${r.id === winner.id ? " 🏆" : ""}</h3>
+      <div class="result-item" style="margin-bottom:0.5rem;">
+        <span class="result-label">Expected Payoff</span>
+        <span class="result-value" style="font-size:1.1rem;">${r.expectedPayoff.toFixed(2)}</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Expected Utility</span>
+        <span class="result-value accent" style="font-size:1.1rem;">${r.expectedUtility.toFixed(4)}</span>
+      </div>
+    </div>
+  `,
+    )
+    .join("");
+
+  document.getElementById("eu-winner").textContent = winner.title;
+  document.getElementById("eu-fn-display").textContent =
+    utilityFnLabel(euUtilityFn);
+
+  renderEUSteps(lastEUData);
+
+  document.getElementById("eu-results").classList.remove("hidden");
+  document.getElementById("eu-steps-section").classList.remove("hidden");
+  document.getElementById("eu-chart-section").classList.remove("hidden");
+
+  requestAnimationFrame(() => drawUtilityCurveEU(lastEUData));
+  document.getElementById("eu-results").scrollIntoView({ behavior: "smooth" });
+}
+
+function renderEUSteps(data) {
+  const { results, winner, fn } = data;
+  const container = document.getElementById("eu-steps-content");
+
+  function sec(title, ...items) {
+    return `<div class="ct-step-section"><div class="ct-step-section-title">${title}</div>${items.join("")}</div>`;
+  }
+  function step(text, cls = "") {
+    return `<div class="ct-step ${cls}">${text}</div>`;
+  }
+
+  const sections = [];
+
+  sections.push(
+    sec(
+      "Utility Function",
+      step(`Selected: <strong>${utilityFnLabel(fn)}</strong>`, "highlight"),
+      step(
+        fn === "sqrt" || fn === "log"
+          ? "Concave function → Risk-averse agent (diminishing marginal utility)"
+          : fn === "linear"
+            ? "Linear function → Risk-neutral agent"
+            : "Convex function → Risk-seeking agent (increasing marginal utility)",
+      ),
+    ),
+  );
+
+  results.forEach((r, idx) => {
+    const outcomeLines = r.outcomes.map((o) => {
+      const u = applyUtility(o.payoff, fn);
+      return step(
+        `p=${o.prob} × u(${o.payoff}) = ${o.prob} × ${u !== null ? u.toFixed(4) : "N/A"} = ${u !== null ? (o.prob * u).toFixed(4) : "N/A"}`,
+      );
+    });
+    sections.push(
+      sec(
+        `${r.title} — Expected Utility`,
+        step(
+          `E[Payoff] = ${r.outcomes.map((o) => `${o.prob}×${o.payoff}`).join(" + ")} = ${r.expectedPayoff.toFixed(4)}`,
+        ),
+        step(`E[U] = Σ p × u(payoff):`),
+        ...outcomeLines,
+        step(
+          `<strong>E[U(${r.title})] = ${r.expectedUtility.toFixed(4)}</strong>`,
+          "result",
+        ),
+      ),
+    );
+  });
+
+  sections.push(
+    sec(
+      "Decision",
+      step(`Compare expected utilities:`),
+      ...results.map((r) =>
+        step(
+          `${r.title}: E[U] = ${r.expectedUtility.toFixed(4)}${r.id === winner.id ? " ← HIGHEST" : ""}`,
+          r.id === winner.id ? "positive" : "",
+        ),
+      ),
+      step(
+        `<strong>Choose ${winner.title}</strong> — it maximizes expected utility.`,
+        "result",
+      ),
+    ),
+  );
+
+  container.innerHTML = sections.join("");
+  document
+    .getElementById("eu-steps-toggle")
+    .setAttribute("aria-expanded", "true");
+  document.getElementById("eu-steps-body").classList.remove("hidden");
+}
+
+function drawUtilityCurveEU(data) {
+  const canvas = document.getElementById("eu-chart-canvas");
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() => drawUtilityCurveEU(data));
+    return;
+  }
+
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 40, right: 40, bottom: 60, left: 80 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+
+  const { results, fn } = data;
+  const allPayoffs = results.flatMap((r) => r.outcomes.map((o) => o.payoff));
+  const xMin = 0;
+  const xMax = Math.max(...allPayoffs) * 1.3;
+  const allU = allPayoffs
+    .map((x) => applyUtility(x, fn))
+    .filter((u) => u !== null);
+  const yMin = 0;
+  const yMax = Math.max(...allU) * 1.3;
+
+  function toX(x) {
+    return padding.left + (x / xMax) * chartWidth;
+  }
+  function toY(u) {
+    return padding.top + chartHeight - (u / yMax) * chartHeight;
+  }
+
+  chart.clear();
+
+  for (let i = 0; i <= 5; i++) {
+    const x = (xMax / 5) * i;
+    ctx.strokeStyle = "rgba(148,163,184,0.12)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(toX(x), padding.top);
+    ctx.lineTo(toX(x), padding.top + chartHeight);
+    ctx.stroke();
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = window.CHART_FONTS.sm;
+    ctx.textAlign = "center";
+    ctx.fillText(x.toFixed(0), toX(x), chart.height - padding.bottom + 18);
+  }
+  for (let i = 0; i <= 5; i++) {
+    const u = (yMax / 5) * i;
+    ctx.strokeStyle = "rgba(148,163,184,0.12)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, toY(u));
+    ctx.lineTo(padding.left + chartWidth, toY(u));
+    ctx.stroke();
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = window.CHART_FONTS.sm;
+    ctx.textAlign = "right";
+    ctx.fillText(u.toFixed(2), padding.left - 8, toY(u) + 4);
+  }
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = window.CHART_FONTS.md;
+  ctx.textAlign = "center";
+  ctx.fillText("Payoff ($K)", chart.width / 2, chart.height - 8);
+  ctx.save();
+  ctx.translate(14, chart.height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("Utility u(x)", 0, 0);
+  ctx.restore();
+
+  ctx.strokeStyle = "rgba(148,163,184,0.3)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding.left, padding.top);
+  ctx.lineTo(padding.left, padding.top + chartHeight);
+  ctx.lineTo(padding.left + chartWidth, padding.top + chartHeight);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#a855f7";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  let started = false;
+  for (let x = xMin; x <= xMax; x += xMax / 300) {
+    const u = applyUtility(x, fn);
+    if (u === null || u > yMax * 1.05) continue;
+    if (!started) {
+      ctx.moveTo(toX(x), toY(u));
+      started = true;
+    } else ctx.lineTo(toX(x), toY(u));
+  }
+  ctx.stroke();
+
+  drawLabelWithBackground(
+    ctx,
+    utilityFnLabel(fn),
+    padding.left + chartWidth - 5,
+    padding.top + 20,
+    { color: "#a855f7", font: window.CHART_FONTS.boldSm, align: "right" },
+  );
+
+  const optColors = ["#2dd4bf", "#60a5fa", "#f59e0b"];
+  results.forEach((r, idx) => {
+    const color = optColors[idx % optColors.length];
+    r.outcomes.forEach((o) => {
+      const u = applyUtility(o.payoff, fn);
+      if (u === null) return;
+      ctx.beginPath();
+      ctx.arc(toX(o.payoff), toY(u), 5, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+
+    const epX = toX(r.expectedPayoff);
+    const epU = applyUtility(r.expectedPayoff, fn);
+    const euY = toY(r.expectedUtility);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(epX, padding.top + chartHeight);
+    ctx.lineTo(epX, epU !== null ? toY(epU) : padding.top);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.moveTo(padding.left, euY);
+    ctx.lineTo(epX, euY);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.arc(epX, euY, 6, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    drawLabelWithBackground(
+      ctx,
+      `${r.title}: E[U]=${r.expectedUtility.toFixed(2)}`,
+      epX + 8,
+      euY - 8,
+      { color, font: window.CHART_FONTS.boldSm, align: "left" },
+    );
+  });
+}
+
+// ===================================================================
+// TAB 4 — RISK PREMIUM
+// ===================================================================
+
+document
+  .getElementById("rp-utility-selector")
+  .addEventListener("click", (e) => {
+    const btn = e.target.closest(".ct-utility-btn");
+    if (!btn) return;
+    document
+      .getElementById("rp-utility-selector")
+      .querySelectorAll(".ct-utility-btn")
+      .forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    rpUtilityFn = btn.dataset.fn;
+  });
+
+document
+  .getElementById("rp-add-outcome")
+  .addEventListener("click", addRPOutcomeRow);
+document
+  .getElementById("rp-calculate")
+  .addEventListener("click", handleRPCalculate);
+
+function addRPOutcomeRow() {
+  rpOutcomeCount++;
+  const container = document.getElementById("rp-outcomes-list");
+  const row = document.createElement("div");
+  row.className = "ct-outcome-row";
+  row.innerHTML = `
+    <input type="number" class="rp-prob" placeholder="e.g. 0.5" min="0" max="1" step="any" />
+    <input type="number" class="rp-payoff" placeholder="e.g. 100" step="any" />
+    <button class="ct-outcome-remove" aria-label="Remove outcome">✕</button>
+  `;
+  row.querySelector(".ct-outcome-remove").addEventListener("click", () => {
+    row.remove();
+    updateRPProbStatus();
+  });
+  row
+    .querySelectorAll("input")
+    .forEach((inp) => inp.addEventListener("input", updateRPProbStatus));
+  container.appendChild(row);
+  updateRPProbStatus();
+}
+
+function updateRPProbStatus() {
+  const probs = Array.from(document.querySelectorAll(".rp-prob")).map((i) =>
+    safeParseFloat(i.value, 0),
+  );
+  const total = probs.reduce((s, p) => s + p, 0);
+  let statusEl = document.getElementById("rp-prob-status");
+  if (!statusEl) {
+    statusEl = document.createElement("div");
+    statusEl.id = "rp-prob-status";
+    document.getElementById("rp-outcomes-list").after(statusEl);
+  }
+  if (Math.abs(total - 1) < 0.001) {
+    statusEl.className = "ct-prob-ok";
+    statusEl.textContent = "✅ Probabilities sum to 1.0";
+  } else {
+    statusEl.className = "ct-prob-warning";
+    statusEl.textContent = `⚠️ Probabilities sum to ${total.toFixed(3)} — must equal 1.0`;
+  }
+}
+
+function solveForCertaintyEquivalent(expectedUtility, fn) {
+  return inverseUtility(expectedUtility, fn);
+}
+
+function handleRPCalculate() {
+  const rows = document.querySelectorAll("#rp-outcomes-list.ct-outcome-row");
+  if (rows.length === 0) return;
+
+  const outcomes = Array.from(rows)
+    .map((row) => ({
+      prob: safeParseFloat(row.querySelector(".rp-prob").value, 0),
+      payoff: safeParseFloat(row.querySelector(".rp-payoff").value, 0),
+    }))
+    .filter((o) => o.prob > 0);
+
+  if (outcomes.length === 0) return;
+
+  const totalProb = outcomes.reduce((s, o) => s + o.prob, 0);
+  if (Math.abs(totalProb - 1) > 0.01) return;
+
+  const expectedPayoff = outcomes.reduce((s, o) => s + o.prob * o.payoff, 0);
+  const expectedUtility = outcomes.reduce((s, o) => {
+    const u = applyUtility(o.payoff, rpUtilityFn);
+    return u !== null ? s + o.prob * u : s;
+  }, 0);
+
+  const ce = solveForCertaintyEquivalent(expectedUtility, rpUtilityFn);
+  const riskPremium = expectedPayoff - ce;
+  const wtp = ce;
+
+  let attitude;
+  if (riskPremium > 0.001) attitude = "Risk-Averse";
+  else if (riskPremium < -0.001) attitude = "Risk-Seeking";
+  else attitude = "Risk-Neutral";
+
+  lastRPData = {
+    outcomes,
+    expectedPayoff,
+    expectedUtility,
+    ce,
+    riskPremium,
+    wtp,
+    fn: rpUtilityFn,
+    attitude,
+  };
+
+  document.getElementById("rp-expected-payoff").textContent =
+    expectedPayoff.toFixed(4);
+  document.getElementById("rp-expected-utility").textContent =
+    expectedUtility.toFixed(4);
+  document.getElementById("rp-ce").textContent = ce.toFixed(4);
+  document.getElementById("rp-premium").textContent = riskPremium.toFixed(4);
+  document.getElementById("rp-wtp").textContent = wtp.toFixed(4);
+  document.getElementById("rp-attitude").textContent = attitude;
+
+  renderRPSteps(lastRPData);
+
+  document.getElementById("rp-results").classList.remove("hidden");
+  document.getElementById("rp-steps-section").classList.remove("hidden");
+  document.getElementById("rp-chart-section").classList.remove("hidden");
+
+  requestAnimationFrame(() => drawRiskPremiumChart(lastRPData));
+  document.getElementById("rp-results").scrollIntoView({ behavior: "smooth" });
+}
+
+function renderRPSteps(data) {
+  const {
+    outcomes,
+    expectedPayoff,
+    expectedUtility,
+    ce,
+    riskPremium,
+    fn,
+    attitude,
+  } = data;
+  const container = document.getElementById("rp-steps-content");
+
+  function sec(title, ...items) {
+    return `<div class="ct-step-section"><div class="ct-step-section-title">${title}</div>${items.join("")}</div>`;
+  }
+  function step(text, cls = "") {
+    return `<div class="ct-step ${cls}">${text}</div>`;
+  }
+
+  container.innerHTML = [
+    sec(
+      "Step 1 — Expected Payoff",
+      step(
+        `E[X] = ${outcomes.map((o) => `${o.prob} × ${o.payoff}`).join(" + ")}`,
+      ),
+      step(`<strong>E[X] = ${expectedPayoff.toFixed(4)}</strong>`, "result"),
+    ),
+    sec(
+      "Step 2 — Expected Utility",
+      step(`E[U] = Σ p × ${utilityFnLabel(fn)}`),
+      ...outcomes.map((o) => {
+        const u = applyUtility(o.payoff, fn);
+        return step(
+          `p=${o.prob} × u(${o.payoff}) = ${o.prob} × ${u !== null ? u.toFixed(4) : "N/A"} = ${u !== null ? (o.prob * u).toFixed(4) : "N/A"}`,
+        );
+      }),
+      step(`<strong>E[U] = ${expectedUtility.toFixed(4)}</strong>`, "result"),
+    ),
+    sec(
+      "Step 3 — Certainty Equivalent",
+      step(`Solve: u(CE) = E[U]`),
+      step(`${utilityFnLabel(fn)} = ${expectedUtility.toFixed(4)}`),
+      step(
+        `CE = ${fn === "sqrt" ? `(${expectedUtility.toFixed(4)})²` : fn === "log" ? `e^${expectedUtility.toFixed(4)}` : fn === "linear" ? `${expectedUtility.toFixed(4)}` : `√${expectedUtility.toFixed(4)}`}`,
+      ),
+      step(`<strong>CE = ${ce.toFixed(4)}</strong>`, "highlight"),
+    ),
+    sec(
+      "Step 4 — Risk Premium",
+      step(`Risk Premium = E[X] − CE`),
+      step(`= ${expectedPayoff.toFixed(4)} − ${ce.toFixed(4)}`),
+      step(
+        `<strong>Risk Premium = ${riskPremium.toFixed(4)}</strong>`,
+        riskPremium > 0
+          ? "negative"
+          : riskPremium < 0
+            ? "positive"
+            : "highlight",
+      ),
+      step(
+        riskPremium > 0
+          ? `The agent is ${attitude} — they would give up ${riskPremium.toFixed(4)} in expected value to eliminate risk.`
+          : riskPremium < 0
+            ? `The agent is ${attitude} — they require a premium to accept a certain payoff over the gamble.`
+            : `The agent is ${attitude} — risk has no cost.`,
+      ),
+    ),
+  ].join("");
+
+  document
+    .getElementById("rp-steps-toggle")
+    .setAttribute("aria-expanded", "true");
+  document.getElementById("rp-steps-body").classList.remove("hidden");
+}
+
+function drawRiskPremiumChart(data) {
+  const canvas = document.getElementById("rp-chart-canvas");
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() => drawRiskPremiumChart(data));
+    return;
+  }
+
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 40, right: 60, bottom: 60, left: 80 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+
+  const { outcomes, expectedPayoff, expectedUtility, ce, riskPremium, fn } =
+    data;
+  const allPayoffs = outcomes.map((o) => o.payoff);
+  const xMax = Math.max(...allPayoffs, expectedPayoff, ce) * 1.3;
+  const xMin = 0;
+  const allU = allPayoffs
+    .map((x) => applyUtility(x, fn))
+    .filter((u) => u !== null);
+  const yMax = Math.max(...allU, expectedUtility) * 1.3;
+  const yMin = 0;
+
+  function toX(x) {
+    return padding.left + ((x - xMin) / (xMax - xMin)) * chartWidth;
+  }
+  function toY(u) {
+    return (
+      padding.top + chartHeight - ((u - yMin) / (yMax - yMin)) * chartHeight
+    );
+  }
+
+  chart.clear();
+
+  for (let i = 0; i <= 5; i++) {
+    const x = (xMax / 5) * i;
+    ctx.strokeStyle = "rgba(148,163,184,0.12)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(toX(x), padding.top);
+    ctx.lineTo(toX(x), padding.top + chartHeight);
+    ctx.stroke();
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = window.CHART_FONTS.sm;
+    ctx.textAlign = "center";
+    ctx.fillText(x.toFixed(0), toX(x), chart.height - padding.bottom + 18);
+  }
+  for (let i = 0; i <= 5; i++) {
+    const u = (yMax / 5) * i;
+    ctx.strokeStyle = "rgba(148,163,184,0.12)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, toY(u));
+    ctx.lineTo(padding.left + chartWidth, toY(u));
+    ctx.stroke();
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = window.CHART_FONTS.sm;
+    ctx.textAlign = "right";
+    ctx.fillText(u.toFixed(2), padding.left - 8, toY(u) + 4);
+  }
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = window.CHART_FONTS.md;
+  ctx.textAlign = "center";
+  ctx.fillText("Wealth / Payoff ($K)", chart.width / 2, chart.height - 8);
+  ctx.save();
+  ctx.translate(14, chart.height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("Utility u(x)", 0, 0);
+  ctx.restore();
+
+  ctx.strokeStyle = "rgba(148,163,184,0.3)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding.left, padding.top);
+  ctx.lineTo(padding.left, padding.top + chartHeight);
+  ctx.lineTo(padding.left + chartWidth, padding.top + chartHeight);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#a855f7";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  let started = false;
+  for (let x = xMin; x <= xMax; x += xMax / 300) {
+    const u = applyUtility(x, fn);
+    if (u === null || u > yMax * 1.05) continue;
+    if (!started) {
+      ctx.moveTo(toX(x), toY(u));
+      started = true;
+    } else ctx.lineTo(toX(x), toY(u));
+  }
+  ctx.stroke();
+
+  drawLabelWithBackground(
+    ctx,
+    utilityFnLabel(fn),
+    padding.left + chartWidth - 5,
+    padding.top + 20,
+    { color: "#a855f7", font: window.CHART_FONTS.boldSm, align: "right" },
+  );
+
+  outcomes.forEach((o) => {
+    const u = applyUtility(o.payoff, fn);
+    if (u === null) return;
+    ctx.beginPath();
+    ctx.arc(toX(o.payoff), toY(u), 6, 0, Math.PI * 2);
+    ctx.fillStyle = "#60a5fa";
+    ctx.fill();
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    drawLabelWithBackground(ctx, `x=${o.payoff}`, toX(o.payoff), toY(u) - 12, {
+      color: "#60a5fa",
+      font: window.CHART_FONTS.xs,
+      align: "center",
+    });
+  });
+
+  const euY = toY(expectedUtility);
+  const epX = toX(expectedPayoff);
+  const ceX = toX(ce);
+  const ceU = applyUtility(ce, fn);
+  const ceY = ceU !== null ? toY(ceU) : euY;
+
+  ctx.strokeStyle = "rgba(148,163,184,0.5)";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(padding.left, euY);
+  ctx.lineTo(epX, euY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+  ctx.arc(epX, euY, 6, 0, Math.PI * 2);
+  ctx.fillStyle = "#f59e0b";
+  ctx.fill();
+  ctx.strokeStyle = "#0f172a";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  drawLabelWithBackground(
+    ctx,
+    `E[X]=${expectedPayoff.toFixed(2)}`,
+    epX,
+    padding.top + chartHeight + 32,
+    { color: "#f59e0b", font: window.CHART_FONTS.boldSm, align: "center" },
+  );
+
+  ctx.beginPath();
+  ctx.arc(ceX, ceY, 6, 0, Math.PI * 2);
+  ctx.fillStyle = "#a855f7";
+  ctx.fill();
+  ctx.strokeStyle = "#0f172a";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  drawLabelWithBackground(
+    ctx,
+    `CE=${ce.toFixed(2)}`,
+    ceX,
+    padding.top + chartHeight + 32,
+    { color: "#a855f7", font: window.CHART_FONTS.boldSm, align: "center" },
+  );
+
+  if (Math.abs(riskPremium) > 0.001 && ceX !== epX) {
+    const midX = (ceX + epX) / 2;
+    const arrowY = padding.top + chartHeight + 44;
+    ctx.strokeStyle = "#f472b6";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(ceX, arrowY);
+    ctx.lineTo(epX, arrowY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(epX, arrowY - 4);
+    ctx.lineTo(epX + 6, arrowY);
+    ctx.lineTo(epX, arrowY + 4);
+    ctx.fillStyle = "#f472b6";
+    ctx.fill();
+    drawLabelWithBackground(
+      ctx,
+      `Risk Premium = ${riskPremium.toFixed(2)}`,
+      midX,
+      arrowY - 6,
+      { color: "#f472b6", font: window.CHART_FONTS.boldSm, align: "center" },
+    );
+  }
+}
+
+// ===================================================================
+// RESIZE HANDLER
+// ===================================================================
+
+let ctResizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(ctResizeTimeout);
+  ctResizeTimeout = setTimeout(() => {
+    if (lastElasData) drawElasticityChart(lastElasData);
+    if (lastCrossData) drawCrossPriceChart(lastCrossData);
+    if (lastEUData) drawUtilityCurveEU(lastEUData);
+    if (lastRPData) drawRiskPremiumChart(lastRPData);
+  }, 250);
+});
+
+// ===================================================================
+// INITIALIZE DEFAULT STATE
+// ===================================================================
+
+addEUOption("Option A");
+addEUOption("Option B");
+addRPOutcomeRow();
+addRPOutcomeRow();
 
 
 ============================================================
@@ -12975,7 +15666,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
       ctx.lineTo(chart.width - padding.right, y);
       ctx.stroke();
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
+      ctx.font = window.CHART_FONTS.sm;
       ctx.textAlign = "right";
       ctx.fillText(formatCurrency(value), padding.left - 8, y + 4);
     }
@@ -12987,7 +15678,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
       const age = profile.currentAge + yr;
       const x = toX(age);
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "10px sans-serif";
+      ctx.font = window.CHART_FONTS.xs;
       ctx.fillText(`${age}`, x, chart.height - padding.bottom + 16);
       ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
       ctx.lineWidth = 1;
@@ -12998,7 +15689,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
     }
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     ctx.textAlign = "center";
     ctx.fillText("Age", chart.width / 2, chart.height - 5);
 
@@ -13013,7 +15704,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
     ctx.stroke();
     ctx.setLineDash([]);
     drawLabelWithBackground(ctx, "You retire here", retireX, padding.top - 10,
-      { color: "#94a3b8", font: "11px sans-serif", align: "center" });
+      { color: "#94a3b8", font: window.CHART_FONTS.sm, align: "center" });
 
     // Drawdown fills (back to front so 3% is on top)
     [...scenarios].reverse().forEach((s) => {
@@ -13073,7 +15764,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
     ctx.stroke();
     ctx.setLineDash([]);
     drawLabelWithBackground(ctx, `FIRE: ${formatCurrency(fireTarget)}`, padding.left + 4, toY(fireTarget) - 6,
-      { color: "#ef4444", font: "10px sans-serif", align: "left" });
+      { color: "#ef4444", font: window.CHART_FONTS.xs, align: "left" });
 
     // Crosshair
     if (highlightAge !== null) {
@@ -13122,7 +15813,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
         });
       }
 
-      ctx.font = "12px sans-serif";
+      ctx.font = window.CHART_FONTS.md;
       const tooltipWidth = Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
       const tooltipHeight = tooltipLines.length * 20 + 16;
       let tx = hx + 15;
@@ -13151,7 +15842,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
       ctx.textAlign = "left";
       tooltipLines.forEach((line, li) => {
         ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
-        ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
+        ctx.font = li === 0 ? window.CHART_FONTS.boldMd : window.CHART_FONTS.md;
         ctx.fillText(line, tx + 12, ty + 18 + li * 20);
       });
     }
@@ -13278,7 +15969,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       offCtx.stroke();
 
       offCtx.fillStyle = "#94a3b8";
-      offCtx.font = "11px sans-serif";
+      offCtx.font = window.CHART_FONTS.sm;
       offCtx.textAlign = "right";
       offCtx.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
@@ -13300,7 +15991,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     }
 
     offCtx.fillStyle = "#94a3b8";
-    offCtx.font = "12px sans-serif";
+    offCtx.font = window.CHART_FONTS.md;
     offCtx.fillText("Age", chart.width / 2, chart.height - 5);
 
     // FIRE target line
@@ -13314,7 +16005,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     offCtx.setLineDash([]);
 
     drawLabelWithBackground(offCtx, `FIRE: ${formatCurrency(fireTarget)}`, padding.left + 5, toY(fireTarget) - 8,
-      { color: "#ef4444", font: "11px sans-serif", align: "left" });
+      { color: "#ef4444", font: window.CHART_FONTS.sm, align: "left" });
 
     // Coast FIRE threshold curve
     if (coastFireNumber) {
@@ -13336,7 +16027,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       offCtx.setLineDash([]);
 
       drawLabelWithBackground(offCtx, `Coast: ${formatCurrency(coastFireNumber)}`, padding.left + 5, toY(coastFireNumber) - 8,
-        { color: "#f59e0b", font: "11px sans-serif", align: "left" });
+        { color: "#f59e0b", font: window.CHART_FONTS.sm, align: "left" });
 
       const coastCrossing = dataPoints.find((d) => {
         const remainingYears = profile.retireAge - d.age;
@@ -13362,7 +16053,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
         offCtx.stroke();
 
         drawLabelWithBackground(offCtx, `Coast Age ${coastCrossing.age}`, cx, cy - 12,
-          { color: "#f59e0b", font: "bold 11px sans-serif", align: "center" });
+          { color: "#f59e0b", font: window.CHART_FONTS.boldSm, align: "center" });
       }
     }
 
@@ -13378,7 +16069,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     offCtx.setLineDash([]);
 
     drawLabelWithBackground(offCtx, `Retire: ${profile.retireAge}`, retireX, padding.top - 10,
-      { color: "#94a3b8", font: "11px sans-serif", align: "center" });
+      { color: "#94a3b8", font: window.CHART_FONTS.sm, align: "center" });
 
     // Accumulation line
     const accumPoints = dataPoints.filter((d) => !d.retired);
@@ -13436,7 +16127,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       offCtx.stroke();
 
       drawLabelWithBackground(offCtx, `Age ${crossingPoint.age}`, cx, cy - 12,
-        { color: "#2dd4bf", font: "bold 11px sans-serif", align: "center" });
+        { color: "#2dd4bf", font: window.CHART_FONTS.boldSm, align: "center" });
     }
   }
 
@@ -13490,7 +16181,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
           gapText,
         ];
 
-        ctx.font = "12px sans-serif";
+        ctx.font = window.CHART_FONTS.md;
         const tooltipWidth =
           Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 20;
         const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -13547,11 +16238,11 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
 
         // Tooltip text
         ctx.fillStyle = "#e2e8f0";
-        ctx.font = "bold 12px sans-serif";
+        ctx.font = window.CHART_FONTS.boldMd;
         ctx.textAlign = "left";
         ctx.fillText(tooltipLines[0], tx + 10, ty + 18);
 
-        ctx.font = "12px sans-serif";
+        ctx.font = window.CHART_FONTS.md;
         ctx.fillText(tooltipLines[1], tx + 10, ty + 38);
 
         ctx.fillStyle = gap >= 0 ? "#2dd4bf" : "#f472b6";
@@ -13683,7 +16374,7 @@ function displayCoastChart(
       offCtxCoast.lineTo(offscreenCoast.width - padding.right, y);
       offCtxCoast.stroke();
       offCtxCoast.fillStyle = "#94a3b8";
-      offCtxCoast.font = "11px sans-serif";
+      offCtxCoast.font = window.CHART_FONTS.sm;
       offCtxCoast.textAlign = "right";
       offCtxCoast.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
@@ -13699,7 +16390,7 @@ function displayCoastChart(
     }
 
     offCtxCoast.fillStyle = "#94a3b8";
-    offCtxCoast.font = "12px sans-serif";
+    offCtxCoast.font = window.CHART_FONTS.md;
     offCtxCoast.fillText("Age", chart.width / 2, chart.height - 5);
 
     // FIRE target line
@@ -13712,7 +16403,7 @@ function displayCoastChart(
     offCtxCoast.stroke();
     offCtxCoast.setLineDash([]);
     drawLabelWithBackground(offCtxCoast, `FIRE: ${formatCurrency(fireTarget)}`, padding.left + 5, toY(fireTarget) - 8,
-      { color: "#ef4444", font: "11px sans-serif", align: "left" });
+      { color: "#ef4444", font: window.CHART_FONTS.sm, align: "left" });
 
     // Retirement age line
     const retireX = toX(yearsToRetire);
@@ -13725,7 +16416,7 @@ function displayCoastChart(
     offCtxCoast.stroke();
     offCtxCoast.setLineDash([]);
     drawLabelWithBackground(offCtxCoast, `Retire: ${profile.retireAge}`, retireX, padding.top - 10,
-      { color: "#94a3b8", font: "11px sans-serif", align: "center" });
+      { color: "#94a3b8", font: window.CHART_FONTS.sm, align: "center" });
 
     // Coast threshold curve
     offCtxCoast.strokeStyle = "#f59e0b";
@@ -13741,7 +16432,7 @@ function displayCoastChart(
     offCtxCoast.stroke();
     offCtxCoast.setLineDash([]);
     drawLabelWithBackground(offCtxCoast, "Coast Threshold", toX(0) + 5, toY(coastData[0].value) - 8,
-      { color: "#f59e0b", font: "11px sans-serif", align: "left" });
+      { color: "#f59e0b", font: window.CHART_FONTS.sm, align: "left" });
 
     // Portfolio line
     offCtxCoast.strokeStyle = "#2dd4bf";
@@ -13773,7 +16464,7 @@ function displayCoastChart(
         offCtxCoast.lineWidth = 2;
         offCtxCoast.stroke();
         drawLabelWithBackground(offCtxCoast, `Coast: Age ${portfolioData[i].age}`, cx, cy - 12,
-          { color: "#f59e0b", font: "bold 11px sans-serif", align: "center" });
+          { color: "#f59e0b", font: window.CHART_FONTS.boldSm, align: "center" });
         break;
       }
     }
@@ -13791,7 +16482,7 @@ function displayCoastChart(
         offCtxCoast.lineWidth = 2;
         offCtxCoast.stroke();
         drawLabelWithBackground(offCtxCoast, `FIRE: Age ${portfolioData[i].age}`, cx, cy - 12,
-          { color: "#2dd4bf", font: "bold 11px sans-serif", align: "center" });
+          { color: "#2dd4bf", font: window.CHART_FONTS.boldSm, align: "center" });
         break;
       }
     }
@@ -13872,7 +16563,7 @@ function displayCoastChart(
             : `❌ ${formatCurrency(Math.abs(fireGap))} below FIRE`,
         );
 
-        ctx.font = "12px sans-serif";
+        ctx.font = window.CHART_FONTS.md;
         const tooltipWidth =
           Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 20;
         const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -13929,10 +16620,10 @@ function displayCoastChart(
         // Tooltip text
         ctx.textAlign = "left";
         ctx.fillStyle = "#e2e8f0";
-        ctx.font = "bold 12px sans-serif";
+        ctx.font = window.CHART_FONTS.boldMd;
         ctx.fillText(tooltipLines[0], tx + 10, ty + 18);
 
-        ctx.font = "12px sans-serif";
+        ctx.font = window.CHART_FONTS.md;
         for (let i = 1; i < tooltipLines.length; i++) {
           const line = tooltipLines[i];
           if (line.startsWith("✅")) {
@@ -14113,6 +16804,71 @@ FIRE_FIELDS.forEach((id) => {
     el.addEventListener("input", saveFireInputs);
   }
 });
+
+
+============================================================
+ FILE: /Users/careycarroll/Github Projects/financial-calculator/js/font-scale.js
+============================================================
+
+// ===================================================================
+// FONT SCALE — Persistent chart + UI font size control
+// Cycles: small → medium → large → small
+// Loaded as a plain script (not module) on every page.
+// ===================================================================
+
+(function () {
+  const SCALES = ["small", "medium", "large"];
+  const ROOT_SIZES = { small: "15px", medium: "17px", large: "19px" };
+  const CHART_FONTS_MAP = {
+    small:  { xs: "10px", sm: "11px", md: "12px", lg: "13px", boldSm: "bold 11px", boldMd: "bold 12px", boldLg: "bold 13px" },
+    medium: { xs: "11px", sm: "13px", md: "14px", lg: "15px", boldSm: "bold 13px", boldMd: "bold 14px", boldLg: "bold 15px" },
+    large:  { xs: "13px", sm: "15px", md: "16px", lg: "17px", boldSm: "bold 15px", boldMd: "bold 16px", boldLg: "bold 17px" },
+  };
+  const SANS = " sans-serif";
+
+  // Read stored scale, default to medium
+  const stored = localStorage.getItem("fontScale") || "medium";
+  const current = SCALES.includes(stored) ? stored : "medium";
+
+  // Apply root font size immediately (before render)
+  document.documentElement.style.fontSize = ROOT_SIZES[current];
+
+  // Expose chart font constants globally so all JS modules can read them
+  const f = CHART_FONTS_MAP[current];
+  window.CHART_FONTS = {
+    xs:     f.xs     + SANS,
+    sm:     f.sm     + SANS,
+    md:     f.md     + SANS,
+    lg:     f.lg     + SANS,
+    boldSm: f.boldSm + SANS,
+    boldMd: f.boldMd + SANS,
+    boldLg: f.boldLg + SANS,
+    current: current,
+  };
+
+  // Inject toggle button into nav once DOM is ready
+  document.addEventListener("DOMContentLoaded", () => {
+    const navLinks = document.querySelector(".top-nav-links");
+    if (!navLinks) return;
+
+    const labels = { small: "A⁻", medium: "A", large: "A⁺" };
+    const btn = document.createElement("button");
+    btn.id = "font-scale-btn";
+    btn.className = "font-scale-btn";
+    btn.setAttribute("aria-label", "Cycle font size");
+    btn.setAttribute("title", "Font size: " + current);
+    btn.textContent = labels[current];
+
+    btn.addEventListener("click", () => {
+      const idx = SCALES.indexOf(current);
+      const next = SCALES[(idx + 1) % SCALES.length];
+      localStorage.setItem("fontScale", next);
+      location.reload();
+    });
+
+    navLinks.appendChild(btn);
+  });
+})();
 
 
 ============================================================
@@ -15942,7 +18698,7 @@ function drawGrid(
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(p.toFixed(2), padding.left - 8, y + 4);
   }
@@ -15956,12 +18712,12 @@ function drawGrid(
     ctx.lineTo(x, padding.top + chartHeight);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "center";
     ctx.fillText(q.toFixed(2), x, chart.height - padding.bottom + 18);
   }
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   ctx.textAlign = "center";
   ctx.fillText("Quantity (Q)", chart.width / 2, chart.height - 8);
   ctx.save();
@@ -15988,7 +18744,7 @@ function drawTooltipBox(
   chartTotalWidth,
   chartRight,
 ) {
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   const tooltipWidth =
     Math.max(...tooltipLines.map((l) => ctx.measureText(l.text).width)) + 24;
   const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -16024,7 +18780,7 @@ function drawTooltipBox(
   ctx.textAlign = "left";
   tooltipLines.forEach((line, i) => {
     ctx.fillStyle = line.color || "#e2e8f0";
-    ctx.font = line.bold ? "bold 12px sans-serif" : "12px sans-serif";
+    ctx.font = line.bold ? window.CHART_FONTS.boldMd : window.CHART_FONTS.md;
     ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
   });
 }
@@ -16084,7 +18840,7 @@ function drawEquilibriumChart(demand, supply, pStar, qStar, highlightQ) {
   const dLabelP = (dLabelQ - demand.effectiveIntercept) / demand.pCoef;
   if (dLabelP > 0 && dLabelP <= pMax) {
     ctx.fillStyle = "#f472b6";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.textAlign = "left";
     ctx.fillText("Demand", toX(dLabelQ) + 5, toY(dLabelP) - 8);
   }
@@ -16106,7 +18862,7 @@ function drawEquilibriumChart(demand, supply, pStar, qStar, highlightQ) {
   const sLabelP = (sLabelQ - supply.effectiveIntercept) / supply.pCoef;
   if (sLabelP > 0 && sLabelP <= pMax) {
     ctx.fillStyle = "#2dd4bf";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.textAlign = "left";
     ctx.fillText("Supply", toX(sLabelQ) + 5, toY(sLabelP) - 8);
   }
@@ -16127,7 +18883,7 @@ function drawEquilibriumChart(demand, supply, pStar, qStar, highlightQ) {
     ctx.setLineDash([]);
 
     ctx.fillStyle = "#f59e0b";
-    ctx.font = "bold 10px sans-serif";
+    ctx.font = window.CHART_FONTS.boldSm;
     ctx.textAlign = "right";
     ctx.fillText("P*=" + pStar.toFixed(3), padding.left - 4, toY(pStar) + 4);
     ctx.textAlign = "center";
@@ -16146,7 +18902,7 @@ function drawEquilibriumChart(demand, supply, pStar, qStar, highlightQ) {
     ctx.stroke();
 
     // Smart label positioning — avoid overlapping curves
-    ctx.font = "bold 11px sans-serif";
+    ctx.font = window.CHART_FONTS.boldSm;
     const eLabel = "E(" + qStar.toFixed(3) + ", " + pStar.toFixed(3) + ")";
     const eLabelW = ctx.measureText(eLabel).width;
     const eLabelH = 14;
@@ -16494,7 +19250,7 @@ function drawShiftersChart(dI, dP, sI, sP, newEq, highlightQ) {
     ctx.strokeStyle = "#0f172a";
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.font = "10px sans-serif";
+    ctx.font = window.CHART_FONTS.xs;
     const e0Label = "E₀(" + orig.qStar.toFixed(3) + ", " + orig.pStar.toFixed(3) + ")";
     const e0LabelW = ctx.measureText(e0Label).width;
     const e0LabelH = 12;
@@ -16541,7 +19297,7 @@ function drawShiftersChart(dI, dP, sI, sP, newEq, highlightQ) {
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.fillStyle = "#f59e0b";
-    ctx.font = "bold 11px sans-serif";
+    ctx.font = window.CHART_FONTS.boldSm;
     const e1Label = "E₁(" + newEq.qStar.toFixed(3) + ", " + newEq.pStar.toFixed(3) + ")";
     const e1LabelW = ctx.measureText(e1Label).width;
     const e1LabelH = 14;
@@ -20525,7 +23281,7 @@ function drawReferenceChart(strategy) {
 
   // Labels
   ctx.fillStyle = "#4ade80";
-  ctx.font = "bold 11px sans-serif";
+  ctx.font = window.CHART_FONTS.boldSm;
   ctx.textAlign = "left";
   ctx.fillText("PROFIT", padding.left + 5, padding.top + 16);
 
@@ -20533,13 +23289,13 @@ function drawReferenceChart(strategy) {
   ctx.fillText("LOSS", padding.left + 5, padding.top + h - 6);
 
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "11px sans-serif";
+  ctx.font = window.CHART_FONTS.sm;
   ctx.textAlign = "center";
   ctx.fillText("Stock Price →", padding.left + w / 2, chart.height - 8);
 
   // Title
   ctx.fillStyle = "#e2e8f0";
-  ctx.font = "bold 14px sans-serif";
+  ctx.font = window.CHART_FONTS.boldLg;
   ctx.textAlign = "center";
   ctx.fillText(strategy.name, chart.width / 2, 22);
 
@@ -20557,7 +23313,7 @@ function drawReferenceChart(strategy) {
       ctx.fillRect(x1, padding.top, x2 - x1, h);
 
       ctx.fillStyle = zone.textColor;
-      ctx.font = "bold 9px sans-serif";
+      ctx.font = window.CHART_FONTS.boldSm;
       ctx.textAlign = "center";
       ctx.globalAlpha = 0.8;
       ctx.fillText(zone.label, (x1 + x2) / 2, padding.top + h - 8);
@@ -20579,7 +23335,7 @@ function drawReferenceChart(strategy) {
       ctx.setLineDash([]);
 
       ctx.fillStyle = "#f59e0b";
-      ctx.font = "bold 10px sans-serif";
+      ctx.font = window.CHART_FONTS.boldSm;
       ctx.textAlign = "center";
       ctx.fillText(strike.label, sx, padding.top - 6);
     });
@@ -20598,7 +23354,7 @@ function drawReferenceChart(strategy) {
       ctx.stroke();
 
       drawLabelWithBackground(ctx, be.label, bx, cy + 16,
-        { color: "#f59e0b", font: "9px sans-serif", align: "center" });
+        { color: "#f59e0b", font: window.CHART_FONTS.xs, align: "center" });
     });
   }
 
@@ -20653,7 +23409,7 @@ function drawReferenceChart(strategy) {
       const ax = toX(ann.x);
       const ay = toY(ann.y);
       drawLabelWithBackground(ctx, ann.text, ax, ay,
-        { color: ann.color || "#e2e8f0", font: ann.bold ? "bold 10px sans-serif" : "10px sans-serif", align: ann.align || "center" });
+        { color: ann.color || "#e2e8f0", font: ann.bold ? window.CHART_FONTS.boldSm : window.CHART_FONTS.xs, align: ann.align || "center" });
     });
   }
 }
@@ -21294,7 +24050,7 @@ function drawMultiCurvePayoff(
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
   }
@@ -21311,7 +24067,7 @@ function drawMultiCurvePayoff(
     );
   }
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   ctx.fillText("Stock Price", chart.width / 2, chart.height - 5);
 
   // Zero line
@@ -21335,7 +24091,7 @@ function drawMultiCurvePayoff(
   ctx.stroke();
   ctx.setLineDash([]);
   drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
-    { color: "#60a5fa", font: "10px sans-serif", align: "center" });
+    { color: "#60a5fa", font: window.CHART_FONTS.xs, align: "center" });
 
   // Draw each curve
   curves.forEach((curve) => {
@@ -21407,7 +24163,7 @@ function drawMultiCurvePayoff(
     });
 
     // Tooltip box
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth =
       Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -21442,11 +24198,11 @@ function drawMultiCurvePayoff(
     ctx.stroke();
 
     ctx.textAlign = "left";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.fillStyle = "#e2e8f0";
     ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     for (let i = 1; i < tooltipLines.length; i++) {
       ctx.fillStyle = curves[i - 1].color;
       ctx.fillText(tooltipLines[i], tx + 12, ty + 18 + i * 20);
@@ -21915,7 +24671,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.stroke();
 
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
+      ctx.font = window.CHART_FONTS.sm;
       ctx.textAlign = "right";
       ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
@@ -21935,7 +24691,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
     }
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     ctx.fillText(
       "Stock Price at Expiration",
       chart.width / 2,
@@ -21965,7 +24721,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
     ctx.setLineDash([]);
 
     drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
-      { color: "#60a5fa", font: "10px sans-serif", align: "center" });
+      { color: "#60a5fa", font: window.CHART_FONTS.xs, align: "center" });
 
     // Profit zone (green fill above zero)
     ctx.beginPath();
@@ -22047,7 +24803,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.stroke();
 
       drawLabelWithBackground(ctx, "BE: $" + be.toFixed(2), bx, by - 12,
-        { color: "#f59e0b", font: "10px sans-serif", align: "center" });
+        { color: "#f59e0b", font: window.CHART_FONTS.xs, align: "center" });
     });
 
     // Hover
@@ -22089,7 +24845,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
             `Payoff: ${formatCurrency(intrinsic)}`,
           ];
 
-      ctx.font = "12px sans-serif";
+      ctx.font = window.CHART_FONTS.md;
       const tooltipWidth =
         Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
       const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -22135,11 +24891,11 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.stroke();
 
       ctx.textAlign = "left";
-      ctx.font = "bold 12px sans-serif";
+      ctx.font = window.CHART_FONTS.boldMd;
       ctx.fillStyle = "#e2e8f0";
       ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
 
-      ctx.font = "12px sans-serif";
+      ctx.font = window.CHART_FONTS.md;
       if (payoffLineMode === "both") {
         ctx.fillStyle = "#f59e0b";
         ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
@@ -22269,7 +25025,7 @@ function drawPayoffDirect(
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
   }
@@ -22286,7 +25042,7 @@ function drawPayoffDirect(
     );
   }
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   ctx.fillText("Stock Price at Expiration", chart.width / 2, chart.height - 5);
 
   // Zero line
@@ -22310,7 +25066,7 @@ function drawPayoffDirect(
   ctx.stroke();
   ctx.setLineDash([]);
   drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
-    { color: "#60a5fa", font: "10px sans-serif", align: "center" });
+    { color: "#60a5fa", font: window.CHART_FONTS.xs, align: "center" });
 
   // Profit fill
   ctx.beginPath();
@@ -22381,7 +25137,7 @@ function drawPayoffDirect(
     ctx.lineWidth = 2;
     ctx.stroke();
     drawLabelWithBackground(ctx, "BE: $" + be.toFixed(2), bx, zeroY - 12,
-      { color: "#f59e0b", font: "10px sans-serif", align: "center" });
+      { color: "#f59e0b", font: window.CHART_FONTS.xs, align: "center" });
   });
 
   // Hover
@@ -22420,7 +25176,7 @@ function drawPayoffDirect(
           `Payoff: ${formatCurrency(intrinsic)}`,
         ];
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth =
       Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -22458,10 +25214,10 @@ function drawPayoffDirect(
     ctx.stroke();
 
     ctx.textAlign = "left";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.fillStyle = "#e2e8f0";
     ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     if (payoffLineMode === "both") {
       ctx.fillStyle = "#f59e0b";
       ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
@@ -22662,7 +25418,7 @@ function drawGreeksSensitivity(greek) {
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(val.toFixed(4), padding.left - 10, y + 4);
   }
@@ -22726,7 +25482,7 @@ function drawGreeksSensitivity(greek) {
     vega: "Vega (ν)",
   };
   ctx.fillStyle = colors[greek];
-  ctx.font = "bold 13px sans-serif";
+  ctx.font = window.CHART_FONTS.boldMd;
   ctx.textAlign = "left";
   ctx.fillText(
     `${greekNames[greek]} vs Stock Price — ${optionType.toUpperCase()}`,
@@ -23436,7 +26192,7 @@ function displayChart(projections, inputs, view) {
     offCtxProj.lineTo(offscreenProj.width - padding.right, y);
     offCtxProj.stroke();
     offCtxProj.fillStyle = "#94a3b8";
-    offCtxProj.font = "11px sans-serif";
+    offCtxProj.font = window.CHART_FONTS.sm;
     offCtxProj.textAlign = "right";
     offCtxProj.fillText(formatCurrency(value), padding.left - 10, y + 4);
   }
@@ -23458,7 +26214,7 @@ function displayChart(projections, inputs, view) {
   drawLabelWithBackground(offCtxProj,
     view === "real" ? "Years (Inflation-Adjusted)" : "Years",
     chart.width / 2, chart.height - 5,
-    { color: "#94a3b8", font: "12px sans-serif", align: "center" });
+    { color: "#94a3b8", font: window.CHART_FONTS.md, align: "center" });
 
   adjustedProjections.forEach((proj) => {
     offCtxProj.strokeStyle = proj.color;
@@ -23518,7 +26274,7 @@ function displayChart(projections, inputs, view) {
       }
     });
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth = Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
     let tx = hx + 15;
@@ -23545,12 +26301,12 @@ function displayChart(projections, inputs, view) {
 
     ctx.textAlign = "left";
     ctx.fillStyle = "#e2e8f0";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
     for (let i = 1; i < tooltipLines.length; i++) {
       const proj = adjustedProjections[i - 1];
       ctx.fillStyle = proj ? proj.color : "#e2e8f0";
-      ctx.font = "12px sans-serif";
+      ctx.font = window.CHART_FONTS.md;
       ctx.fillText(tooltipLines[i], tx + 12, ty + 18 + i * 20);
     }
   }
@@ -26530,6 +29286,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/analyzer-ui.js"></script>
+      <script src="../js/font-scale.js"></script>
   </body>
 </html>
 
@@ -27055,6 +29812,529 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/cm-analysis.js"></script>
+    <script src="../js/font-scale.js"></script>
+    <script src="../js/prefetch.js"></script>
+  </body>
+</html>
+
+
+============================================================
+ FILE: /Users/careycarroll/Github Projects/financial-calculator/pages/consumer-theory.html
+============================================================
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Consumer Theory | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/common-calculator.css" />
+    <link rel="stylesheet" href="../css/consumer-theory.css" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-container">
+      <header>
+        <h1>📐 Consumer Theory</h1>
+        <p class="tagline">Price elasticity, cross-price effects, expected utility, and risk premium — interactive tools for economics.</p>
+      </header>
+
+      <main>
+        <div class="ct-tabs">
+          <button id="tab-elasticity" class="ct-tab active" aria-label="Price elasticity tab">📐 Price Elasticity</button>
+          <button id="tab-cross-price" class="ct-tab" aria-label="Cross-price elasticity tab">🔗 Cross-Price</button>
+          <button id="tab-eu" class="ct-tab" aria-label="Expected utility tab">🎲 Expected Utility</button>
+          <button id="tab-risk-premium" class="ct-tab" aria-label="Risk premium tab">💰 Risk Premium</button>
+        </div>
+
+        <!-- ==================== TAB 1: PRICE ELASTICITY ==================== -->
+        <div id="elasticity-tab">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="elas-explainer-toggle" aria-expanded="false">
+              💡 How Price Elasticity Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="elas-explainer-body">
+              <p><strong>Price elasticity of demand (ε)</strong> measures how responsive quantity demanded is to a change in price. It answers: if price rises by 1%, how much does quantity fall?</p>
+              <p>The formula is: <strong>ε = (∂q/∂p) × (p/q)</strong>. Because demand slopes downward, ε is always negative for demand.</p>
+              <p><strong>Elastic demand (|ε| &gt; 1):</strong> quantity is very sensitive to price. A price increase causes revenue to fall because the quantity drop outweighs the price gain.</p>
+              <p><strong>Inelastic demand (|ε| &lt; 1):</strong> quantity is not very sensitive to price. A price increase causes revenue to rise because the price gain outweighs the quantity drop.</p>
+              <p><strong>Unit elastic (|ε| = 1):</strong> revenue is unchanged for a small price change.</p>
+              <p><strong>From Equation mode</strong> solves for equilibrium P* and Q* first, then computes elasticity at that point — exactly like the lecture worked example.</p>
+              <p><strong>Solve for P or Q</strong> lets you work backwards: given a target elasticity, find the price or quantity where that elasticity holds.</p>
+              <p><strong>Arc elasticity</strong> uses the midpoint formula between two observed data points.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Input Method</h2>
+            <div class="mode-toggle" style="margin-bottom:1.25rem; flex-wrap:wrap; gap:0.5rem;">
+              <button id="elas-mode-equation" class="btn-toggle active">📋 From Equation</button>
+              <button id="elas-mode-point" class="btn-toggle">📐 Find ε</button>
+              <button id="elas-mode-solve" class="btn-toggle">🎯 Solve for P or Q</button>
+              <button id="elas-mode-arc" class="btn-toggle">📍 Arc Elasticity</button>
+            </div>
+
+            <!-- From Equation Inputs -->
+            <div id="elas-equation-inputs">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter your demand and supply equations. The tool solves for equilibrium P* and Q*, then computes elasticity at that point.</p>
+              <div class="micro-curve-inputs" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.25rem;">
+                <div class="micro-curve-block demand" style="background:var(--bg-primary); border:1px solid var(--border); border-left:3px solid #f472b6; border-radius:10px; padding:1.25rem;">
+                  <h3 style="font-size:0.95rem; font-weight:700; color:#f472b6; margin-bottom:0.75rem;">📉 Demand Curve</h3>
+                  <div class="form-group">
+                    <label for="elas-eq-d-const">Constant (a)</label>
+                    <input type="number" id="elas-eq-d-const" placeholder="e.g. 16" step="any" />
+                    <span class="form-hint">q = a + b·P  →  enter a</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="elas-eq-d-coef">Price Coefficient (b)</label>
+                    <input type="number" id="elas-eq-d-coef" placeholder="e.g. -2" step="any" />
+                    <span class="form-hint">Negative for downward-sloping demand</span>
+                  </div>
+                  <div id="elas-eq-demand-preview" style="margin-top:0.75rem; padding:0.6rem 1rem; background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; font-family:monospace; font-size:0.9rem; color:var(--accent);">q = a + b·P</div>
+                </div>
+                <div class="micro-curve-block supply" style="background:var(--bg-primary); border:1px solid var(--border); border-left:3px solid #2dd4bf; border-radius:10px; padding:1.25rem;">
+                  <h3 style="font-size:0.95rem; font-weight:700; color:#2dd4bf; margin-bottom:0.75rem;">📈 Supply Curve</h3>
+                  <div class="form-group">
+                    <label for="elas-eq-s-const">Constant (c)</label>
+                    <input type="number" id="elas-eq-s-const" placeholder="e.g. -2" step="any" />
+                    <span class="form-hint">q = c + d·P  →  enter c</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="elas-eq-s-coef">Price Coefficient (d)</label>
+                    <input type="number" id="elas-eq-s-coef" placeholder="e.g. 1" step="any" />
+                    <span class="form-hint">Positive for upward-sloping supply</span>
+                  </div>
+                  <div id="elas-eq-supply-preview" style="margin-top:0.75rem; padding:0.6rem 1rem; background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; font-family:monospace; font-size:0.9rem; color:var(--accent);">q = c + d·P</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Find ε Inputs -->
+            <div id="elas-point-inputs" class="hidden">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter the slope of your equation and the price/quantity at the point of interest.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-curve-type">Curve Type</label>
+                  <select id="elas-curve-type">
+                    <option value="demand">Demand</option>
+                    <option value="supply">Supply</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="elas-dqdp">∂q/∂p (slope of curve)</label>
+                  <input type="number" id="elas-dqdp" placeholder="e.g. -2 for demand, 1 for supply" step="any" />
+                  <span class="form-hint">The coefficient on P in your equation.</span>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-p">Price (P)</label>
+                  <input type="number" id="elas-p" placeholder="e.g. 6" step="any" min="0" />
+                </div>
+                <div class="form-group">
+                  <label for="elas-q">Quantity (Q)</label>
+                  <input type="number" id="elas-q" placeholder="e.g. 4" step="any" min="0" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Solve for P or Q Inputs -->
+            <div id="elas-solve-inputs" class="hidden">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter a target elasticity and two of the three variables — the tool solves for the third.</p>
+              <div class="mode-toggle" style="margin-bottom:1.25rem;">
+                <button id="elas-solve-q-btn" class="btn-toggle active">Solve for Q</button>
+                <button id="elas-solve-p-btn" class="btn-toggle">Solve for P</button>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-solve-curve-type">Curve Type</label>
+                  <select id="elas-solve-curve-type">
+                    <option value="demand">Demand</option>
+                    <option value="supply">Supply</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="elas-solve-eps">Target Elasticity (ε)</label>
+                  <input type="number" id="elas-solve-eps" placeholder="e.g. -2 or 1.5" step="any" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-solve-dqdp">∂q/∂p (slope)</label>
+                  <input type="number" id="elas-solve-dqdp" placeholder="e.g. -2" step="any" />
+                </div>
+                <div class="form-group" id="elas-solve-p-group">
+                  <label for="elas-solve-p">Price (P) <span style="color:var(--accent);">← known</span></label>
+                  <input type="number" id="elas-solve-p" placeholder="e.g. 6" step="any" min="0" />
+                  <span class="form-hint">Solving for Q at this price.</span>
+                </div>
+                <div class="form-group hidden" id="elas-solve-q-group">
+                  <label for="elas-solve-q">Quantity (Q) <span style="color:var(--accent);">← known</span></label>
+                  <input type="number" id="elas-solve-q" placeholder="e.g. 4" step="any" min="0" />
+                  <span class="form-hint">Solving for P at this quantity.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Arc Elasticity Inputs -->
+            <div id="elas-arc-inputs" class="hidden">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter two observed price-quantity pairs. The arc elasticity uses the midpoint formula.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-arc-curve-type">Curve Type</label>
+                  <select id="elas-arc-curve-type">
+                    <option value="demand">Demand</option>
+                    <option value="supply">Supply</option>
+                  </select>
+                </div>
+                <div class="form-group"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-p1">Price 1 (P₁)</label>
+                  <input type="number" id="elas-p1" placeholder="e.g. 5" step="any" min="0" />
+                </div>
+                <div class="form-group">
+                  <label for="elas-q1">Quantity 1 (Q₁)</label>
+                  <input type="number" id="elas-q1" placeholder="e.g. 10" step="any" min="0" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-p2">Price 2 (P₂)</label>
+                  <input type="number" id="elas-p2" placeholder="e.g. 7" step="any" min="0" />
+                </div>
+                <div class="form-group">
+                  <label for="elas-q2">Quantity 2 (Q₂)</label>
+                  <input type="number" id="elas-q2" placeholder="e.g. 6" step="any" min="0" />
+                </div>
+              </div>
+            </div>
+
+            <button id="elas-calculate" class="btn-primary">Calculate Elasticity</button>
+          </div>
+
+          <!-- Results -->
+          <div id="elas-results" class="results-panel hidden" aria-live="polite">
+            <h2>Elasticity Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Price Elasticity (ε)</span>
+                <span id="elas-value" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">|ε| (Absolute Value)</span>
+                <span id="elas-abs" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Classification</span>
+                <span id="elas-badge">—</span>
+              </div>
+            </div>
+            <div id="elas-revenue-impact" class="ct-revenue-impact neutral" style="margin-top:1rem;">
+              —
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="elas-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="elas-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="elas-steps-body">
+                <div id="elas-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="elas-chart-section" class="chart-panel hidden">
+            <h2>Elasticity Diagram</h2>
+            <div class="canvas-chart">
+              <canvas id="elas-chart-canvas" role="img" aria-label="Price elasticity diagram showing demand curve with elastic and inelastic regions"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 2: CROSS-PRICE ELASTICITY ==================== -->
+        <div id="cross-price-tab" class="hidden">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="cross-explainer-toggle" aria-expanded="false">
+              💡 How Cross-Price Elasticity Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="cross-explainer-body">
+              <p><strong>Cross-price elasticity</strong> measures how the quantity demanded of Good i responds to a change in the price of Good j.</p>
+              <p><strong>Substitutes (ε &gt; 0):</strong> when the price of Good j rises, consumers buy more of Good i instead. Example: Pepsi and Coke.</p>
+              <p><strong>Complements (ε &lt; 0):</strong> when the price of Good j rises, consumers buy less of Good i too. Example: cars and gasoline.</p>
+              <p><strong>Independent (ε ≈ 0):</strong> the price of Good j has no meaningful effect on demand for Good i.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Cross-Price Elasticity</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Enter two observations of Good i's quantity at different prices of Good j.</p>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cross-good-i">Good i Name (optional)</label>
+                <input type="text" id="cross-good-i" placeholder="e.g. Pepsi" />
+              </div>
+              <div class="form-group">
+                <label for="cross-good-j">Good j Name (optional)</label>
+                <input type="text" id="cross-good-j" placeholder="e.g. Coke" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cross-pj1">Price of Good j — Point 1 (Pⱼ₁)</label>
+                <input type="number" id="cross-pj1" placeholder="e.g. 2.00" step="any" min="0" />
+              </div>
+              <div class="form-group">
+                <label for="cross-qi1">Quantity of Good i — Point 1 (Qᵢ₁)</label>
+                <input type="number" id="cross-qi1" placeholder="e.g. 100" step="any" min="0" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cross-pj2">Price of Good j — Point 2 (Pⱼ₂)</label>
+                <input type="number" id="cross-pj2" placeholder="e.g. 2.50" step="any" min="0" />
+              </div>
+              <div class="form-group">
+                <label for="cross-qi2">Quantity of Good i — Point 2 (Qᵢ₂)</label>
+                <input type="number" id="cross-qi2" placeholder="e.g. 120" step="any" min="0" />
+              </div>
+            </div>
+            <button id="cross-calculate" class="btn-primary">Calculate Cross-Price Elasticity</button>
+          </div>
+
+          <!-- Results -->
+          <div id="cross-results" class="results-panel hidden" aria-live="polite">
+            <h2>Cross-Price Elasticity Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Cross-Price Elasticity (ε)</span>
+                <span id="cross-value" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Relationship</span>
+                <span id="cross-badge">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Interpretation</span>
+                <span id="cross-interpretation" class="result-value" style="font-size:1rem;">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="cross-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="cross-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="cross-steps-body">
+                <div id="cross-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="cross-chart-section" class="chart-panel hidden">
+            <h2>Cross-Price Relationship</h2>
+            <div class="canvas-chart">
+              <canvas id="cross-chart-canvas" role="img" aria-label="Cross-price elasticity chart showing relationship between Good j price and Good i quantity"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 3: EXPECTED UTILITY ==================== -->
+        <div id="eu-tab" class="hidden">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="eu-explainer-toggle" aria-expanded="false">
+              💡 How Expected Utility Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="eu-explainer-body">
+              <p><strong>Expected utility</strong> is not the same as expected payoff. When consumers are risk-averse, they have diminishing marginal utility of wealth — each additional dollar is worth less than the last.</p>
+              <p><strong>Expected Payoff</strong> = Σ (probability × payoff). This is just the probability-weighted average outcome.</p>
+              <p><strong>Expected Utility</strong> = Σ (probability × u(payoff)). This applies the utility function first, then takes the weighted average.</p>
+              <p>Because of diminishing marginal utility, a risk-averse person prefers a certain $1M over a 50/50 shot at $2M — even though both have the same expected payoff. The utility function captures this preference.</p>
+              <p>The utility function you choose determines how risk-averse the agent is: <strong>√x</strong> and <strong>ln(x)</strong> are concave (risk-averse), <strong>x</strong> is linear (risk-neutral), and <strong>x²</strong> is convex (risk-seeking).</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Utility Function</h2>
+            <div class="ct-utility-selector" id="eu-utility-selector">
+              <button class="ct-utility-btn active" data-fn="sqrt">u(x) = √x</button>
+              <button class="ct-utility-btn" data-fn="log">u(x) = ln(x)</button>
+              <button class="ct-utility-btn" data-fn="linear">u(x) = x</button>
+              <button class="ct-utility-btn" data-fn="square">u(x) = x²</button>
+            </div>
+            <p class="form-hint">Units are in thousands ($). Enter payoffs as numbers (e.g. 100 = $100,000).</p>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Options</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Add up to 3 options. Each option can have up to 4 outcomes. Probabilities must sum to 1.0 per option.</p>
+            <div id="eu-options-list"></div>
+            <button id="eu-add-option" class="btn-secondary" style="margin-top:0.75rem;">+ Add Option</button>
+          </div>
+
+          <button id="eu-calculate" class="btn-primary">Calculate Expected Utility</button>
+
+          <!-- Results -->
+          <div id="eu-results" class="results-panel hidden" aria-live="polite">
+            <h2>Expected Utility Results</h2>
+            <div id="eu-comparison" class="ct-eu-comparison"></div>
+            <div id="eu-winner-banner" class="savings-banner" style="margin-top:1rem;">
+              <div class="savings-item">
+                <span class="savings-label">Best Option</span>
+                <span id="eu-winner" class="savings-value">—</span>
+              </div>
+              <div class="savings-item">
+                <span class="savings-label">Utility Function</span>
+                <span id="eu-fn-display" class="savings-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="eu-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="eu-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="eu-steps-body">
+                <div id="eu-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="eu-chart-section" class="chart-panel hidden">
+            <h2>Utility Curve</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Each option's outcomes are plotted on the utility curve. The gap between expected payoff and expected utility illustrates risk aversion.</p>
+            <div class="canvas-chart">
+              <canvas id="eu-chart-canvas" role="img" aria-label="Utility curve showing expected utility vs expected payoff for each option"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 4: RISK PREMIUM ==================== -->
+        <div id="risk-premium-tab" class="hidden">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="rp-explainer-toggle" aria-expanded="false">
+              💡 How Risk Premium Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="rp-explainer-body">
+              <p><strong>Risk premium</strong> is how much of the expected payoff you would give up to eliminate all uncertainty. It measures the cost of risk to a risk-averse agent.</p>
+              <p><strong>Certainty Equivalent (CE)</strong> is the guaranteed amount that gives you the same utility as the risky investment. If CE = $80K and the expected payoff is $100K, you'd accept $80K for certain rather than take the gamble.</p>
+              <p><strong>Risk Premium = Expected Payoff − Certainty Equivalent.</strong> In the example above, the risk premium is $20K — that's how much you'd pay to eliminate the risk.</p>
+              <p><strong>Willingness to Pay (WTP)</strong> is the maximum you'd pay today for the risky asset, equal to the present value of the certainty equivalent (ignoring discount rates here, WTP = CE).</p>
+              <p>The larger the risk premium, the more risk-averse the agent. A risk-neutral agent has a risk premium of zero.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Utility Function</h2>
+            <div class="ct-utility-selector" id="rp-utility-selector">
+              <button class="ct-utility-btn active" data-fn="sqrt">u(x) = √x</button>
+              <button class="ct-utility-btn" data-fn="log">u(x) = ln(x)</button>
+              <button class="ct-utility-btn" data-fn="linear">u(x) = x</button>
+              <button class="ct-utility-btn" data-fn="square">u(x) = x²</button>
+            </div>
+            <p class="form-hint">Units are in thousands ($). Enter payoffs as numbers (e.g. 100 = $100,000).</p>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Risky Asset</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Enter the possible outcomes and their probabilities. Probabilities must sum to 1.0.</p>
+            <div id="rp-outcomes-list"></div>
+            <button id="rp-add-outcome" class="btn-secondary" style="margin-top:0.75rem;">+ Add Outcome</button>
+          </div>
+
+          <button id="rp-calculate" class="btn-primary">Calculate Risk Premium</button>
+
+          <!-- Results -->
+          <div id="rp-results" class="results-panel hidden" aria-live="polite">
+            <h2>Risk Premium Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Expected Payoff</span>
+                <span id="rp-expected-payoff" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Expected Utility</span>
+                <span id="rp-expected-utility" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Certainty Equivalent</span>
+                <span id="rp-ce" class="result-value" style="color:#a855f7">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Risk Premium</span>
+                <span id="rp-premium" class="result-value negative">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Willingness to Pay</span>
+                <span id="rp-wtp" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Risk Attitude</span>
+                <span id="rp-attitude" class="result-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="rp-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="rp-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="rp-steps-body">
+                <div id="rp-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="rp-chart-section" class="chart-panel hidden">
+            <h2>Risk Premium Diagram</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">The classic textbook diagram — utility curve with expected payoff, certainty equivalent, and risk premium labeled.</p>
+            <div class="canvas-chart">
+              <canvas id="rp-chart-canvas" role="img" aria-label="Risk premium diagram showing utility curve with certainty equivalent and risk premium marked"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script type="module" src="../js/consumer-theory.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -27550,6 +30830,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/fire.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -27956,6 +31237,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/loan-advanced.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -28115,6 +31397,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/loan.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -28468,6 +31751,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/micro-econ.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -28692,6 +31976,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/news.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -29195,6 +32480,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/npv-irr.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -29786,6 +33072,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/options.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -30041,6 +33328,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/projections.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -30455,6 +33743,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/pv.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -30906,6 +34195,7 @@ export function calculateVerdict(price, results) {
 
     <!-- Valuator (order matters: api-manager → valuator → ui) -->
     <script type="module" src="../js/valuator-ui.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>

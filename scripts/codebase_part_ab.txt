@@ -1,4 +1,2889 @@
-ody.style.overflow = "hidden";
+;
+
+    const prev = document.createElement("button");
+    prev.textContent = "← Prev";
+    prev.className = "btn-toggle";
+    prev.disabled = currentPage === 0;
+    prev.addEventListener("click", () => { currentPage--; renderPage(); });
+
+    const info = document.createElement("span");
+    info.textContent = `Page ${currentPage + 1} of ${totalPages} (${schedule.length} rows)`;
+
+    const next = document.createElement("button");
+    next.textContent = "Next →";
+    next.className = "btn-toggle";
+    next.disabled = currentPage >= totalPages - 1;
+    next.addEventListener("click", () => { currentPage++; renderPage(); });
+
+    pager.appendChild(prev);
+    pager.appendChild(info);
+    pager.appendChild(next);
+  }
+
+  renderPage();
+}
+
+// ===== VIEW SWITCHING =====
+function switchChart(view) {
+  currentChartView = view;
+  chartOriginalBtn.classList.toggle("active", view === "original");
+  chartAdjustedBtn.classList.toggle("active", view === "adjusted");
+  displayChart(view === "original" ? originalYearly : adjustedYearly);
+  displayCumulativeChart(
+    view === "original" ? originalMonthly : adjustedMonthly,
+  );
+}
+
+function displayCumulativeChart(schedule) {
+  const canvas = document.getElementById("adv-line-canvas");
+  if (!canvas || schedule.length === 0) return;
+
+  const cumulative = schedule.reduce((acc, row) => {
+    const previous = acc.length
+      ? acc[acc.length - 1]
+      : { principal: 0, interest: 0, total: 0, balance: row.balance };
+    const principal = previous.principal + row.principal;
+    const interest = previous.interest + row.interest;
+    acc.push({
+      period: row.period,
+      principal,
+      interest,
+      total: principal + interest,
+      balance: row.balance,
+    });
+    return acc;
+  }, []);
+
+  drawLineChart(canvas, cumulative, {
+    series: [
+      { key: "total", color: "#2dd4bf", label: "Total Paid", fill: true },
+      { key: "principal", color: "#60a5fa", label: "Principal" },
+      { key: "interest", color: "#f472b6", label: "Interest" },
+      { key: "balance", color: "#f59e0b", label: "Balance" },
+    ],
+    xLabel: (d) => `Mo ${d.period}`,
+    xTicks: 12,
+    tooltip: (d) => [
+      `Month ${d.period}`,
+      `Total Paid: ${formatCurrency(d.total)}`,
+      `Principal: ${formatCurrency(d.principal)}`,
+      `Interest: ${formatCurrency(d.interest)}`,
+      `Balance: ${formatCurrency(d.balance)}`,
+    ],
+    controller: advLineController,
+    legendEl: "adv-line-legend",
+  });
+}
+
+function switchTablePeriod(period) {
+  currentTablePeriod = period;
+  viewMonthlyBtn.classList.toggle("active", period === "monthly");
+  viewYearlyBtn.classList.toggle("active", period === "yearly");
+  updateTable();
+}
+
+function switchTableView(view) {
+  currentTableView = view;
+  tableOriginalBtn.classList.toggle("active", view === "original");
+  tableAdjustedBtn.classList.toggle("active", view === "adjusted");
+  updateTable();
+}
+
+function updateTable() {
+  let schedule;
+  if (currentTableView === "original") {
+    schedule =
+      currentTablePeriod === "monthly" ? originalMonthly : originalYearly;
+  } else {
+    schedule =
+      currentTablePeriod === "monthly" ? adjustedMonthly : adjustedYearly;
+  }
+  displayTable(schedule, currentTablePeriod);
+}
+
+// ===== RESIZE HANDLER =====
+let resizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    if (originalYearly.length > 0) {
+      displayChart(currentChartView === "original" ? originalYearly : adjustedYearly);
+      displayCumulativeChart(currentChartView === "original" ? originalMonthly : adjustedMonthly);
+    }
+  }, 250);
+});
+
+function resetToggleStates() {
+  chartOriginalBtn.classList.add("active");
+  chartAdjustedBtn.classList.remove("active");
+  viewMonthlyBtn.classList.add("active");
+  viewYearlyBtn.classList.remove("active");
+  tableOriginalBtn.classList.add("active");
+  tableAdjustedBtn.classList.remove("active");
+}
+
+
+============================================================
+ FILE: /Users/careycarroll/Github Projects/financial-calculator/js/loan.js
+============================================================
+
+import {
+  safeParseFloat, safeParseInt, formatCurrency,
+  drawBarChart, drawLineChart, showChartLoading, hideChartLoading,
+  validateInputs, bindFormEnter
+} from "./chart-utils.js";
+
+// ===== DOM ELEMENTS =====
+const calculateBtn = document.getElementById("calculate-btn");
+const resultsSection = document.getElementById("results");
+const chartSection = document.getElementById("chart-section");
+const amortizationSection = document.getElementById("amortization-section");
+const viewMonthlyBtn = document.getElementById("view-monthly");
+const viewYearlyBtn = document.getElementById("view-yearly");
+
+// Store the schedule globally so we can toggle between monthly/yearly
+let monthlySchedule = [];
+let yearlySchedule = [];
+
+// ===== EVENT LISTENERS =====
+calculateBtn.addEventListener("click", handleCalculate);
+viewMonthlyBtn.addEventListener("click", () => switchView("monthly"));
+viewYearlyBtn.addEventListener("click", () => switchView("yearly"));
+
+// Allow Enter key to trigger calculation
+bindFormEnter(() => handleCalculate());
+
+// ===== MAIN CALCULATION =====
+function handleCalculate() {
+  // Grab inputs
+  const principal = safeParseFloat(document.getElementById("loan-amount").value);
+  const annualRate = safeParseFloat(document.getElementById("interest-rate").value);
+  const termYears = safeParseInt(document.getElementById("loan-term").value);
+
+  // Validate
+  const valid = validateInputs([
+    { id: "loan-amount",   label: "Loan Amount",    required: true, min: 1              },
+    { id: "interest-rate", label: "Interest Rate",  required: true, min: 0.01, max: 30  },
+    { id: "loan-term",     label: "Loan Term",      required: true, min: 1,    max: 50, integer: true },
+  ], ".calc-form");
+  if (!valid) return;
+
+  // Calculate
+  const monthlyRate = annualRate / 100 / 12;
+  const totalMonths = termYears * 12;
+
+  // Monthly payment formula: M = P * [r(1+r)^n] / [(1+r)^n - 1]
+  const monthlyPayment =
+    (principal * (monthlyRate * Math.pow(1 + monthlyRate, totalMonths))) /
+    (Math.pow(1 + monthlyRate, totalMonths) - 1);
+
+  // Build amortization schedule
+  monthlySchedule = buildMonthlySchedule(
+    principal,
+    monthlyRate,
+    totalMonths,
+    monthlyPayment,
+  );
+  yearlySchedule = buildYearlySchedule(monthlySchedule);
+
+  const totalCost = monthlyPayment * totalMonths;
+  const totalInterest = totalCost - principal;
+
+  // Display results
+  displaySummary(monthlyPayment, principal, totalInterest, totalCost);
+  showChartLoading("loan-bar-canvas");
+  showChartLoading("loan-line-canvas");
+  requestAnimationFrame(() => {
+    displayChart(yearlySchedule);
+    hideChartLoading("loan-bar-canvas");
+    displayCumulativeChart(monthlySchedule);
+    hideChartLoading("loan-line-canvas");
+  });
+  displayTable(monthlySchedule, "monthly");
+
+  // Show all sections
+  resultsSection.classList.remove("hidden");
+  chartSection.classList.remove("hidden");
+  document
+    .getElementById("cumulative-chart-section")
+    .classList.remove("hidden");
+  amortizationSection.classList.remove("hidden");
+
+  // Scroll to results
+  resultsSection.scrollIntoView({ behavior: "smooth" });
+}
+
+// ===== BUILD SCHEDULES =====
+function buildMonthlySchedule(
+  principal,
+  monthlyRate,
+  totalMonths,
+  monthlyPayment,
+) {
+  const schedule = [];
+  let balance = principal;
+
+  for (let month = 1; month <= totalMonths; month++) {
+    const interestPayment = balance * monthlyRate;
+    const principalPayment = monthlyPayment - interestPayment;
+    balance -= principalPayment;
+
+    // Prevent floating point issues on the last payment
+    if (balance < 0) balance = 0;
+
+    schedule.push({
+      period: month,
+      payment: monthlyPayment,
+      principal: principalPayment,
+      interest: interestPayment,
+      balance: balance,
+    });
+  }
+
+  return schedule;
+}
+
+function buildYearlySchedule(monthly) {
+  const yearly = [];
+  let yearPrincipal = 0;
+  let yearInterest = 0;
+  let yearPayment = 0;
+
+  for (let i = 0; i < monthly.length; i++) {
+    yearPrincipal += monthly[i].principal;
+    yearInterest += monthly[i].interest;
+    yearPayment += monthly[i].payment;
+
+    // End of year or last month
+    if ((i + 1) % 12 === 0 || i === monthly.length - 1) {
+      yearly.push({
+        period: yearly.length + 1,
+        payment: yearPayment,
+        principal: yearPrincipal,
+        interest: yearInterest,
+        balance: monthly[i].balance,
+      });
+      yearPrincipal = 0;
+      yearInterest = 0;
+      yearPayment = 0;
+    }
+  }
+
+  return yearly;
+}
+
+// ===== DISPLAY FUNCTIONS =====
+
+function displaySummary(monthlyPayment, principal, totalInterest, totalCost) {
+  document.getElementById("monthly-payment").textContent =
+    formatCurrency(monthlyPayment);
+  document.getElementById("total-principal").textContent =
+    formatCurrency(principal);
+  document.getElementById("total-interest").textContent =
+    formatCurrency(totalInterest);
+  document.getElementById("total-cost").textContent = formatCurrency(totalCost);
+}
+
+let loanBarController = null;
+let loanLineController = null;
+
+function displayChart(yearly) {
+  const canvas = document.getElementById("loan-bar-canvas");
+  if (!canvas) return;
+  drawBarChart(canvas, yearly, {
+    series: [
+      { key: "principal", color: "#2dd4bf", label: "Principal" },
+      { key: "interest", color: "#f472b6", label: "Interest" },
+    ],
+    xLabel: (d) => `Yr ${d.period}`,
+    tooltip: (d) => [
+      `Year ${d.period}`,
+      `Principal: ${formatCurrency(d.principal)}`,
+      `Interest: ${formatCurrency(d.interest)}`,
+      `Balance: ${formatCurrency(d.balance)}`,
+    ],
+    controller: loanBarController,
+    legendEl: "loan-bar-legend",
+  });
+}
+
+function displayCumulativeChart(schedule) {
+  const canvas = document.getElementById("loan-line-canvas");
+  if (!canvas || schedule.length === 0) return;
+
+  const cumulative = schedule.reduce((acc, row) => {
+    const previous = acc.length
+      ? acc[acc.length - 1]
+      : { principal: 0, interest: 0, total: 0, balance: row.balance };
+    const principal = previous.principal + row.principal;
+    const interest = previous.interest + row.interest;
+    acc.push({
+      period: row.period,
+      principal,
+      interest,
+      total: principal + interest,
+      balance: row.balance,
+    });
+    return acc;
+  }, []);
+
+  drawLineChart(canvas, cumulative, {
+    series: [
+      { key: "total", color: "#2dd4bf", label: "Total Paid", fill: true },
+      { key: "principal", color: "#60a5fa", label: "Principal" },
+      { key: "interest", color: "#f472b6", label: "Interest" },
+      { key: "balance", color: "#f59e0b", label: "Balance" },
+    ],
+    xLabel: (d) => `Mo ${d.period}`,
+    xTicks: 12,
+    tooltip: (d) => [
+      `Month ${d.period}`,
+      `Total Paid: ${formatCurrency(d.total)}`,
+      `Principal: ${formatCurrency(d.principal)}`,
+      `Interest: ${formatCurrency(d.interest)}`,
+      `Balance: ${formatCurrency(d.balance)}`,
+    ],
+    controller: loanLineController,
+    legendEl: "loan-line-legend",
+  });
+}
+
+function displayTable(schedule, view) {
+  const tbody = document.getElementById("amortization-body");
+  const periodHeader = document.getElementById("period-header");
+
+  periodHeader.textContent = view === "monthly" ? "Month" : "Year";
+  tbody.innerHTML = "";
+
+  schedule.forEach((row) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.period}</td>
+      <td>${formatCurrency(row.payment)}</td>
+      <td>${formatCurrency(row.principal)}</td>
+      <td>${formatCurrency(row.interest)}</td>
+      <td>${formatCurrency(row.balance)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== RESIZE HANDLER =====
+let resizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    if (yearlySchedule.length > 0) {
+      displayChart(yearlySchedule);
+      displayCumulativeChart(monthlySchedule);
+    }
+  }, 250);
+});
+
+// ===== VIEW TOGGLE =====
+function switchView(view) {
+  if (view === "monthly") {
+    viewMonthlyBtn.classList.add("active");
+    viewYearlyBtn.classList.remove("active");
+    displayTable(monthlySchedule, "monthly");
+  } else {
+    viewYearlyBtn.classList.add("active");
+    viewMonthlyBtn.classList.remove("active");
+    displayTable(yearlySchedule, "yearly");
+  }
+}
+
+
+============================================================
+ FILE: /Users/careycarroll/Github Projects/financial-calculator/js/micro-econ.js
+============================================================
+
+import {
+  safeParseFloat,
+  createChartContext,
+  rafThrottle,
+  showFieldError,
+  bindFormEnter,
+} from "./chart-utils.js";
+
+// ===================================================================
+// STATE
+// ===================================================================
+
+let baseEquilibrium = null;
+
+// ===================================================================
+// TAB SWITCHING
+// ===================================================================
+
+const tabs = {
+  equilibrium: {
+    tab: document.getElementById("tab-equilibrium"),
+    panel: document.getElementById("equilibrium-tab"),
+  },
+  shifters: {
+    tab: document.getElementById("tab-shifters"),
+    panel: document.getElementById("shifters-tab"),
+  },
+};
+
+Object.keys(tabs).forEach((key) => {
+  tabs[key].tab.addEventListener("click", () => {
+    Object.keys(tabs).forEach((k) => {
+      tabs[k].tab.classList.remove("active");
+      tabs[k].panel.classList.add("hidden");
+    });
+    tabs[key].tab.classList.add("active");
+    tabs[key].panel.classList.remove("hidden");
+  });
+});
+
+// ===================================================================
+// INPUT MODE TOGGLE
+// ===================================================================
+
+let inputMode = "equation";
+
+document.getElementById("mode-equation").addEventListener("click", () => {
+  inputMode = "equation";
+  document.getElementById("mode-equation").classList.add("active");
+  document.getElementById("mode-points").classList.remove("active");
+  document.getElementById("equation-inputs").classList.remove("hidden");
+  document.getElementById("points-inputs").classList.add("hidden");
+});
+
+document.getElementById("mode-points").addEventListener("click", () => {
+  inputMode = "points";
+  document.getElementById("mode-points").classList.add("active");
+  document.getElementById("mode-equation").classList.remove("active");
+  document.getElementById("points-inputs").classList.remove("hidden");
+  document.getElementById("equation-inputs").classList.add("hidden");
+});
+
+// ===================================================================
+// EXTRA VARIABLE ROWS
+// ===================================================================
+
+function createExtraVarRow(side) {
+  const row = document.createElement("div");
+  row.className = "micro-var-row micro-extra-var";
+  row.innerHTML = `
+    <input type="text" class="micro-var-name" placeholder="e.g. p_rbs" />
+    <input type="number" class="micro-var-coef" placeholder="e.g. 0.22" step="any" />
+    <input type="number" class="micro-var-value" placeholder="current value" step="any" />
+    <button class="micro-var-remove" aria-label="Remove variable">✕</button>
+  `;
+  row.querySelector(".micro-var-remove").addEventListener("click", () => {
+    row.remove();
+    updateEquationPreview(side);
+  });
+  row.querySelectorAll("input").forEach((inp) => {
+    inp.addEventListener("input", () => updateEquationPreview(side));
+  });
+  return row;
+}
+
+document.getElementById("demand-add-var").addEventListener("click", () => {
+  document
+    .getElementById("demand-extra-vars")
+    .appendChild(createExtraVarRow("demand"));
+  updateEquationPreview("demand");
+});
+
+document.getElementById("supply-add-var").addEventListener("click", () => {
+  document
+    .getElementById("supply-extra-vars")
+    .appendChild(createExtraVarRow("supply"));
+  updateEquationPreview("supply");
+});
+
+// ===================================================================
+// LIVE EQUATION PREVIEW
+// ===================================================================
+
+function updateEquationPreview(side) {
+  const prefix = side === "demand" ? "demand" : "supply";
+  const previewEl = document.getElementById(prefix + "-eq-preview");
+
+  const constVal = safeParseFloat(
+    document.getElementById("eq-" + prefix + "-const").value,
+    null,
+  );
+  const pName =
+    document.getElementById("eq-" + prefix + "-p-name").value.trim() || "p";
+  const pCoef = safeParseFloat(
+    document.getElementById("eq-" + prefix + "-p-coef").value,
+    null,
+  );
+
+  const extraRows = document.querySelectorAll(
+    "#" + prefix + "-extra-vars .micro-extra-var",
+  );
+  const extras = Array.from(extraRows).map((row) => ({
+    name: row.querySelector(".micro-var-name").value.trim() || "?",
+    coef: safeParseFloat(row.querySelector(".micro-var-coef").value, null),
+    value: safeParseFloat(row.querySelector(".micro-var-value").value, null),
+  }));
+
+  let parts = [];
+  if (constVal !== null) parts.push(constVal.toString());
+  if (pCoef !== null) {
+    const sign = pCoef >= 0 ? (parts.length ? " + " : "") : " \u2212 ";
+    parts.push(
+      (parts.length && pCoef >= 0 ? " + " : pCoef < 0 ? " \u2212 " : "") +
+        Math.abs(pCoef) +
+        pName,
+    );
+  }
+  extras.forEach((e) => {
+    if (e.coef !== null) {
+      const sign = e.coef >= 0 ? " + " : " \u2212 ";
+      parts.push(sign + Math.abs(e.coef) + e.name);
+    }
+  });
+
+  if (parts.length === 0) {
+    previewEl.textContent = "q = const + coef\u00b7P +...";
+  } else {
+    previewEl.innerHTML =
+      "q = " +
+      parts
+        .join("")
+        .replace(/^ \+ /, "")
+        .replace(/^ \u2212 /, "\u2212");
+  }
+}
+
+["eq-demand-const", "eq-demand-p-name", "eq-demand-p-coef"].forEach((id) => {
+  document
+    .getElementById(id)
+    .addEventListener("input", () => updateEquationPreview("demand"));
+});
+["eq-supply-const", "eq-supply-p-name", "eq-supply-p-coef"].forEach((id) => {
+  document
+    .getElementById(id)
+    .addEventListener("input", () => updateEquationPreview("supply"));
+});
+
+// ===================================================================
+// PARSE CURVE FROM INPUTS
+// ===================================================================
+
+function parseCurve(side) {
+  const prefix = side === "demand" ? "demand" : "supply";
+  const constVal = safeParseFloat(
+    document.getElementById("eq-" + prefix + "-const").value,
+    null,
+  );
+  const pName =
+    document.getElementById("eq-" + prefix + "-p-name").value.trim() || "p";
+  const pCoef = safeParseFloat(
+    document.getElementById("eq-" + prefix + "-p-coef").value,
+    null,
+  );
+
+  if (constVal === null || pCoef === null) return null;
+
+  const extraRows = document.querySelectorAll(
+    "#" + prefix + "-extra-vars .micro-extra-var",
+  );
+  const extras = Array.from(extraRows)
+    .map((row) => ({
+      name: row.querySelector(".micro-var-name").value.trim() || "?",
+      coef: safeParseFloat(row.querySelector(".micro-var-coef").value, null),
+      value: safeParseFloat(row.querySelector(".micro-var-value").value, null),
+    }))
+    .filter((e) => e.coef !== null);
+
+  // Compute effective intercept
+  let effectiveIntercept = constVal;
+  extras.forEach((e) => {
+    if (e.value !== null) effectiveIntercept += e.coef * e.value;
+  });
+
+  return { constVal, pName, pCoef, extras, effectiveIntercept };
+}
+
+// ===================================================================
+// SOLVE FOR EQUILIBRIUM
+// ===================================================================
+
+function solveEquilibrium(
+  demandIntercept,
+  demandPCoef,
+  supplyIntercept,
+  supplyPCoef,
+) {
+  // Qd = demandIntercept + demandPCoef * P
+  // Qs = supplyIntercept + supplyPCoef * P
+  // At eq: demandIntercept + demandPCoef*P = supplyIntercept + supplyPCoef*P
+  // (demandPCoef - supplyPCoef)*P = supplyIntercept - demandIntercept
+  const denom = demandPCoef - supplyPCoef;
+  if (Math.abs(denom) < 1e-10) return null;
+  const pStar = (supplyIntercept - demandIntercept) / denom;
+  const qStar = demandIntercept + demandPCoef * pStar;
+  return { pStar, qStar };
+}
+
+function getCoefsFromPoints() {
+  const p1d = safeParseFloat(
+    document.getElementById("pt-demand-p1").value,
+    null,
+  );
+  const q1d = safeParseFloat(
+    document.getElementById("pt-demand-q1").value,
+    null,
+  );
+  const p2d = safeParseFloat(
+    document.getElementById("pt-demand-p2").value,
+    null,
+  );
+  const q2d = safeParseFloat(
+    document.getElementById("pt-demand-q2").value,
+    null,
+  );
+  const p1s = safeParseFloat(
+    document.getElementById("pt-supply-p1").value,
+    null,
+  );
+  const q1s = safeParseFloat(
+    document.getElementById("pt-supply-q1").value,
+    null,
+  );
+  const p2s = safeParseFloat(
+    document.getElementById("pt-supply-p2").value,
+    null,
+  );
+  const q2s = safeParseFloat(
+    document.getElementById("pt-supply-q2").value,
+    null,
+  );
+
+  if ([p1d, q1d, p2d, q2d, p1s, q1s, p2s, q2s].some((v) => v === null))
+    return null;
+  if (p2d === p1d || p2s === p1s) return null;
+
+  const dSlope = (q2d - q1d) / (p2d - p1d);
+  const dIntercept = q1d - dSlope * p1d;
+
+  const sSlope = (q2s - q1s) / (p2s - p1s);
+  const sIntercept = q1s - sSlope * p1s;
+
+  return {
+    fromPoints: true,
+    demand: {
+      constVal: dIntercept,
+      pCoef: dSlope,
+      extras: [],
+      effectiveIntercept: dIntercept,
+      pName: "p",
+    },
+    supply: {
+      constVal: sIntercept,
+      pCoef: sSlope,
+      extras: [],
+      effectiveIntercept: sIntercept,
+      pName: "p",
+    },
+    p1d,
+    q1d,
+    p2d,
+    q2d,
+    p1s,
+    q1s,
+    p2s,
+    q2s,
+    dSlope,
+    sSlope,
+  };
+}
+
+// ===================================================================
+// MAIN HANDLER
+// ===================================================================
+
+document
+  .getElementById("eq-calculate")
+  .addEventListener("click", handleCalculate);
+bindFormEnter(() => handleCalculate(), "#equilibrium-tab");
+
+function handleCalculate() {
+  let demand,
+    supply,
+    fromPoints = false,
+    pointsData = null;
+
+  if (inputMode === "points") {
+    const pts = getCoefsFromPoints();
+    if (!pts) {
+      showFieldError("eq-demand-a", "Please fill in all point fields.");
+      return;
+    }
+    demand = pts.demand;
+    supply = pts.supply;
+    fromPoints = true;
+    pointsData = pts;
+  } else {
+    demand = parseCurve("demand");
+    supply = parseCurve("supply");
+    if (!demand) {
+      showFieldError(
+        "eq-demand-const",
+        "Please fill in demand constant and price coefficient.",
+      );
+      return;
+    }
+    if (!supply) {
+      showFieldError(
+        "eq-supply-const",
+        "Please fill in supply constant and price coefficient.",
+      );
+      return;
+    }
+  }
+
+  const eq = solveEquilibrium(
+    demand.effectiveIntercept,
+    demand.pCoef,
+    supply.effectiveIntercept,
+    supply.pCoef,
+  );
+
+  if (!eq) {
+    showFieldError(
+      "eq-demand-const",
+      "No equilibrium exists — curves are parallel.",
+    );
+    return;
+  }
+
+  const { pStar, qStar } = eq;
+
+  baseEquilibrium = {
+    demand,
+    supply,
+    pStar,
+    qStar,
+    fromPoints,
+    pointsData,
+  };
+
+  document.getElementById("eq-price").textContent = pStar.toFixed(4);
+  document.getElementById("eq-quantity").textContent = qStar.toFixed(4);
+
+  const statusEl = document.getElementById("eq-status");
+  if (pStar > 0 && qStar > 0) {
+    statusEl.textContent = "\u2705 Market Clears";
+    statusEl.className = "result-value positive";
+  } else {
+    statusEl.textContent = "\u26a0\ufe0f Check Inputs";
+    statusEl.className = "result-value negative";
+  }
+
+  renderSteps(demand, supply, pStar, qStar, fromPoints, pointsData);
+
+  document.getElementById("eq-results").classList.remove("hidden");
+  document.getElementById("eq-steps-section").classList.remove("hidden");
+  document.getElementById("eq-chart-section").classList.remove("hidden");
+
+  drawEquilibriumChart(demand, supply, pStar, qStar, null);
+
+  document.getElementById("shifters-no-data").style.display = "none";
+  document.getElementById("shifters-controls").classList.remove("hidden");
+  initSliders(demand, supply);
+
+  document.getElementById("eq-results").scrollIntoView({ behavior: "smooth" });
+}
+
+// ===================================================================
+// STEP-BY-STEP
+// ===================================================================
+
+function renderSteps(demand, supply, pStar, qStar, fromPoints, pointsData) {
+  const container = document.getElementById("eq-steps-content");
+  const section = document.getElementById("eq-steps-section");
+  const toggle = document.getElementById("eq-steps-toggle");
+  const body = document.getElementById("eq-steps-body");
+
+  const steps = [];
+
+  function sec(title, ...items) {
+    return `<div class="micro-step-section">
+      <div class="micro-step-section-title">${title}</div>
+      ${items.join("")}
+    </div>`;
+  }
+
+  function step(text) {
+    return `<div class="micro-step">${text}</div>`;
+  }
+
+  // Step 0 — from points
+  if (fromPoints && pointsData) {
+    const { p1d, q1d, p2d, q2d, p1s, q1s, p2s, q2s, dSlope, sSlope } =
+      pointsData;
+    steps.push(
+      sec(
+        "Step 0 \u2014 Derive Equations from Points",
+        step(
+          `<span class="demand-color">Demand points: (P=${p1d}, Q=${q1d}) and (P=${p2d}, Q=${q2d})</span>`,
+        ),
+        step(
+          `slope = (${q2d} \u2212 ${q1d}) / (${p2d} \u2212 ${p1d}) = <strong>${dSlope.toFixed(4)}</strong>`,
+        ),
+        step(
+          `intercept = ${q1d} \u2212 (${dSlope.toFixed(4)})(${p1d}) = <strong>${demand.constVal.toFixed(4)}</strong>`,
+        ),
+        step(
+          `<span class="demand-color">\u2192 Q<sub>d</sub> = ${demand.constVal.toFixed(4)} + ${dSlope.toFixed(4)}P</span>`,
+        ),
+        step(` `),
+        step(
+          `<span class="supply-color">Supply points: (P=${p1s}, Q=${q1s}) and (P=${p2s}, Q=${q2s})</span>`,
+        ),
+        step(
+          `slope = (${q2s} \u2212 ${q1s}) / (${p2s} \u2212 ${p1s}) = <strong>${sSlope.toFixed(4)}</strong>`,
+        ),
+        step(
+          `intercept = ${q1s} \u2212 (${sSlope.toFixed(4)})(${p1s}) = <strong>${supply.constVal.toFixed(4)}</strong>`,
+        ),
+        step(
+          `<span class="supply-color">\u2192 Q<sub>s</sub> = ${supply.constVal.toFixed(4)} + ${sSlope.toFixed(4)}P</span>`,
+        ),
+      ),
+    );
+  }
+
+  // Step 1 — full equations
+  function formatEq(curve, color) {
+    let eq = `${curve.constVal}`;
+    eq += ` ${curve.pCoef >= 0 ? "+" : "\u2212"} ${Math.abs(curve.pCoef)}${curve.pName}`;
+    curve.extras.forEach((e) => {
+      eq += ` ${e.coef >= 0 ? "+" : "\u2212"} ${Math.abs(e.coef)}${e.name}`;
+    });
+    return `<span class="${color}">${eq}</span>`;
+  }
+
+  steps.push(
+    sec(
+      "Step 1 \u2014 Full Equations",
+      step(
+        `<span class="demand-color">Demand: q = ${formatEq(demand, "demand-color")}</span>`,
+      ),
+      step(
+        `<span class="supply-color">Supply: q = ${formatEq(supply, "supply-color")}</span>`,
+      ),
+    ),
+  );
+
+  // Step 2 — substitute known values
+  if (demand.extras.length > 0 || supply.extras.length > 0) {
+    const dLines = [];
+    dLines.push(step(`<span class="demand-color">Demand substitution:</span>`));
+    dLines.push(step(`  Base constant: ${demand.constVal}`));
+    demand.extras.forEach((e) => {
+      const contrib = e.value !== null ? e.coef * e.value : "?";
+      dLines.push(
+        step(
+          `  + ${e.name}: ${e.coef} \u00d7 ${e.value !== null ? e.value : "?"} = <strong>${typeof contrib === "number" ? contrib.toFixed(4) : "?"}</strong>`,
+        ),
+      );
+    });
+    dLines.push(
+      step(
+        `  <strong class="demand-color">Effective intercept = ${demand.effectiveIntercept.toFixed(4)}</strong>`,
+      ),
+    );
+    dLines.push(
+      step(
+        `  <strong class="demand-color">\u2192 q \u2248 ${demand.effectiveIntercept.toFixed(4)} + ${demand.pCoef}${demand.pName}</strong>`,
+      ),
+    );
+
+    const sLines = [];
+    sLines.push(step(`<span class="supply-color">Supply substitution:</span>`));
+    sLines.push(step(`  Base constant: ${supply.constVal}`));
+    supply.extras.forEach((e) => {
+      const contrib = e.value !== null ? e.coef * e.value : "?";
+      sLines.push(
+        step(
+          `  + ${e.name}: ${e.coef} \u00d7 ${e.value !== null ? e.value : "?"} = <strong>${typeof contrib === "number" ? contrib.toFixed(4) : "?"}</strong>`,
+        ),
+      );
+    });
+    sLines.push(
+      step(
+        `  <strong class="supply-color">Effective intercept = ${supply.effectiveIntercept.toFixed(4)}</strong>`,
+      ),
+    );
+    sLines.push(
+      step(
+        `  <strong class="supply-color">\u2192 q \u2248 ${supply.effectiveIntercept.toFixed(4)} + ${supply.pCoef}${supply.pName}</strong>`,
+      ),
+    );
+
+    steps.push(
+      sec(
+        "Step 2 \u2014 Substitute Known Values",
+        ...dLines,
+        step(" "),
+        ...sLines,
+      ),
+    );
+  }
+
+  // Step 3 — set equal
+  const dI = demand.effectiveIntercept;
+  const dP = demand.pCoef;
+  const sI = supply.effectiveIntercept;
+  const sP = supply.pCoef;
+  const denom = dP - sP;
+
+  steps.push(
+    sec(
+      "Step 3 \u2014 Set Q<sub>d</sub> = Q<sub>s</sub>",
+      step(`${dI.toFixed(4)} + ${dP}P = ${sI.toFixed(4)} + ${sP}P`),
+      step(`${dI.toFixed(4)} \u2212 ${sI.toFixed(4)} = ${sP}P \u2212 ${dP}P`),
+      step(`${(dI - sI).toFixed(4)} = ${(sP - dP).toFixed(4)}P`),
+      step(`P* = ${(dI - sI).toFixed(4)} \u00f7 ${(sP - dP).toFixed(4)}`),
+      step(`<strong class="eq-color">P* = ${pStar.toFixed(4)}</strong>`),
+    ),
+  );
+
+  // Step 4 — find Q*
+  const qFromDemand = (dI + dP * pStar).toFixed(4);
+  const qFromSupply = (sI + sP * pStar).toFixed(4);
+
+  steps.push(
+    sec(
+      "Step 4 \u2014 Find Q*",
+      step(`Using demand: Q* = ${dI.toFixed(4)} + ${dP}(${pStar.toFixed(4)})`),
+      step(`Q* = ${dI.toFixed(4)} + ${(dP * pStar).toFixed(4)}`),
+      step(`<strong class="eq-color">Q* = ${qFromDemand}</strong>`),
+      step(` `),
+      step(
+        `Verify using supply: Q* = ${sI.toFixed(4)} + ${sP}(${pStar.toFixed(4)})`,
+      ),
+      step(`Q* = ${sI.toFixed(4)} + ${(sP * pStar).toFixed(4)}`),
+      step(`<strong class="eq-color">Q* = ${qFromSupply} \u2705</strong>`),
+    ),
+  );
+
+  steps.push(
+    sec(
+      "Step 5 \u2014 Market Equilibrium",
+      step(`<span class="eq-color">P* = ${pStar.toFixed(4)}</span>`),
+      step(`<span class="eq-color">Q* = ${qStar.toFixed(4)}</span>`),
+      step(
+        `At this price, quantity demanded equals quantity supplied \u2014 the market clears.`,
+      ),
+    ),
+  );
+
+  container.innerHTML = steps.join("");
+  section.classList.remove("hidden");
+  toggle.setAttribute("aria-expanded", "true");
+  body.classList.remove("hidden");
+}
+
+// ===================================================================
+// CHART HELPERS
+// ===================================================================
+
+function getChartBounds(demand, supply, pStar, qStar) {
+  const dI = demand.effectiveIntercept;
+  const dP = demand.pCoef;
+  const sI = supply.effectiveIntercept;
+  const sP = supply.pCoef;
+
+  // Q when P=0 for demand: q = dI
+  // P when Q=0 for demand: P = -dI/dP
+  // Q when P=0 for supply: q = sI
+  const qMax = Math.max(Math.abs(dI), Math.abs(qStar) * 1.6, 1);
+  const pMax = Math.max(Math.abs(dI / dP), Math.abs(pStar) * 1.8, 1);
+  return { qMax, pMax };
+}
+
+function drawCurveOnChart(
+  ctx,
+  toX,
+  toY,
+  intercept,
+  pCoef,
+  qMax,
+  pMax,
+  color,
+  alpha,
+  lineWidth,
+) {
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.beginPath();
+  let started = false;
+  for (let q = 0; q <= qMax * 1.05; q += qMax / 300) {
+    if (Math.abs(pCoef) < 1e-10) continue;
+    const p = (q - intercept) / pCoef;
+    if (p < 0 || p > pMax * 1.05) continue;
+    if (!started) {
+      ctx.moveTo(toX(q), toY(p));
+      started = true;
+    } else ctx.lineTo(toX(q), toY(p));
+  }
+  if (started) ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function drawGrid(
+  ctx,
+  chart,
+  padding,
+  chartWidth,
+  chartHeight,
+  qMax,
+  pMax,
+  toX,
+  toY,
+) {
+  for (let i = 0; i <= 6; i++) {
+    const p = (pMax / 6) * i;
+    const y = toY(p);
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.12)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(chart.width - padding.right, y);
+    ctx.stroke();
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = window.CHART_FONTS.sm;
+    ctx.textAlign = "right";
+    ctx.fillText(p.toFixed(2), padding.left - 8, y + 4);
+  }
+  for (let i = 0; i <= 6; i++) {
+    const q = (qMax / 6) * i;
+    const x = toX(q);
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.12)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, padding.top);
+    ctx.lineTo(x, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = window.CHART_FONTS.sm;
+    ctx.textAlign = "center";
+    ctx.fillText(q.toFixed(2), x, chart.height - padding.bottom + 18);
+  }
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = window.CHART_FONTS.md;
+  ctx.textAlign = "center";
+  ctx.fillText("Quantity (Q)", chart.width / 2, chart.height - 8);
+  ctx.save();
+  ctx.translate(14, chart.height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("Price (P)", 0, 0);
+  ctx.restore();
+  ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding.left, padding.top);
+  ctx.lineTo(padding.left, padding.top + chartHeight);
+  ctx.lineTo(padding.left + chartWidth, padding.top + chartHeight);
+  ctx.stroke();
+}
+
+function drawTooltipBox(
+  ctx,
+  tooltipLines,
+  hx,
+  padding,
+  chartWidth,
+  chartHeight,
+  chartTotalWidth,
+  chartRight,
+) {
+  ctx.font = window.CHART_FONTS.md;
+  const tooltipWidth =
+    Math.max(...tooltipLines.map((l) => ctx.measureText(l.text).width)) + 24;
+  const tooltipHeight = tooltipLines.length * 20 + 12;
+  let tx = hx + 15;
+  let ty = padding.top + 10;
+  if (tx + tooltipWidth > chartTotalWidth - chartRight)
+    tx = hx - tooltipWidth - 15;
+
+  const rad = 6;
+  ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+  ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(tx + rad, ty);
+  ctx.lineTo(tx + tooltipWidth - rad, ty);
+  ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + rad, rad);
+  ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - rad);
+  ctx.arcTo(
+    tx + tooltipWidth,
+    ty + tooltipHeight,
+    tx + tooltipWidth - rad,
+    ty + tooltipHeight,
+    rad,
+  );
+  ctx.lineTo(tx + rad, ty + tooltipHeight);
+  ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - rad, rad);
+  ctx.lineTo(tx, ty + rad);
+  ctx.arcTo(tx, ty, tx + rad, ty, rad);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.textAlign = "left";
+  tooltipLines.forEach((line, i) => {
+    ctx.fillStyle = line.color || "#e2e8f0";
+    ctx.font = line.bold ? window.CHART_FONTS.boldMd : window.CHART_FONTS.md;
+    ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
+  });
+}
+
+// ===================================================================
+// EQUILIBRIUM CHART
+// ===================================================================
+
+let eqChartController = null;
+
+function drawEquilibriumChart(demand, supply, pStar, qStar, highlightQ) {
+  const canvas = document.getElementById("eq-chart-canvas");
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() =>
+      drawEquilibriumChart(demand, supply, pStar, qStar, highlightQ),
+    );
+    return;
+  }
+
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 40, right: 60, bottom: 60, left: 80 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+
+  const { qMax, pMax } = getChartBounds(demand, supply, pStar, qStar);
+
+  function toX(q) {
+    return padding.left + (q / qMax) * chartWidth;
+  }
+  function toY(p) {
+    return padding.top + chartHeight - (p / pMax) * chartHeight;
+  }
+  function fromX(x) {
+    return ((x - padding.left) / chartWidth) * qMax;
+  }
+
+  chart.clear();
+  drawGrid(ctx, chart, padding, chartWidth, chartHeight, qMax, pMax, toX, toY);
+
+  // Demand curve
+  drawCurveOnChart(
+    ctx,
+    toX,
+    toY,
+    demand.effectiveIntercept,
+    demand.pCoef,
+    qMax,
+    pMax,
+    "#f472b6",
+    1,
+    2.5,
+  );
+  const dLabelQ = qMax * 0.05;
+  const dLabelP = (dLabelQ - demand.effectiveIntercept) / demand.pCoef;
+  if (dLabelP > 0 && dLabelP <= pMax) {
+    ctx.fillStyle = "#f472b6";
+    ctx.font = window.CHART_FONTS.boldMd;
+    ctx.textAlign = "left";
+    ctx.fillText("Demand", toX(dLabelQ) + 5, toY(dLabelP) - 8);
+  }
+
+  // Supply curve
+  drawCurveOnChart(
+    ctx,
+    toX,
+    toY,
+    supply.effectiveIntercept,
+    supply.pCoef,
+    qMax,
+    pMax,
+    "#2dd4bf",
+    1,
+    2.5,
+  );
+  const sLabelQ = qMax * 0.75;
+  const sLabelP = (sLabelQ - supply.effectiveIntercept) / supply.pCoef;
+  if (sLabelP > 0 && sLabelP <= pMax) {
+    ctx.fillStyle = "#2dd4bf";
+    ctx.font = window.CHART_FONTS.boldMd;
+    ctx.textAlign = "left";
+    ctx.fillText("Supply", toX(sLabelQ) + 5, toY(sLabelP) - 8);
+  }
+
+  // Equilibrium
+  if (pStar > 0 && qStar > 0 && pStar <= pMax && qStar <= qMax) {
+    ctx.strokeStyle = "rgba(245, 158, 11, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(toX(qStar), padding.top + chartHeight);
+    ctx.lineTo(toX(qStar), toY(pStar));
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(padding.left, toY(pStar));
+    ctx.lineTo(toX(qStar), toY(pStar));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = "#f59e0b";
+    ctx.font = window.CHART_FONTS.boldSm;
+    ctx.textAlign = "right";
+    ctx.fillText("P*=" + pStar.toFixed(3), padding.left - 4, toY(pStar) + 4);
+    ctx.textAlign = "center";
+    ctx.fillText(
+      "Q*=" + qStar.toFixed(3),
+      toX(qStar),
+      padding.top + chartHeight + 32,
+    );
+
+    ctx.beginPath();
+    ctx.arc(toX(qStar), toY(pStar), 7, 0, Math.PI * 2);
+    ctx.fillStyle = "#f59e0b";
+    ctx.fill();
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Smart label positioning — avoid overlapping curves
+    ctx.font = window.CHART_FONTS.boldSm;
+    const eLabel = "E(" + qStar.toFixed(3) + ", " + pStar.toFixed(3) + ")";
+    const eLabelW = ctx.measureText(eLabel).width;
+    const eLabelH = 14;
+    const ePad = 4;
+    // Place left of dot if in right 40% of chart, else right
+    const eInRightHalf = toX(qStar) > padding.left + chartWidth * 0.6;
+    const eLabelX = eInRightHalf ? toX(qStar) - eLabelW - 14 : toX(qStar) + 12;
+    // Place below dot if near top, else above
+    const eNearTop = toY(pStar) < padding.top + chartHeight * 0.25;
+    const eLabelY = eNearTop ? toY(pStar) + 20 : toY(pStar) - 10;
+    // Background box
+    ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+    ctx.beginPath();
+    ctx.roundRect(eLabelX - ePad, eLabelY - eLabelH, eLabelW + ePad * 2, eLabelH + ePad, 4);
+    ctx.fill();
+    ctx.fillStyle = "#f59e0b";
+    ctx.textAlign = "left";
+    ctx.fillText(eLabel, eLabelX, eLabelY - 2);
+  }
+
+  // Hover
+  if (highlightQ !== null && highlightQ >= 0 && highlightQ <= qMax) {
+    const hx = toX(highlightQ);
+    const pDemand =
+      Math.abs(demand.pCoef) > 1e-10
+        ? (highlightQ - demand.effectiveIntercept) / demand.pCoef
+        : null;
+    const pSupply =
+      Math.abs(supply.pCoef) > 1e-10
+        ? (highlightQ - supply.effectiveIntercept) / supply.pCoef
+        : null;
+
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(hx, padding.top);
+    ctx.lineTo(hx, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const tooltipLines = [
+      { text: "Q = " + highlightQ.toFixed(3), color: "#e2e8f0", bold: true },
+    ];
+
+    if (pDemand !== null && pDemand >= 0 && pDemand <= pMax) {
+      ctx.beginPath();
+      ctx.arc(hx, toY(pDemand), 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#f472b6";
+      ctx.fill();
+      tooltipLines.push({
+        text: "Demand P = " + pDemand.toFixed(4),
+        color: "#f472b6",
+      });
+    }
+    if (pSupply !== null && pSupply >= 0 && pSupply <= pMax) {
+      ctx.beginPath();
+      ctx.arc(hx, toY(pSupply), 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#2dd4bf";
+      ctx.fill();
+      tooltipLines.push({
+        text: "Supply P = " + pSupply.toFixed(4),
+        color: "#2dd4bf",
+      });
+    }
+    if (pDemand !== null && pSupply !== null && pDemand >= 0 && pSupply >= 0) {
+      const diff = pDemand - pSupply;
+      if (Math.abs(diff) > 1e-6) {
+        tooltipLines.push({
+          text:
+            diff > 0
+              ? "Shortage: " + diff.toFixed(4)
+              : "Surplus: " + Math.abs(diff).toFixed(4),
+          color: diff > 0 ? "#4ade80" : "#f472b6",
+        });
+      } else {
+        tooltipLines.push({
+          text: "\u2248 Equilibrium",
+          color: "#f59e0b",
+          bold: true,
+        });
+      }
+    }
+
+    drawTooltipBox(
+      ctx,
+      tooltipLines,
+      hx,
+      padding,
+      chartWidth,
+      chartHeight,
+      chart.width,
+      padding.right,
+    );
+  }
+
+  if (eqChartController) eqChartController.abort();
+  eqChartController = new AbortController();
+  const { signal } = eqChartController;
+
+  canvas.addEventListener(
+    "mousemove",
+    rafThrottle((e) => {
+      const r = canvas.getBoundingClientRect();
+      const scaleX = chart.width / r.width;
+      const q = fromX((e.clientX - r.left) * scaleX);
+      if (q >= 0 && q <= qMax) {
+        canvas.style.cursor = "crosshair";
+        drawEquilibriumChart(demand, supply, pStar, qStar, q);
+      } else {
+        canvas.style.cursor = "default";
+        drawEquilibriumChart(demand, supply, pStar, qStar, null);
+      }
+    }),
+    { signal },
+  );
+
+  canvas.addEventListener(
+    "mouseleave",
+    () => {
+      canvas.style.cursor = "default";
+      drawEquilibriumChart(demand, supply, pStar, qStar, null);
+    },
+    { signal },
+  );
+}
+
+// ===================================================================
+// SHIFTERS TAB
+// ===================================================================
+
+function initSliders(demand, supply) {
+  const dI = demand.effectiveIntercept;
+  const dP = demand.pCoef;
+  const sI = supply.effectiveIntercept;
+  const sP = supply.pCoef;
+
+  const sliderA = document.getElementById("slider-a");
+  const sliderB = document.getElementById("slider-b");
+  const sliderC = document.getElementById("slider-c");
+  const sliderD = document.getElementById("slider-d");
+
+  const aRange = Math.max(Math.abs(dI) * 1.5, 1);
+  sliderA.min = (dI - aRange).toFixed(4);
+  sliderA.max = (dI + aRange).toFixed(4);
+  sliderA.value = dI;
+  sliderA.step = (aRange / 100).toFixed(4);
+
+  const bRange = Math.max(Math.abs(dP) * 2, 0.001);
+  sliderB.min = (dP - bRange).toFixed(4);
+  sliderB.max = (dP + bRange).toFixed(4);
+  sliderB.value = dP;
+  sliderB.step = (bRange / 100).toFixed(4);
+
+  const cRange = Math.max(Math.abs(sI) * 1.5, 1);
+  sliderC.min = (sI - cRange).toFixed(4);
+  sliderC.max = (sI + cRange).toFixed(4);
+  sliderC.value = sI;
+  sliderC.step = (cRange / 100).toFixed(4);
+
+  const dRange = Math.max(Math.abs(sP) * 2, 0.001);
+  sliderD.min = (sP - dRange).toFixed(4);
+  sliderD.max = (sP + dRange).toFixed(4);
+  sliderD.value = sP;
+  sliderD.step = (dRange / 100).toFixed(4);
+
+  updateSliderLabels(dI, dP, sI, sP);
+  updateShiftersChart(dI, dP, sI, sP);
+
+  document.getElementById("shifters-results").classList.remove("hidden");
+  document.getElementById("shifters-chart-section").classList.remove("hidden");
+}
+
+function updateSliderLabels(a, b, c, d) {
+  document.getElementById("slider-a-label").textContent =
+    parseFloat(a).toFixed(4);
+  document.getElementById("slider-b-label").textContent =
+    parseFloat(b).toFixed(4);
+  document.getElementById("slider-c-label").textContent =
+    parseFloat(c).toFixed(4);
+  document.getElementById("slider-d-label").textContent =
+    parseFloat(d).toFixed(4);
+}
+
+["slider-a", "slider-b", "slider-c", "slider-d"].forEach((id) => {
+  document.getElementById(id).addEventListener(
+    "input",
+    rafThrottle(() => {
+      if (!baseEquilibrium) return;
+      const a = safeParseFloat(document.getElementById("slider-a").value);
+      const b = safeParseFloat(document.getElementById("slider-b").value);
+      const c = safeParseFloat(document.getElementById("slider-c").value);
+      const d = safeParseFloat(document.getElementById("slider-d").value);
+      updateSliderLabels(a, b, c, d);
+      updateShiftersChart(a, b, c, d);
+    }),
+  );
+});
+
+document.getElementById("shifters-reset").addEventListener("click", () => {
+  if (!baseEquilibrium) return;
+  const { demand, supply } = baseEquilibrium;
+  document.getElementById("slider-a").value = demand.effectiveIntercept;
+  document.getElementById("slider-b").value = demand.pCoef;
+  document.getElementById("slider-c").value = supply.effectiveIntercept;
+  document.getElementById("slider-d").value = supply.pCoef;
+  updateSliderLabels(
+    demand.effectiveIntercept,
+    demand.pCoef,
+    supply.effectiveIntercept,
+    supply.pCoef,
+  );
+  updateShiftersChart(
+    demand.effectiveIntercept,
+    demand.pCoef,
+    supply.effectiveIntercept,
+    supply.pCoef,
+  );
+});
+
+function updateShiftersChart(dI, dP, sI, sP) {
+  const eq = solveEquilibrium(dI, dP, sI, sP);
+  const origEq = baseEquilibrium;
+
+  if (eq) {
+    document.getElementById("orig-price").textContent = origEq.pStar.toFixed(4);
+    document.getElementById("orig-quantity").textContent =
+      origEq.qStar.toFixed(4);
+    document.getElementById("new-price").textContent = eq.pStar.toFixed(4);
+    document.getElementById("new-quantity").textContent = eq.qStar.toFixed(4);
+
+    const deltaP = eq.pStar - origEq.pStar;
+    const deltaQ = eq.qStar - origEq.qStar;
+
+    const deltaPEl = document.getElementById("delta-price");
+    deltaPEl.textContent = (deltaP >= 0 ? "+" : "") + deltaP.toFixed(4);
+    deltaPEl.className =
+      "result-value " + (deltaP >= 0 ? "positive" : "negative");
+
+    const deltaQEl = document.getElementById("delta-quantity");
+    deltaQEl.textContent = (deltaQ >= 0 ? "+" : "") + deltaQ.toFixed(4);
+    deltaQEl.className =
+      "result-value " + (deltaQ >= 0 ? "positive" : "negative");
+  }
+
+  drawShiftersChart(dI, dP, sI, sP, eq, null);
+}
+
+// ===================================================================
+// SHIFTERS CHART
+// ===================================================================
+
+let shiftersChartController = null;
+
+function drawShiftersChart(dI, dP, sI, sP, newEq, highlightQ) {
+  const canvas = document.getElementById("shifters-chart-canvas");
+  const container = canvas.parentElement;
+  const rect = container.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    requestAnimationFrame(() =>
+      drawShiftersChart(dI, dP, sI, sP, newEq, highlightQ),
+    );
+    return;
+  }
+
+  const orig = baseEquilibrium;
+  const chart = createChartContext(canvas, rect.width, rect.height);
+  const ctx = chart.ctx;
+  const padding = { top: 40, right: 60, bottom: 60, left: 80 };
+  const chartWidth = chart.width - padding.left - padding.right;
+  const chartHeight = chart.height - padding.top - padding.bottom;
+
+  const allPStar = [orig.pStar, newEq ? newEq.pStar : orig.pStar];
+  const allQStar = [orig.qStar, newEq ? newEq.qStar : orig.qStar];
+  const allIntercepts = [
+    Math.abs(orig.demand.effectiveIntercept),
+    Math.abs(orig.supply.effectiveIntercept),
+    Math.abs(dI),
+    Math.abs(sI),
+  ];
+
+  const qMax = Math.max(
+    ...allIntercepts,
+    ...allQStar.map((q) => Math.abs(q) * 1.6),
+    1,
+  );
+  const pMax = Math.max(...allPStar.map((p) => Math.abs(p) * 1.8), 1);
+
+  function toX(q) {
+    return padding.left + (q / qMax) * chartWidth;
+  }
+  function toY(p) {
+    return padding.top + chartHeight - (p / pMax) * chartHeight;
+  }
+  function fromX(x) {
+    return ((x - padding.left) / chartWidth) * qMax;
+  }
+
+  chart.clear();
+  drawGrid(ctx, chart, padding, chartWidth, chartHeight, qMax, pMax, toX, toY);
+
+  // Original curves (ghost)
+  ctx.setLineDash([6, 4]);
+  drawCurveOnChart(
+    ctx,
+    toX,
+    toY,
+    orig.demand.effectiveIntercept,
+    orig.demand.pCoef,
+    qMax,
+    pMax,
+    "#f472b6",
+    0.3,
+    1.5,
+  );
+  drawCurveOnChart(
+    ctx,
+    toX,
+    toY,
+    orig.supply.effectiveIntercept,
+    orig.supply.pCoef,
+    qMax,
+    pMax,
+    "#2dd4bf",
+    0.3,
+    1.5,
+  );
+  ctx.setLineDash([]);
+
+  // New curves (solid)
+  drawCurveOnChart(ctx, toX, toY, dI, dP, qMax, pMax, "#f472b6", 1, 2.5);
+  drawCurveOnChart(ctx, toX, toY, sI, sP, qMax, pMax, "#2dd4bf", 1, 2.5);
+
+  // Original equilibrium ghost
+  if (
+    orig.pStar > 0 &&
+    orig.qStar > 0 &&
+    orig.pStar <= pMax &&
+    orig.qStar <= qMax
+  ) {
+    ctx.beginPath();
+    ctx.arc(toX(orig.qStar), toY(orig.pStar), 6, 0, Math.PI * 2);
+    ctx.fillStyle = "#94a3b8";
+    ctx.fill();
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.font = window.CHART_FONTS.xs;
+    const e0Label = "E₀(" + orig.qStar.toFixed(3) + ", " + orig.pStar.toFixed(3) + ")";
+    const e0LabelW = ctx.measureText(e0Label).width;
+    const e0LabelH = 12;
+    const e0Pad = 3;
+    const e0InRight = toX(orig.qStar) > padding.left + chartWidth * 0.6;
+    const e0LabelX = e0InRight ? toX(orig.qStar) - e0LabelW - 12 : toX(orig.qStar) + 10;
+    const e0NearTop = toY(orig.pStar) < padding.top + chartHeight * 0.25;
+    const e0LabelY = e0NearTop ? toY(orig.pStar) + 18 : toY(orig.pStar) - 8;
+    ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+    ctx.beginPath();
+    ctx.roundRect(e0LabelX - e0Pad, e0LabelY - e0LabelH, e0LabelW + e0Pad * 2, e0LabelH + e0Pad, 4);
+    ctx.fill();
+    ctx.fillStyle = "#94a3b8";
+    ctx.textAlign = "left";
+    ctx.fillText(e0Label, e0LabelX, e0LabelY - 1);
+  }
+
+  // New equilibrium
+  if (
+    newEq &&
+    newEq.pStar > 0 &&
+    newEq.qStar > 0 &&
+    newEq.pStar <= pMax &&
+    newEq.qStar <= qMax
+  ) {
+    ctx.strokeStyle = "rgba(245, 158, 11, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(toX(newEq.qStar), padding.top + chartHeight);
+    ctx.lineTo(toX(newEq.qStar), toY(newEq.pStar));
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(padding.left, toY(newEq.pStar));
+    ctx.lineTo(toX(newEq.qStar), toY(newEq.pStar));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.arc(toX(newEq.qStar), toY(newEq.pStar), 7, 0, Math.PI * 2);
+    ctx.fillStyle = "#f59e0b";
+    ctx.fill();
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#f59e0b";
+    ctx.font = window.CHART_FONTS.boldSm;
+    const e1Label = "E₁(" + newEq.qStar.toFixed(3) + ", " + newEq.pStar.toFixed(3) + ")";
+    const e1LabelW = ctx.measureText(e1Label).width;
+    const e1LabelH = 14;
+    const e1Pad = 4;
+    const e1InRight = toX(newEq.qStar) > padding.left + chartWidth * 0.6;
+    const e1LabelX = e1InRight ? toX(newEq.qStar) - e1LabelW - 14 : toX(newEq.qStar) + 12;
+    const e1NearTop = toY(newEq.pStar) < padding.top + chartHeight * 0.25;
+    const e1LabelY = e1NearTop ? toY(newEq.pStar) + 20 : toY(newEq.pStar) - 10;
+    ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+    ctx.beginPath();
+    ctx.roundRect(e1LabelX - e1Pad, e1LabelY - e1LabelH, e1LabelW + e1Pad * 2, e1LabelH + e1Pad, 4);
+    ctx.fill();
+    ctx.fillStyle = "#f59e0b";
+    ctx.textAlign = "left";
+    ctx.fillText(e1Label, e1LabelX, e1LabelY - 2);
+  }
+
+  // Hover
+  if (highlightQ !== null && highlightQ >= 0 && highlightQ <= qMax) {
+    const hx = toX(highlightQ);
+    const pDemand = Math.abs(dP) > 1e-10 ? (highlightQ - dI) / dP : null;
+    const pSupply = Math.abs(sP) > 1e-10 ? (highlightQ - sI) / sP : null;
+
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(hx, padding.top);
+    ctx.lineTo(hx, padding.top + chartHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const tooltipLines = [
+      { text: "Q = " + highlightQ.toFixed(3), color: "#e2e8f0", bold: true },
+    ];
+    if (pDemand !== null && pDemand >= 0 && pDemand <= pMax) {
+      ctx.beginPath();
+      ctx.arc(hx, toY(pDemand), 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#f472b6";
+      ctx.fill();
+      tooltipLines.push({
+        text: "Demand P = " + pDemand.toFixed(4),
+        color: "#f472b6",
+      });
+    }
+    if (pSupply !== null && pSupply >= 0 && pSupply <= pMax) {
+      ctx.beginPath();
+      ctx.arc(hx, toY(pSupply), 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#2dd4bf";
+      ctx.fill();
+      tooltipLines.push({
+        text: "Supply P = " + pSupply.toFixed(4),
+        color: "#2dd4bf",
+      });
+    }
+
+    drawTooltipBox(
+      ctx,
+      tooltipLines,
+      hx,
+      padding,
+      chartWidth,
+      chartHeight,
+      chart.width,
+      padding.right,
+    );
+  }
+
+  if (shiftersChartController) shiftersChartController.abort();
+  shiftersChartController = new AbortController();
+  const { signal } = shiftersChartController;
+
+  canvas.addEventListener(
+    "mousemove",
+    rafThrottle((e) => {
+      const r = canvas.getBoundingClientRect();
+      const scaleX = chart.width / r.width;
+      const q = fromX((e.clientX - r.left) * scaleX);
+      if (q >= 0 && q <= qMax) {
+        canvas.style.cursor = "crosshair";
+        drawShiftersChart(dI, dP, sI, sP, newEq, q);
+      } else {
+        canvas.style.cursor = "default";
+        drawShiftersChart(dI, dP, sI, sP, newEq, null);
+      }
+    }),
+    { signal },
+  );
+
+  canvas.addEventListener(
+    "mouseleave",
+    () => {
+      canvas.style.cursor = "default";
+      drawShiftersChart(dI, dP, sI, sP, newEq, null);
+    },
+    { signal },
+  );
+}
+
+// ===================================================================
+// TWO POINTS PREVIEW
+// ===================================================================
+
+function updatePointsPreviews() {
+  const p1d = safeParseFloat(
+    document.getElementById("pt-demand-p1").value,
+    null,
+  );
+  const q1d = safeParseFloat(
+    document.getElementById("pt-demand-q1").value,
+    null,
+  );
+  const p2d = safeParseFloat(
+    document.getElementById("pt-demand-p2").value,
+    null,
+  );
+  const q2d = safeParseFloat(
+    document.getElementById("pt-demand-q2").value,
+    null,
+  );
+  const p1s = safeParseFloat(
+    document.getElementById("pt-supply-p1").value,
+    null,
+  );
+  const q1s = safeParseFloat(
+    document.getElementById("pt-supply-q1").value,
+    null,
+  );
+  const p2s = safeParseFloat(
+    document.getElementById("pt-supply-p2").value,
+    null,
+  );
+  const q2s = safeParseFloat(
+    document.getElementById("pt-supply-q2").value,
+    null,
+  );
+
+  const demandEl = document.getElementById("demand-pts-preview");
+  const supplyEl = document.getElementById("supply-pts-preview");
+
+  if (
+    p1d !== null &&
+    q1d !== null &&
+    p2d !== null &&
+    q2d !== null &&
+    p2d !== p1d
+  ) {
+    const b = (q2d - q1d) / (p2d - p1d);
+    const a = q1d - b * p1d;
+    demandEl.innerHTML =
+      "Q<sub>d</sub> = " + a.toFixed(4) + " + " + b.toFixed(4) + "P";
+  } else {
+    demandEl.textContent = "Enter two points to derive equation";
+  }
+
+  if (
+    p1s !== null &&
+    q1s !== null &&
+    p2s !== null &&
+    q2s !== null &&
+    p2s !== p1s
+  ) {
+    const d = (q2s - q1s) / (p2s - p1s);
+    const c = q1s - d * p1s;
+    supplyEl.innerHTML =
+      "Q<sub>s</sub> = " + c.toFixed(4) + " + " + d.toFixed(4) + "P";
+  } else {
+    supplyEl.textContent = "Enter two points to derive equation";
+  }
+}
+
+[
+  "pt-demand-p1",
+  "pt-demand-q1",
+  "pt-demand-p2",
+  "pt-demand-q2",
+  "pt-supply-p1",
+  "pt-supply-q1",
+  "pt-supply-p2",
+  "pt-supply-q2",
+].forEach((id) => {
+  document.getElementById(id).addEventListener("input", updatePointsPreviews);
+});
+
+// ===================================================================
+// RESIZE HANDLER
+// ===================================================================
+
+let microResizeTimeout;
+window.addEventListener("resize", () => {
+  clearTimeout(microResizeTimeout);
+  microResizeTimeout = setTimeout(() => {
+    if (baseEquilibrium) {
+      const { demand, supply, pStar, qStar } = baseEquilibrium;
+      drawEquilibriumChart(demand, supply, pStar, qStar, null);
+      const sa = safeParseFloat(document.getElementById("slider-a").value);
+      const sb = safeParseFloat(document.getElementById("slider-b").value);
+      const sc = safeParseFloat(document.getElementById("slider-c").value);
+      const sd = safeParseFloat(document.getElementById("slider-d").value);
+      const newEq = solveEquilibrium(sa, sb, sc, sd);
+      drawShiftersChart(sa, sb, sc, sd, newEq, null);
+    }
+  }, 250);
+});
+
+
+============================================================
+ FILE: /Users/careycarroll/Github Projects/financial-calculator/js/news.js
+============================================================
+
+// ===================================================================
+// NEWS FEED — RSS READER
+// ===================================================================
+
+const CORS_PROXIES = [
+  { url: "https://corsproxy.io/?url=", encode: true },
+  { url: "https://api.allorigins.win/raw?url=", encode: true },
+];
+let currentProxyIndex = 0;
+
+const STORAGE_KEY = "newsfeed_feeds";
+const READ_KEY = "newsfeed_read";
+const BOOKMARK_KEY = "newsfeed_bookmarks";
+const CACHE_KEY = "newsfeed_cache";
+const CACHE_TIME_KEY = "newsfeed_cache_time";
+const CACHE_MAX_AGE = 4 * 60 * 60 * 1000; // 4 hours
+
+let allFeeds = [];
+const FAILED_KEY = "newsfeed_failed";
+const FAILED_MAX_AGE = 24 * 60 * 60 * 1000; // Remember failures for 24h
+let allArticles = [];
+let displayedCount = 0;
+const ARTICLES_PER_PAGE = 30;
+let activeCategory = "all";
+let activeHoursFilter = 24;
+let isFetching = false;
+let cancelRequested = false;
+let fetchController = null;
+let searchQuery = "";
+let searchDebounceTimer = null;
+
+// ===================================================================
+// INITIALIZATION
+// ===================================================================
+
+function init() {
+  allFeeds = loadFeeds();
+
+  // Event listeners
+  document.getElementById("news-refresh-btn").addEventListener("click", () => {
+    // Clear cache and fetch fresh
+    localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(CACHE_TIME_KEY);
+    refreshFeeds();
+  });
+  document
+    .getElementById("news-opml-input")
+    .addEventListener("change", handleOPMLImport);
+  document
+    .getElementById("news-empty-import-btn")
+    .addEventListener("click", () => {
+      document.getElementById("news-opml-input").click();
+    });
+  document.getElementById("news-import-btn").addEventListener("click", () => {
+      document.getElementById("news-opml-input").click();
+    });
+  document
+    .getElementById("news-empty-demo-btn")
+    .addEventListener("click", loadDemoFeeds);
+  document
+    .getElementById("news-manage-btn")
+    .addEventListener("click", openManager);
+  document
+    .getElementById("news-manager-close")
+    .addEventListener("click", closeManager);
+  document
+    .getElementById("news-manager-overlay")
+    .addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) closeManager();
+    });
+  document
+    .getElementById("news-add-btn")
+    .addEventListener("click", handleAddFeed);
+  document
+    .getElementById("news-export-btn")
+    .addEventListener("click", exportOPML);
+  document
+    .getElementById("news-clear-btn")
+    .addEventListener("click", clearAllFeeds);
+  document
+    .getElementById("news-load-more-btn")
+    .addEventListener("click", showMoreArticles);
+  // Filter toggle
+  document
+    .getElementById("news-filter-toggle")
+    .addEventListener("click", toggleFilterPanel);
+
+  // Keyboard shortcut to close modal
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeManager();
+  });
+
+
+  document
+    .getElementById("news-cancel-btn")
+    .addEventListener("click", cancelFetch);
+
+  document.getElementById("news-export-bookmarks-json").addEventListener("click", exportBookmarksJSON);
+  document.getElementById("news-export-bookmarks-csv").addEventListener("click", exportBookmarksCSV);
+  // Search
+  document
+    .getElementById("news-search")
+    .addEventListener("input", handleSearch);
+  document
+    .getElementById("news-search-clear")
+    .addEventListener("click", clearSearch);
+
+  // Delegated article listeners (one listener instead of 3 per article)
+  document.getElementById("news-articles").addEventListener("click", (e) => {
+    const article = e.target.closest(".news-article");
+    if (!article) return;
+    const articleId = article.dataset.articleId;
+    const articleData = allArticles.find((a) => a.id === articleId);
+    if (!articleData) return;
+
+    if (e.target.closest(".bookmark-btn")) {
+      e.stopPropagation();
+      const nowBookmarked = toggleBookmark(articleId);
+      const btn = article.querySelector(".bookmark-btn");
+      btn.classList.toggle("bookmarked", nowBookmarked);
+      btn.textContent = nowBookmarked ? "★" : "☆";
+      return;
+    }
+
+    if (e.target.closest(".open-btn")) {
+      e.stopPropagation();
+      markAsRead(articleId);
+      article.classList.add("read");
+      window.open(articleData.link, "_blank");
+      return;
+    }
+
+    if (e.target.closest(".news-article-body")) {
+      markAsRead(articleId);
+      article.classList.add("read");
+      window.open(articleData.link, "_blank");
+    }
+  });
+
+  if (allFeeds.length > 0) {
+    document.getElementById("news-empty").classList.add("hidden");
+    renderCategoryBar();
+    loadFromCache();
+  }
+}
+
+// ===================================================================
+// STORAGE
+// ===================================================================
+
+
+function getFailedFeeds() {
+  try {
+    const data = JSON.parse(localStorage.getItem(FAILED_KEY)) || {};
+    const now = Date.now();
+    // Prune expired entries
+    Object.keys(data).forEach(url => {
+      if (now - data[url] > FAILED_MAX_AGE) delete data[url];
+    });
+    localStorage.setItem(FAILED_KEY, JSON.stringify(data));
+    return data;
+  } catch { return {}; }
+}
+
+function markFeedFailed(xmlUrl) {
+  const data = getFailedFeeds();
+  data[xmlUrl] = Date.now();
+  localStorage.setItem(FAILED_KEY, JSON.stringify(data));
+}
+
+function clearFailedFeeds() {
+  localStorage.removeItem(FAILED_KEY);
+}
+function loadFeeds() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFeeds() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(allFeeds));
+}
+
+function getReadArticles() {
+  try {
+    return JSON.parse(localStorage.getItem(READ_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function markAsRead(articleId) {
+  const read = getReadArticles();
+  if (!read.includes(articleId)) {
+    read.push(articleId);
+    // Keep only last 1000
+    if (read.length > 1000) read.splice(0, read.length - 1000);
+    localStorage.setItem(READ_KEY, JSON.stringify(read));
+  }
+}
+
+function getBookmarks() {
+  try {
+    return JSON.parse(localStorage.getItem(BOOKMARK_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function toggleBookmark(articleId) {
+  let bookmarks = getBookmarks();
+  if (bookmarks.includes(articleId)) {
+    bookmarks = bookmarks.filter((b) => b !== articleId);
+  } else {
+    bookmarks.push(articleId);
+  }
+  localStorage.setItem(BOOKMARK_KEY, JSON.stringify(bookmarks));
+  return bookmarks.includes(articleId);
+}
+// ===================================================================
+// CACHE
+// ===================================================================
+
+function saveToCache() {
+  try {
+    // Only cache essential fields to save space
+    const slim = allArticles.map((a) => ({
+      id: a.id,
+      title: a.title,
+      link: a.link,
+      description: a.description,
+      date: a.date.getTime(),
+      source: a.source,
+      category: a.category,
+    }));
+    localStorage.setItem(CACHE_KEY, JSON.stringify(slim));
+    localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+  } catch (e) {
+    // localStorage full — clear old cache and try once more
+    console.warn("Cache save failed, clearing old cache:", e.message);
+    localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(CACHE_TIME_KEY);
+  }
+}
+
+function loadFromCache() {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    const cacheTime = parseInt(localStorage.getItem(CACHE_TIME_KEY) || "0");
+    const age = Date.now() - cacheTime;
+
+    if (cached && cacheTime) {
+      const parsed = JSON.parse(cached);
+      allArticles = parsed.map((a) => ({ ...a, date: new Date(a.date) }));
+
+      allArticles.sort((a, b) => b.date - a.date);
+      displayedCount = 0;
+      showMoreArticles();
+      document.getElementById("news-articles").classList.remove("hidden");
+
+      // Show cache age
+      const minsAgo = Math.floor(age / 60000);
+      const hoursAgo = Math.floor(age / 3600000);
+      let ageText = "";
+      if (minsAgo < 60) {
+        ageText = `${minsAgo}m ago`;
+      } else {
+        ageText = `${hoursAgo}h ago`;
+      }
+      document.getElementById("news-last-updated").textContent =
+        `Cached from ${ageText}`;
+
+      // If cache is stale, auto-refresh
+      if (age > CACHE_MAX_AGE) {
+        document.getElementById("news-last-updated").textContent =
+          `Cache is ${ageText} old — refreshing...`;
+        refreshFeeds();
+      }
+
+      return;
+    }
+  } catch (e) {
+    console.warn("Cache load failed:", e.message);
+  }
+
+  // No cache — fetch fresh
+  refreshFeeds();
+}
+
+function getCacheAge() {
+  const cacheTime = parseInt(localStorage.getItem(CACHE_TIME_KEY) || "0");
+  return Date.now() - cacheTime;
+}
+
+// ===================================================================
+// CANCEL
+// ===================================================================
+
+function cancelFetch() {
+  cancelRequested = true;
+  if (fetchController) fetchController.abort();
+  fetchController = null;
+  isFetching = false;
+  document.getElementById("news-loading").classList.add("hidden");
+  const now = new Date();
+  document.getElementById("news-last-updated").textContent =
+    "Stopped — " + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+// ===================================================================
+// SEARCH
+// ===================================================================
+
+function handleSearch(e) {
+  const query = e.target.value.trim();
+  const clearBtn = document.getElementById("news-search-clear");
+
+  if (query.length > 0) {
+    clearBtn.classList.remove("hidden");
+  } else {
+    clearBtn.classList.add("hidden");
+  }
+
+  // Debounce — wait 250ms after typing stops
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => {
+    searchQuery = query.toLowerCase();
+    displayedCount = 0;
+    showMoreArticles();
+    updateActiveFilterTags();
+  }, 250);
+}
+
+function clearSearch() {
+  document.getElementById("news-search").value = "";
+  document.getElementById("news-search-clear").classList.add("hidden");
+  searchQuery = "";
+  displayedCount = 0;
+  showMoreArticles();
+  updateActiveFilterTags();
+}
+// ===================================================================
+// OPML PARSING
+// ===================================================================
+
+function parseOPML(xmlString) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlString, "text/xml");
+  const feeds = [];
+
+  // Find category groups (outlines with child outlines)
+  const topOutlines = doc.querySelectorAll("body > outline");
+
+  topOutlines.forEach((group) => {
+    const category =
+      group.getAttribute("text") ||
+      group.getAttribute("title") ||
+      "Uncategorized";
+
+    const children = group.querySelectorAll(":scope > outline");
+
+    if (children.length === 0 && group.getAttribute("xmlUrl")) {
+      // Single feed, no category wrapper
+      feeds.push({
+        name:
+          group.getAttribute("text") ||
+          group.getAttribute("title") ||
+          "Unknown",
+        xmlUrl: group.getAttribute("xmlUrl"),
+        htmlUrl: group.getAttribute("htmlUrl") || "",
+        category: "Uncategorized",
+      });
+    } else {
+      children.forEach((child) => {
+        const xmlUrl = child.getAttribute("xmlUrl");
+        if (xmlUrl) {
+          feeds.push({
+            name:
+              child.getAttribute("text") ||
+              child.getAttribute("title") ||
+              "Unknown",
+            xmlUrl: xmlUrl,
+            htmlUrl: child.getAttribute("htmlUrl") || "",
+            category: category,
+          });
+        }
+      });
+    }
+  });
+
+  return feeds;
+}
+
+function handleOPMLImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const feeds = parseOPML(event.target.result);
+
+    if (feeds.length === 0) {
+      alert("No feeds found in the OPML file. Please check the format.");
+      return;
+    }
+
+    // Merge with existing (avoid duplicates by xmlUrl)
+    const existingUrls = new Set(allFeeds.map((f) => f.xmlUrl));
+    let newCount = 0;
+
+    feeds.forEach((feed) => {
+      if (!existingUrls.has(feed.xmlUrl)) {
+        allFeeds.push(feed);
+        existingUrls.add(feed.xmlUrl);
+        newCount++;
+      }
+    });
+
+    saveFeeds();
+    localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(CACHE_TIME_KEY);
+
+    document.getElementById("news-empty").classList.add("hidden");
+    renderCategoryBar();
+    refreshFeeds();
+
+    alert(
+      `Imported ${newCount} new feed${newCount !== 1 ? "s" : ""} (${feeds.length - newCount} duplicates skipped).`,
+    );
+  };
+
+  reader.readAsText(file);
+  // Reset input so same file can be imported again
+  e.target.value = "";
+}
+
+// ===================================================================
+// FEED FETCHING
+// ===================================================================
+
+async function refreshFeeds() {
+  if (allFeeds.length === 0) return;
+  if (isFetching) return;
+
+  isFetching = true;
+  const refreshStart = performance.now();
+  fetchController = new AbortController();
+  cancelRequested = false;
+
+  const loading = document.getElementById("news-loading");
+  const articlesEl = document.getElementById("news-articles");
+  const progress = document.getElementById("news-loading-progress");
+
+  loading.classList.remove("hidden");
+  articlesEl.classList.remove("hidden");
+  articlesEl.innerHTML = "";
+  document.getElementById("news-load-more").classList.add("hidden");
+
+  allArticles = [];
+  displayedCount = 0;
+  let completed = 0;
+  let failed = 0;
+
+  // Rotate proxy for each refresh to spread load
+  currentProxyIndex = (currentProxyIndex + 1) % CORS_PROXIES.length;
+
+  const concurrency = 10;
+  const queue = [...allFeeds];
+
+  let lastRenderTime = 0;
+  const RENDER_THROTTLE = 1000;
+  function renderCurrentArticles() {
+    allArticles.sort((a, b) => b.date - a.date);
+
+    const filtered = getFilteredArticles();
+    const readArticles = getReadArticles();
+    const bookmarks = getBookmarks();
+
+    articlesEl.innerHTML = "";
+    const toShow = filtered.slice(
+      0,
+      Math.max(displayedCount, ARTICLES_PER_PAGE),
+    );
+    displayedCount = toShow.length;
+
+    toShow.forEach((article) => {
+      const isRead = readArticles.includes(article.id);
+      const isBookmarked = bookmarks.includes(article.id);
+      const el = createArticleElement(article, isRead, isBookmarked);
+      articlesEl.appendChild(el);
+    });
+
+    const loadMore = document.getElementById("news-load-more");
+    if (displayedCount < filtered.length) {
+      loadMore.classList.remove("hidden");
+      document.getElementById("news-load-more-btn").textContent =
+        `Load More (${filtered.length - displayedCount} remaining)`;
+    } else {
+      loadMore.classList.add("hidden");
+    }
+
+    updateArticleCount(filtered.length);
+  }
+
+  async function fetchNext() {
+    if (queue.length === 0) return;
+    if (cancelRequested) return;
+
+    // Small delay to avoid rate limiting
+    if (completed > 0) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+
+    if (cancelRequested) return;
+    if (queue.length === 0) return;
+
+    const feed = queue.shift();
+    const failedFeeds = getFailedFeeds();
+    if (failedFeeds[feed.xmlUrl]) {
+      completed++;
+      progress.textContent = `${completed} of ${allFeeds.length} feeds loaded${failed > 0 ? ` (${failed} failed)` : ""}`;
+      if (queue.length > 0 && !cancelRequested) await fetchNext();
+      return;
+    }
+    try {
+      const articles = await fetchFeed(feed);
+      allArticles.push(...articles);
+      const now = Date.now();
+      if (now - lastRenderTime > RENDER_THROTTLE) {
+        lastRenderTime = now;
+        renderCurrentArticles();
+      }
+    } catch (err) {
+      failed++;
+      console.warn(`Failed to fetch ${feed.name}:`, err.message);
+      markFeedFailed(feed.xmlUrl);
+    }
+
+    completed++;
+    const remaining = queue.length;
+    progress.textContent = `${completed} of ${allFeeds.length} feeds loaded${failed > 0 ? ` (${failed} failed)` : ""}`;
+
+    if (queue.length > 0 && !cancelRequested) {
+      await fetchNext();
+    }
+  }
+
+  // Start concurrent fetches
+  const workers = [];
+  for (let i = 0; i < Math.min(concurrency, queue.length); i++) {
+    workers.push(fetchNext());
+  }
+
+  await Promise.all(workers);
+
+  // Final render
+  if (allArticles.length > 0) {
+    allArticles.sort((a, b) => b.date - a.date);
+    displayedCount = 0;
+    showMoreArticles();
+
+    // Save to cache
+    saveToCache();
+  }
+
+  // Hide loading
+  loading.classList.add("hidden");
+  isFetching = false;
+  fetchController = null;
+  // Update last refreshed time
+  const now = new Date();
+
+  if (cancelRequested) {
+    document.getElementById("news-last-updated").textContent =
+      `Stopped at ${completed} of ${allFeeds.length} feeds — ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  } else {
+    document.getElementById("news-last-updated").textContent =
+      `Last updated: ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} — ${((performance.now() - refreshStart) / 1000).toFixed(1)}s`;
+  }
+
+  if (allArticles.length === 0 && failed > 0) {
+    articlesEl.innerHTML = `
+      <div class="news-empty" style="padding: 2rem;">
+        <p>⚠️ All ${failed} feeds failed to load. The CORS proxies may be rate-limited.</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+          Wait 30 seconds and try again — the proxies allow ~20-60 requests per minute.
+          With ${allFeeds.length} feeds, it may take 2-3 refreshes to warm up.
+        </p>
+      </div>
+    `;
+  } else if (failed > 0) {
+    const note = document.createElement("div");
+    note.style.cssText =
+      "text-align: center; padding: 1rem; font-size: 0.8rem; color: var(--text-secondary);";
+    note.textContent = `⚠️ ${failed} of ${allFeeds.length} feeds failed to load. These may not support CORS proxying.`;
+    articlesEl.appendChild(note);
+  }
+
+  cancelRequested = false;
+}
+
+async function fetchFeed(feed) {
+  let lastError = null;
+
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    if (cancelRequested) throw new Error("Cancelled");
+
+    const proxyIndex = (currentProxyIndex + i) % CORS_PROXIES.length;
+    const proxy = CORS_PROXIES[proxyIndex];
+
+    try {
+      const url =
+        proxy.url +
+        (proxy.encode ? encodeURIComponent(feed.xmlUrl) : feed.xmlUrl);
+
+      const response = await fetch(url, {
+        signal: AbortSignal.any([fetchController.signal, AbortSignal.timeout(3000)]),
+      });
+
+      // If rate limited, try next proxy immediately
+      if (response.status === 429) {
+        throw new Error("Rate limited (429)");
+      }
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const text = await response.text();
+
+      // Validate we got XML, not an error page
+      if (
+        !text.includes("<") ||
+        (text.includes("<!DOCTYPE html>") &&
+          !text.includes("<rss") &&
+          !text.includes("<feed") &&
+          !text.includes("<channel"))
+      ) {
+        throw new Error("Response is not RSS/Atom XML");
+      }
+
+      // If this proxy worked, prefer it for future requests
+      currentProxyIndex = proxyIndex;
+
+      return parseFeed(text, feed);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error("All proxies failed");
+}
+
+function parseFeed(xmlString, feed) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlString, "text/xml");
+  const articles = [];
+
+  // Try RSS format first
+  const items = doc.querySelectorAll("item");
+
+  if (items.length > 0) {
+    items.forEach((item) => {
+      const title = getTextContent(item, "title");
+      const link = getTextContent(item, "link");
+      const description = cleanDescription(
+        getTextContent(item, "description") ||
+          getTextContent(item, "content\\:encoded"),
+      );
+      const pubDate = getTextContent(item, "pubDate");
+      const date = pubDate ? new Date(pubDate) : new Date();
+
+      if (title && link) {
+        articles.push({
+          id: hashString(link + title),
+          title: title.trim(),
+          link: link.trim(),
+          description: description,
+          date: date,
+          source: feed.name,
+          category: feed.category,
+          htmlUrl: feed.htmlUrl,
+        });
+      }
+    });
+  } else {
+    // Try Atom format
+    const entries = doc.querySelectorAll("entry");
+    entries.forEach((entry) => {
+      const title = getTextContent(entry, "title");
+      const linkEl = entry.querySelector("link[href]");
+      const link = linkEl ? linkEl.getAttribute("href") : "";
+      const description = cleanDescription(
+        getTextContent(entry, "summary") || getTextContent(entry, "content"),
+      );
+      const published =
+        getTextContent(entry, "published") || getTextContent(entry, "updated");
+      const date = published ? new Date(published) : new Date();
+
+      if (title && link) {
+        articles.push({
+          id: hashString(link + title),
+          title: title.trim(),
+          link: link.trim(),
+          description: description,
+          date: date,
+          source: feed.name,
+          category: feed.category,
+          htmlUrl: feed.htmlUrl,
+        });
+      }
+    });
+  }
+
+  return articles;
+}
+
+function getTextContent(parent, tagName) {
+  const el = parent.querySelector(tagName);
+  return el ? el.textContent : "";
+}
+
+function cleanDescription(html) {
+  if (!html) return "";
+  // Strip HTML tags
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  let text = div.textContent || div.innerText || "";
+  // Clean up whitespace
+  text = text.replace(/\s+/g, " ").trim();
+  // Truncate
+  if (text.length > 300) {
+    text = text.substring(0, 300) + "…";
+  }
+  return text;
+}
+
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return "art_" + Math.abs(hash).toString(36);
+}
+
+// ===================================================================
+// RENDERING
+// ===================================================================
+
+function showMoreArticles() {
+  const container = document.getElementById("news-articles");
+  const filtered = getFilteredArticles();
+  const readArticles = getReadArticles();
+  const bookmarks = getBookmarks();
+
+  const nextBatch = filtered.slice(
+    displayedCount,
+    displayedCount + ARTICLES_PER_PAGE,
+  );
+
+  if (displayedCount === 0) {
+    container.innerHTML = "";
+  }
+
+  nextBatch.forEach((article) => {
+    const isRead = readArticles.includes(article.id);
+    const isBookmarked = bookmarks.includes(article.id);
+    const el = createArticleElement(article, isRead, isBookmarked);
+    container.appendChild(el);
+  });
+
+  displayedCount += nextBatch.length;
+
+  // Show/hide load more
+  const loadMore = document.getElementById("news-load-more");
+  if (displayedCount < filtered.length) {
+    loadMore.classList.remove("hidden");
+    document.getElementById("news-load-more-btn").textContent =
+      `Load More (${filtered.length - displayedCount} remaining)`;
+    updateArticleCount(filtered.length);
+  } else {
+    loadMore.classList.add("hidden");
+  }
+  updateArticleCount(filtered.length);
+  if (filtered.length === 0) {
+    const hasDateFilter = activeHoursFilter > 0;
+    const hasCategoryFilter = activeCategory !== "all";
+    let hint = "";
+    if (hasDateFilter && hasCategoryFilter) {
+      hint =
+        " in this category and time range. Try expanding the date filter or selecting 'All'.";
+    } else if (hasDateFilter) {
+      hint = " in this time range. Try selecting a longer date range.";
+    } else if (hasCategoryFilter) {
+      hint = " in this category. Try selecting 'All'.";
+    } else {
+      hint = ". Try refreshing.";
+    }
+
+    container.innerHTML = `
+      <div class="news-empty" style="padding: 2rem;">
+        <p>No articles found${hint}</p>
+      </div>
+    `;
+  }
+}
+
+function getFilteredArticles() {
+  let filtered = allArticles;
+
+  // Category filter
+  if (activeCategory !== "all") {
+    filtered = filtered.filter((a) => a.category === activeCategory);
+  }
+
+  // Date filter
+  if (activeHoursFilter > 0) {
+    const cutoff = new Date(Date.now() - activeHoursFilter * 60 * 60 * 1000);
+    filtered = filtered.filter((a) => a.date >= cutoff);
+  }
+
+  // Search filter
+  if (searchQuery) {
+    filtered = filtered.filter(
+      (a) =>
+        a.title.toLowerCase().includes(searchQuery) ||
+        a.source.toLowerCase().includes(searchQuery) ||
+        (a.description && a.description.toLowerCase().includes(searchQuery)),
+    );
+  }
+
+  return filtered;
+}
+
+function createArticleElement(article, isRead, isBookmarked) {
+  const el = document.createElement("div");
+  el.className = `news-article${isRead ? " read" : ""}`;
+  el.dataset.articleId = article.id;
+
+  const timeAgo = getTimeAgo(article.date);
+
+  el.innerHTML = `
+    <div class="news-article-body">
+      <div class="news-article-meta">
+        <span class="news-article-source">${escapeHtml(article.source)}</span>
+        <span class="news-article-category">${escapeHtml(simplifyCategory(article.category))}</span>
+        <span class="news-article-date">${timeAgo}</span>
+      </div>
+      <div class="news-article-title">${escapeHtml(article.title)}</div>
+      ${article.description ? `<div class="news-article-description">${escapeHtml(article.description)}</div>` : ""}
+    </div>
+    <div class="news-article-actions">
+      <button class="news-article-action bookmark-btn ${isBookmarked ? "bookmarked" : ""}" title="Bookmark">
+        ${isBookmarked ? "★" : "☆"}
+      </button>
+      <button class="news-article-action open-btn" title="Open in new tab">↗</button>
+    </div>
+  `;
+
+  return el;
+}
+function simplifyCategory(category) {
+  // Remove "BIZ - " prefix for cleaner display
+  return category.replace(/^BIZ\s*-\s*/i, "");
+}
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function getTimeAgo(date) {
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+// ===================================================================
+// CATEGORY BAR
+// ===================================================================
+function toggleFilterPanel() {
+  const panel = document.getElementById("news-filter-panel");
+  const btn = document.getElementById("news-filter-toggle");
+
+  panel.classList.toggle("hidden");
+
+  if (panel.classList.contains("hidden")) {
+    btn.textContent = "🔽 Filters";
+    btn.classList.remove("open");
+  } else {
+    btn.textContent = "🔼 Filters";
+    btn.classList.add("open");
+  }
+}
+
+function updateActiveFilterTags() {
+  const container = document.getElementById("news-active-filters");
+  const tags = [];
+
+  if (activeCategory !== "all") {
+    tags.push(simplifyCategory(activeCategory));
+  }
+
+  const dateLabels = {
+    24: "Last 24h",
+    72: "Last 3 Days",
+    168: "Last 7 Days",
+    720: "Last 30 Days",
+    0: "All Time",
+  };
+
+  if (activeHoursFilter !== 24) {
+    tags.push(dateLabels[activeHoursFilter] || `${activeHoursFilter}h`);
+  }
+
+  if (searchQuery) {
+    tags.push(`"${searchQuery}"`);
+  }
+
+  if (tags.length === 0) {
+    container.innerHTML = "";
+  } else {
+    container.innerHTML = tags
+      .map(
+        (t) => `<span class="news-active-filter-tag">${escapeHtml(t)}</span>`,
+      )
+      .join("");
+  }
+}
+
+function renderCategoryBar() {
+  const bar = document.getElementById("news-category-bar");
+
+  const categories = [...new Set(allFeeds.map((f) => f.category))].sort();
+
+  bar.innerHTML = `
+    <button class="news-category-btn ${activeCategory === "all" ? "active" : ""}" data-category="all">All</button>
+    ${categories
+      .map(
+        (cat) => `
+      <button class="news-category-btn ${activeCategory === cat ? "active" : ""}" data-category="${escapeHtml(cat)}">
+        ${escapeHtml(simplifyCategory(cat))}
+      </button>
+    `,
+      )
+      .join("")}
+  `;
+
+  bar.addEventListener("click", (e) => {
+    const btn = e.target.closest(".news-category-btn");
+    if (!btn) return;
+    activeCategory = btn.dataset.category;
+    bar
+      .querySelectorAll(".news-category-btn")
+      .forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    displayedCount = 0;
+    showMoreArticles();
+    document.getElementById("news-articles").classList.remove("hidden");
+    updateActiveFilterTags();
+  });
+
+  renderDateBar();
+  updateActiveFilterTags();
+}
+
+function renderDateBar() {
+  const bar = document.getElementById("news-date-bar");
+
+  bar.querySelectorAll(".news-date-btn").forEach((btn) => {
+    const hours = parseInt(btn.dataset.hours);
+    btn.classList.toggle("active", hours === activeHoursFilter);
+
+    // Remove old listeners by cloning
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+
+    newBtn.addEventListener("click", () => {
+      activeHoursFilter = parseInt(newBtn.dataset.hours);
+      bar
+        .querySelectorAll(".news-date-btn")
+        .forEach((b) => b.classList.remove("active"));
+      newBtn.classList.add("active");
+      displayedCount = 0;
+      showMoreArticles();
+      updateActiveFilterTags();
+    });
+  });
+}
+
+function updateArticleCount(count) {
+  const el = document.getElementById("news-article-count");
+  if (!el) return;
+
+  const total = allArticles.length;
+  if (activeHoursFilter > 0 || activeCategory !== "all") {
+    el.textContent = `${count} of ${total} articles`;
+  } else {
+    el.textContent = `${total} articles`;
+  }
+}
+
+// ===================================================================
+// FEED MANAGER
+// ===================================================================
+
+function openManager() {
+  document.getElementById("news-manager-overlay").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
   renderFeedList();
   renderCategoryDropdown();
 }
@@ -2753,7 +5638,7 @@ function drawReferenceChart(strategy) {
 
   // Labels
   ctx.fillStyle = "#4ade80";
-  ctx.font = "bold 11px sans-serif";
+  ctx.font = window.CHART_FONTS.boldSm;
   ctx.textAlign = "left";
   ctx.fillText("PROFIT", padding.left + 5, padding.top + 16);
 
@@ -2761,13 +5646,13 @@ function drawReferenceChart(strategy) {
   ctx.fillText("LOSS", padding.left + 5, padding.top + h - 6);
 
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "11px sans-serif";
+  ctx.font = window.CHART_FONTS.sm;
   ctx.textAlign = "center";
   ctx.fillText("Stock Price →", padding.left + w / 2, chart.height - 8);
 
   // Title
   ctx.fillStyle = "#e2e8f0";
-  ctx.font = "bold 14px sans-serif";
+  ctx.font = window.CHART_FONTS.boldLg;
   ctx.textAlign = "center";
   ctx.fillText(strategy.name, chart.width / 2, 22);
 
@@ -2785,7 +5670,7 @@ function drawReferenceChart(strategy) {
       ctx.fillRect(x1, padding.top, x2 - x1, h);
 
       ctx.fillStyle = zone.textColor;
-      ctx.font = "bold 9px sans-serif";
+      ctx.font = window.CHART_FONTS.boldSm;
       ctx.textAlign = "center";
       ctx.globalAlpha = 0.8;
       ctx.fillText(zone.label, (x1 + x2) / 2, padding.top + h - 8);
@@ -2807,7 +5692,7 @@ function drawReferenceChart(strategy) {
       ctx.setLineDash([]);
 
       ctx.fillStyle = "#f59e0b";
-      ctx.font = "bold 10px sans-serif";
+      ctx.font = window.CHART_FONTS.boldSm;
       ctx.textAlign = "center";
       ctx.fillText(strike.label, sx, padding.top - 6);
     });
@@ -2826,7 +5711,7 @@ function drawReferenceChart(strategy) {
       ctx.stroke();
 
       drawLabelWithBackground(ctx, be.label, bx, cy + 16,
-        { color: "#f59e0b", font: "9px sans-serif", align: "center" });
+        { color: "#f59e0b", font: window.CHART_FONTS.xs, align: "center" });
     });
   }
 
@@ -2881,7 +5766,7 @@ function drawReferenceChart(strategy) {
       const ax = toX(ann.x);
       const ay = toY(ann.y);
       drawLabelWithBackground(ctx, ann.text, ax, ay,
-        { color: ann.color || "#e2e8f0", font: ann.bold ? "bold 10px sans-serif" : "10px sans-serif", align: ann.align || "center" });
+        { color: ann.color || "#e2e8f0", font: ann.bold ? window.CHART_FONTS.boldSm : window.CHART_FONTS.xs, align: ann.align || "center" });
     });
   }
 }
@@ -3522,7 +6407,7 @@ function drawMultiCurvePayoff(
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
   }
@@ -3539,7 +6424,7 @@ function drawMultiCurvePayoff(
     );
   }
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   ctx.fillText("Stock Price", chart.width / 2, chart.height - 5);
 
   // Zero line
@@ -3563,7 +6448,7 @@ function drawMultiCurvePayoff(
   ctx.stroke();
   ctx.setLineDash([]);
   drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
-    { color: "#60a5fa", font: "10px sans-serif", align: "center" });
+    { color: "#60a5fa", font: window.CHART_FONTS.xs, align: "center" });
 
   // Draw each curve
   curves.forEach((curve) => {
@@ -3635,7 +6520,7 @@ function drawMultiCurvePayoff(
     });
 
     // Tooltip box
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth =
       Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -3670,11 +6555,11 @@ function drawMultiCurvePayoff(
     ctx.stroke();
 
     ctx.textAlign = "left";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.fillStyle = "#e2e8f0";
     ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     for (let i = 1; i < tooltipLines.length; i++) {
       ctx.fillStyle = curves[i - 1].color;
       ctx.fillText(tooltipLines[i], tx + 12, ty + 18 + i * 20);
@@ -4143,7 +7028,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.stroke();
 
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
+      ctx.font = window.CHART_FONTS.sm;
       ctx.textAlign = "right";
       ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
@@ -4163,7 +7048,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
     }
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     ctx.fillText(
       "Stock Price at Expiration",
       chart.width / 2,
@@ -4193,7 +7078,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
     ctx.setLineDash([]);
 
     drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
-      { color: "#60a5fa", font: "10px sans-serif", align: "center" });
+      { color: "#60a5fa", font: window.CHART_FONTS.xs, align: "center" });
 
     // Profit zone (green fill above zero)
     ctx.beginPath();
@@ -4275,7 +7160,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.stroke();
 
       drawLabelWithBackground(ctx, "BE: $" + be.toFixed(2), bx, by - 12,
-        { color: "#f59e0b", font: "10px sans-serif", align: "center" });
+        { color: "#f59e0b", font: window.CHART_FONTS.xs, align: "center" });
     });
 
     // Hover
@@ -4317,7 +7202,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
             `Payoff: ${formatCurrency(intrinsic)}`,
           ];
 
-      ctx.font = "12px sans-serif";
+      ctx.font = window.CHART_FONTS.md;
       const tooltipWidth =
         Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
       const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -4363,11 +7248,11 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.stroke();
 
       ctx.textAlign = "left";
-      ctx.font = "bold 12px sans-serif";
+      ctx.font = window.CHART_FONTS.boldMd;
       ctx.fillStyle = "#e2e8f0";
       ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
 
-      ctx.font = "12px sans-serif";
+      ctx.font = window.CHART_FONTS.md;
       if (payoffLineMode === "both") {
         ctx.fillStyle = "#f59e0b";
         ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
@@ -4497,7 +7382,7 @@ function drawPayoffDirect(
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
   }
@@ -4514,7 +7399,7 @@ function drawPayoffDirect(
     );
   }
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   ctx.fillText("Stock Price at Expiration", chart.width / 2, chart.height - 5);
 
   // Zero line
@@ -4538,7 +7423,7 @@ function drawPayoffDirect(
   ctx.stroke();
   ctx.setLineDash([]);
   drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
-    { color: "#60a5fa", font: "10px sans-serif", align: "center" });
+    { color: "#60a5fa", font: window.CHART_FONTS.xs, align: "center" });
 
   // Profit fill
   ctx.beginPath();
@@ -4609,7 +7494,7 @@ function drawPayoffDirect(
     ctx.lineWidth = 2;
     ctx.stroke();
     drawLabelWithBackground(ctx, "BE: $" + be.toFixed(2), bx, zeroY - 12,
-      { color: "#f59e0b", font: "10px sans-serif", align: "center" });
+      { color: "#f59e0b", font: window.CHART_FONTS.xs, align: "center" });
   });
 
   // Hover
@@ -4648,7 +7533,7 @@ function drawPayoffDirect(
           `Payoff: ${formatCurrency(intrinsic)}`,
         ];
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth =
       Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -4686,10 +7571,10 @@ function drawPayoffDirect(
     ctx.stroke();
 
     ctx.textAlign = "left";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.fillStyle = "#e2e8f0";
     ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     if (payoffLineMode === "both") {
       ctx.fillStyle = "#f59e0b";
       ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
@@ -4890,7 +7775,7 @@ function drawGreeksSensitivity(greek) {
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(val.toFixed(4), padding.left - 10, y + 4);
   }
@@ -4954,7 +7839,7 @@ function drawGreeksSensitivity(greek) {
     vega: "Vega (ν)",
   };
   ctx.fillStyle = colors[greek];
-  ctx.font = "bold 13px sans-serif";
+  ctx.font = window.CHART_FONTS.boldMd;
   ctx.textAlign = "left";
   ctx.fillText(
     `${greekNames[greek]} vs Stock Price — ${optionType.toUpperCase()}`,
@@ -5664,7 +8549,7 @@ function displayChart(projections, inputs, view) {
     offCtxProj.lineTo(offscreenProj.width - padding.right, y);
     offCtxProj.stroke();
     offCtxProj.fillStyle = "#94a3b8";
-    offCtxProj.font = "11px sans-serif";
+    offCtxProj.font = window.CHART_FONTS.sm;
     offCtxProj.textAlign = "right";
     offCtxProj.fillText(formatCurrency(value), padding.left - 10, y + 4);
   }
@@ -5686,7 +8571,7 @@ function displayChart(projections, inputs, view) {
   drawLabelWithBackground(offCtxProj,
     view === "real" ? "Years (Inflation-Adjusted)" : "Years",
     chart.width / 2, chart.height - 5,
-    { color: "#94a3b8", font: "12px sans-serif", align: "center" });
+    { color: "#94a3b8", font: window.CHART_FONTS.md, align: "center" });
 
   adjustedProjections.forEach((proj) => {
     offCtxProj.strokeStyle = proj.color;
@@ -5746,7 +8631,7 @@ function displayChart(projections, inputs, view) {
       }
     });
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth = Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
     let tx = hx + 15;
@@ -5773,12 +8658,12 @@ function displayChart(projections, inputs, view) {
 
     ctx.textAlign = "left";
     ctx.fillStyle = "#e2e8f0";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
     for (let i = 1; i < tooltipLines.length; i++) {
       const proj = adjustedProjections[i - 1];
       ctx.fillStyle = proj ? proj.color : "#e2e8f0";
-      ctx.font = "12px sans-serif";
+      ctx.font = window.CHART_FONTS.md;
       ctx.fillText(tooltipLines[i], tx + 12, ty + 18 + i * 20);
     }
   }
@@ -8758,6 +11643,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/analyzer-ui.js"></script>
+      <script src="../js/font-scale.js"></script>
   </body>
 </html>
 
@@ -9283,6 +12169,529 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/cm-analysis.js"></script>
+    <script src="../js/font-scale.js"></script>
+    <script src="../js/prefetch.js"></script>
+  </body>
+</html>
+
+
+============================================================
+ FILE: /Users/careycarroll/Github Projects/financial-calculator/pages/consumer-theory.html
+============================================================
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Consumer Theory | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/common-calculator.css" />
+    <link rel="stylesheet" href="../css/consumer-theory.css" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-container">
+      <header>
+        <h1>📐 Consumer Theory</h1>
+        <p class="tagline">Price elasticity, cross-price effects, expected utility, and risk premium — interactive tools for economics.</p>
+      </header>
+
+      <main>
+        <div class="ct-tabs">
+          <button id="tab-elasticity" class="ct-tab active" aria-label="Price elasticity tab">📐 Price Elasticity</button>
+          <button id="tab-cross-price" class="ct-tab" aria-label="Cross-price elasticity tab">🔗 Cross-Price</button>
+          <button id="tab-eu" class="ct-tab" aria-label="Expected utility tab">🎲 Expected Utility</button>
+          <button id="tab-risk-premium" class="ct-tab" aria-label="Risk premium tab">💰 Risk Premium</button>
+        </div>
+
+        <!-- ==================== TAB 1: PRICE ELASTICITY ==================== -->
+        <div id="elasticity-tab">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="elas-explainer-toggle" aria-expanded="false">
+              💡 How Price Elasticity Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="elas-explainer-body">
+              <p><strong>Price elasticity of demand (ε)</strong> measures how responsive quantity demanded is to a change in price. It answers: if price rises by 1%, how much does quantity fall?</p>
+              <p>The formula is: <strong>ε = (∂q/∂p) × (p/q)</strong>. Because demand slopes downward, ε is always negative for demand.</p>
+              <p><strong>Elastic demand (|ε| &gt; 1):</strong> quantity is very sensitive to price. A price increase causes revenue to fall because the quantity drop outweighs the price gain.</p>
+              <p><strong>Inelastic demand (|ε| &lt; 1):</strong> quantity is not very sensitive to price. A price increase causes revenue to rise because the price gain outweighs the quantity drop.</p>
+              <p><strong>Unit elastic (|ε| = 1):</strong> revenue is unchanged for a small price change.</p>
+              <p><strong>From Equation mode</strong> solves for equilibrium P* and Q* first, then computes elasticity at that point — exactly like the lecture worked example.</p>
+              <p><strong>Solve for P or Q</strong> lets you work backwards: given a target elasticity, find the price or quantity where that elasticity holds.</p>
+              <p><strong>Arc elasticity</strong> uses the midpoint formula between two observed data points.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Input Method</h2>
+            <div class="mode-toggle" style="margin-bottom:1.25rem; flex-wrap:wrap; gap:0.5rem;">
+              <button id="elas-mode-equation" class="btn-toggle active">📋 From Equation</button>
+              <button id="elas-mode-point" class="btn-toggle">📐 Find ε</button>
+              <button id="elas-mode-solve" class="btn-toggle">🎯 Solve for P or Q</button>
+              <button id="elas-mode-arc" class="btn-toggle">📍 Arc Elasticity</button>
+            </div>
+
+            <!-- From Equation Inputs -->
+            <div id="elas-equation-inputs">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter your demand and supply equations. The tool solves for equilibrium P* and Q*, then computes elasticity at that point.</p>
+              <div class="micro-curve-inputs" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.25rem;">
+                <div class="micro-curve-block demand" style="background:var(--bg-primary); border:1px solid var(--border); border-left:3px solid #f472b6; border-radius:10px; padding:1.25rem;">
+                  <h3 style="font-size:0.95rem; font-weight:700; color:#f472b6; margin-bottom:0.75rem;">📉 Demand Curve</h3>
+                  <div class="form-group">
+                    <label for="elas-eq-d-const">Constant (a)</label>
+                    <input type="number" id="elas-eq-d-const" placeholder="e.g. 16" step="any" />
+                    <span class="form-hint">q = a + b·P  →  enter a</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="elas-eq-d-coef">Price Coefficient (b)</label>
+                    <input type="number" id="elas-eq-d-coef" placeholder="e.g. -2" step="any" />
+                    <span class="form-hint">Negative for downward-sloping demand</span>
+                  </div>
+                  <div id="elas-eq-demand-preview" style="margin-top:0.75rem; padding:0.6rem 1rem; background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; font-family:monospace; font-size:0.9rem; color:var(--accent);">q = a + b·P</div>
+                </div>
+                <div class="micro-curve-block supply" style="background:var(--bg-primary); border:1px solid var(--border); border-left:3px solid #2dd4bf; border-radius:10px; padding:1.25rem;">
+                  <h3 style="font-size:0.95rem; font-weight:700; color:#2dd4bf; margin-bottom:0.75rem;">📈 Supply Curve</h3>
+                  <div class="form-group">
+                    <label for="elas-eq-s-const">Constant (c)</label>
+                    <input type="number" id="elas-eq-s-const" placeholder="e.g. -2" step="any" />
+                    <span class="form-hint">q = c + d·P  →  enter c</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="elas-eq-s-coef">Price Coefficient (d)</label>
+                    <input type="number" id="elas-eq-s-coef" placeholder="e.g. 1" step="any" />
+                    <span class="form-hint">Positive for upward-sloping supply</span>
+                  </div>
+                  <div id="elas-eq-supply-preview" style="margin-top:0.75rem; padding:0.6rem 1rem; background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; font-family:monospace; font-size:0.9rem; color:var(--accent);">q = c + d·P</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Find ε Inputs -->
+            <div id="elas-point-inputs" class="hidden">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter the slope of your equation and the price/quantity at the point of interest.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-curve-type">Curve Type</label>
+                  <select id="elas-curve-type">
+                    <option value="demand">Demand</option>
+                    <option value="supply">Supply</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="elas-dqdp">∂q/∂p (slope of curve)</label>
+                  <input type="number" id="elas-dqdp" placeholder="e.g. -2 for demand, 1 for supply" step="any" />
+                  <span class="form-hint">The coefficient on P in your equation.</span>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-p">Price (P)</label>
+                  <input type="number" id="elas-p" placeholder="e.g. 6" step="any" min="0" />
+                </div>
+                <div class="form-group">
+                  <label for="elas-q">Quantity (Q)</label>
+                  <input type="number" id="elas-q" placeholder="e.g. 4" step="any" min="0" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Solve for P or Q Inputs -->
+            <div id="elas-solve-inputs" class="hidden">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter a target elasticity and two of the three variables — the tool solves for the third.</p>
+              <div class="mode-toggle" style="margin-bottom:1.25rem;">
+                <button id="elas-solve-q-btn" class="btn-toggle active">Solve for Q</button>
+                <button id="elas-solve-p-btn" class="btn-toggle">Solve for P</button>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-solve-curve-type">Curve Type</label>
+                  <select id="elas-solve-curve-type">
+                    <option value="demand">Demand</option>
+                    <option value="supply">Supply</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="elas-solve-eps">Target Elasticity (ε)</label>
+                  <input type="number" id="elas-solve-eps" placeholder="e.g. -2 or 1.5" step="any" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-solve-dqdp">∂q/∂p (slope)</label>
+                  <input type="number" id="elas-solve-dqdp" placeholder="e.g. -2" step="any" />
+                </div>
+                <div class="form-group" id="elas-solve-p-group">
+                  <label for="elas-solve-p">Price (P) <span style="color:var(--accent);">← known</span></label>
+                  <input type="number" id="elas-solve-p" placeholder="e.g. 6" step="any" min="0" />
+                  <span class="form-hint">Solving for Q at this price.</span>
+                </div>
+                <div class="form-group hidden" id="elas-solve-q-group">
+                  <label for="elas-solve-q">Quantity (Q) <span style="color:var(--accent);">← known</span></label>
+                  <input type="number" id="elas-solve-q" placeholder="e.g. 4" step="any" min="0" />
+                  <span class="form-hint">Solving for P at this quantity.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Arc Elasticity Inputs -->
+            <div id="elas-arc-inputs" class="hidden">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter two observed price-quantity pairs. The arc elasticity uses the midpoint formula.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-arc-curve-type">Curve Type</label>
+                  <select id="elas-arc-curve-type">
+                    <option value="demand">Demand</option>
+                    <option value="supply">Supply</option>
+                  </select>
+                </div>
+                <div class="form-group"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-p1">Price 1 (P₁)</label>
+                  <input type="number" id="elas-p1" placeholder="e.g. 5" step="any" min="0" />
+                </div>
+                <div class="form-group">
+                  <label for="elas-q1">Quantity 1 (Q₁)</label>
+                  <input type="number" id="elas-q1" placeholder="e.g. 10" step="any" min="0" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-p2">Price 2 (P₂)</label>
+                  <input type="number" id="elas-p2" placeholder="e.g. 7" step="any" min="0" />
+                </div>
+                <div class="form-group">
+                  <label for="elas-q2">Quantity 2 (Q₂)</label>
+                  <input type="number" id="elas-q2" placeholder="e.g. 6" step="any" min="0" />
+                </div>
+              </div>
+            </div>
+
+            <button id="elas-calculate" class="btn-primary">Calculate Elasticity</button>
+          </div>
+
+          <!-- Results -->
+          <div id="elas-results" class="results-panel hidden" aria-live="polite">
+            <h2>Elasticity Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Price Elasticity (ε)</span>
+                <span id="elas-value" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">|ε| (Absolute Value)</span>
+                <span id="elas-abs" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Classification</span>
+                <span id="elas-badge">—</span>
+              </div>
+            </div>
+            <div id="elas-revenue-impact" class="ct-revenue-impact neutral" style="margin-top:1rem;">
+              —
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="elas-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="elas-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="elas-steps-body">
+                <div id="elas-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="elas-chart-section" class="chart-panel hidden">
+            <h2>Elasticity Diagram</h2>
+            <div class="canvas-chart">
+              <canvas id="elas-chart-canvas" role="img" aria-label="Price elasticity diagram showing demand curve with elastic and inelastic regions"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 2: CROSS-PRICE ELASTICITY ==================== -->
+        <div id="cross-price-tab" class="hidden">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="cross-explainer-toggle" aria-expanded="false">
+              💡 How Cross-Price Elasticity Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="cross-explainer-body">
+              <p><strong>Cross-price elasticity</strong> measures how the quantity demanded of Good i responds to a change in the price of Good j.</p>
+              <p><strong>Substitutes (ε &gt; 0):</strong> when the price of Good j rises, consumers buy more of Good i instead. Example: Pepsi and Coke.</p>
+              <p><strong>Complements (ε &lt; 0):</strong> when the price of Good j rises, consumers buy less of Good i too. Example: cars and gasoline.</p>
+              <p><strong>Independent (ε ≈ 0):</strong> the price of Good j has no meaningful effect on demand for Good i.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Cross-Price Elasticity</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Enter two observations of Good i's quantity at different prices of Good j.</p>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cross-good-i">Good i Name (optional)</label>
+                <input type="text" id="cross-good-i" placeholder="e.g. Pepsi" />
+              </div>
+              <div class="form-group">
+                <label for="cross-good-j">Good j Name (optional)</label>
+                <input type="text" id="cross-good-j" placeholder="e.g. Coke" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cross-pj1">Price of Good j — Point 1 (Pⱼ₁)</label>
+                <input type="number" id="cross-pj1" placeholder="e.g. 2.00" step="any" min="0" />
+              </div>
+              <div class="form-group">
+                <label for="cross-qi1">Quantity of Good i — Point 1 (Qᵢ₁)</label>
+                <input type="number" id="cross-qi1" placeholder="e.g. 100" step="any" min="0" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cross-pj2">Price of Good j — Point 2 (Pⱼ₂)</label>
+                <input type="number" id="cross-pj2" placeholder="e.g. 2.50" step="any" min="0" />
+              </div>
+              <div class="form-group">
+                <label for="cross-qi2">Quantity of Good i — Point 2 (Qᵢ₂)</label>
+                <input type="number" id="cross-qi2" placeholder="e.g. 120" step="any" min="0" />
+              </div>
+            </div>
+            <button id="cross-calculate" class="btn-primary">Calculate Cross-Price Elasticity</button>
+          </div>
+
+          <!-- Results -->
+          <div id="cross-results" class="results-panel hidden" aria-live="polite">
+            <h2>Cross-Price Elasticity Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Cross-Price Elasticity (ε)</span>
+                <span id="cross-value" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Relationship</span>
+                <span id="cross-badge">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Interpretation</span>
+                <span id="cross-interpretation" class="result-value" style="font-size:1rem;">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="cross-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="cross-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="cross-steps-body">
+                <div id="cross-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="cross-chart-section" class="chart-panel hidden">
+            <h2>Cross-Price Relationship</h2>
+            <div class="canvas-chart">
+              <canvas id="cross-chart-canvas" role="img" aria-label="Cross-price elasticity chart showing relationship between Good j price and Good i quantity"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 3: EXPECTED UTILITY ==================== -->
+        <div id="eu-tab" class="hidden">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="eu-explainer-toggle" aria-expanded="false">
+              💡 How Expected Utility Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="eu-explainer-body">
+              <p><strong>Expected utility</strong> is not the same as expected payoff. When consumers are risk-averse, they have diminishing marginal utility of wealth — each additional dollar is worth less than the last.</p>
+              <p><strong>Expected Payoff</strong> = Σ (probability × payoff). This is just the probability-weighted average outcome.</p>
+              <p><strong>Expected Utility</strong> = Σ (probability × u(payoff)). This applies the utility function first, then takes the weighted average.</p>
+              <p>Because of diminishing marginal utility, a risk-averse person prefers a certain $1M over a 50/50 shot at $2M — even though both have the same expected payoff. The utility function captures this preference.</p>
+              <p>The utility function you choose determines how risk-averse the agent is: <strong>√x</strong> and <strong>ln(x)</strong> are concave (risk-averse), <strong>x</strong> is linear (risk-neutral), and <strong>x²</strong> is convex (risk-seeking).</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Utility Function</h2>
+            <div class="ct-utility-selector" id="eu-utility-selector">
+              <button class="ct-utility-btn active" data-fn="sqrt">u(x) = √x</button>
+              <button class="ct-utility-btn" data-fn="log">u(x) = ln(x)</button>
+              <button class="ct-utility-btn" data-fn="linear">u(x) = x</button>
+              <button class="ct-utility-btn" data-fn="square">u(x) = x²</button>
+            </div>
+            <p class="form-hint">Units are in thousands ($). Enter payoffs as numbers (e.g. 100 = $100,000).</p>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Options</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Add up to 3 options. Each option can have up to 4 outcomes. Probabilities must sum to 1.0 per option.</p>
+            <div id="eu-options-list"></div>
+            <button id="eu-add-option" class="btn-secondary" style="margin-top:0.75rem;">+ Add Option</button>
+          </div>
+
+          <button id="eu-calculate" class="btn-primary">Calculate Expected Utility</button>
+
+          <!-- Results -->
+          <div id="eu-results" class="results-panel hidden" aria-live="polite">
+            <h2>Expected Utility Results</h2>
+            <div id="eu-comparison" class="ct-eu-comparison"></div>
+            <div id="eu-winner-banner" class="savings-banner" style="margin-top:1rem;">
+              <div class="savings-item">
+                <span class="savings-label">Best Option</span>
+                <span id="eu-winner" class="savings-value">—</span>
+              </div>
+              <div class="savings-item">
+                <span class="savings-label">Utility Function</span>
+                <span id="eu-fn-display" class="savings-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="eu-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="eu-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="eu-steps-body">
+                <div id="eu-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="eu-chart-section" class="chart-panel hidden">
+            <h2>Utility Curve</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Each option's outcomes are plotted on the utility curve. The gap between expected payoff and expected utility illustrates risk aversion.</p>
+            <div class="canvas-chart">
+              <canvas id="eu-chart-canvas" role="img" aria-label="Utility curve showing expected utility vs expected payoff for each option"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 4: RISK PREMIUM ==================== -->
+        <div id="risk-premium-tab" class="hidden">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="rp-explainer-toggle" aria-expanded="false">
+              💡 How Risk Premium Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="rp-explainer-body">
+              <p><strong>Risk premium</strong> is how much of the expected payoff you would give up to eliminate all uncertainty. It measures the cost of risk to a risk-averse agent.</p>
+              <p><strong>Certainty Equivalent (CE)</strong> is the guaranteed amount that gives you the same utility as the risky investment. If CE = $80K and the expected payoff is $100K, you'd accept $80K for certain rather than take the gamble.</p>
+              <p><strong>Risk Premium = Expected Payoff − Certainty Equivalent.</strong> In the example above, the risk premium is $20K — that's how much you'd pay to eliminate the risk.</p>
+              <p><strong>Willingness to Pay (WTP)</strong> is the maximum you'd pay today for the risky asset, equal to the present value of the certainty equivalent (ignoring discount rates here, WTP = CE).</p>
+              <p>The larger the risk premium, the more risk-averse the agent. A risk-neutral agent has a risk premium of zero.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Utility Function</h2>
+            <div class="ct-utility-selector" id="rp-utility-selector">
+              <button class="ct-utility-btn active" data-fn="sqrt">u(x) = √x</button>
+              <button class="ct-utility-btn" data-fn="log">u(x) = ln(x)</button>
+              <button class="ct-utility-btn" data-fn="linear">u(x) = x</button>
+              <button class="ct-utility-btn" data-fn="square">u(x) = x²</button>
+            </div>
+            <p class="form-hint">Units are in thousands ($). Enter payoffs as numbers (e.g. 100 = $100,000).</p>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Risky Asset</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Enter the possible outcomes and their probabilities. Probabilities must sum to 1.0.</p>
+            <div id="rp-outcomes-list"></div>
+            <button id="rp-add-outcome" class="btn-secondary" style="margin-top:0.75rem;">+ Add Outcome</button>
+          </div>
+
+          <button id="rp-calculate" class="btn-primary">Calculate Risk Premium</button>
+
+          <!-- Results -->
+          <div id="rp-results" class="results-panel hidden" aria-live="polite">
+            <h2>Risk Premium Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Expected Payoff</span>
+                <span id="rp-expected-payoff" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Expected Utility</span>
+                <span id="rp-expected-utility" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Certainty Equivalent</span>
+                <span id="rp-ce" class="result-value" style="color:#a855f7">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Risk Premium</span>
+                <span id="rp-premium" class="result-value negative">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Willingness to Pay</span>
+                <span id="rp-wtp" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Risk Attitude</span>
+                <span id="rp-attitude" class="result-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="rp-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="rp-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="rp-steps-body">
+                <div id="rp-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="rp-chart-section" class="chart-panel hidden">
+            <h2>Risk Premium Diagram</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">The classic textbook diagram — utility curve with expected payoff, certainty equivalent, and risk premium labeled.</p>
+            <div class="canvas-chart">
+              <canvas id="rp-chart-canvas" role="img" aria-label="Risk premium diagram showing utility curve with certainty equivalent and risk premium marked"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script type="module" src="../js/consumer-theory.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -9778,6 +13187,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/fire.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -10184,6 +13594,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/loan-advanced.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -10343,6 +13754,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/loan.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -10696,6 +14108,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/micro-econ.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -10920,6 +14333,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/news.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -11423,6 +14837,7 @@ export function calculateVerdict(price, results) {
     </div>
 
     <script type="module" src="../js/npv-irr.js"></script>
+    <script src="../js/font-scale.js"></script>
     <script src="../js/prefetch.js"></script>
   </body>
 </html>
@@ -11723,1536 +15138,4 @@ export function calculateVerdict(price, results) {
                 />
               </div>
               <div class="form-group">
-                <label for="bs-volatility">Implied Volatility (%)</label>
-                <input
-                  type="number"
-                  id="bs-volatility"
-                  placeholder="e.g. 25"
-                  min="0"
-                  step="any"
-                />
-                <span class="form-hint"
-                  >Annual volatility. S&P 500 averages ~15-20%.</span
-                >
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="bs-rate">Risk-Free Rate (%)</label>
-                <input
-                  type="number"
-                  id="bs-rate"
-                  placeholder="e.g. 5"
-                  min="0"
-                  step="any"
-                  value="5"
-                />
-                <span class="form-hint">Usually the Treasury bill rate.</span>
-              </div>
-              <div class="form-group">
-                <label for="bs-dividend">Dividend Yield (%)</label>
-                <input
-                  type="number"
-                  id="bs-dividend"
-                  placeholder="e.g. 1.5"
-                  min="0"
-                  step="any"
-                  value="0"
-                />
-                <span class="form-hint"
-                  >Annual dividend yield. 0 for non-dividend stocks.</span
-                >
-              </div>
-            </div>
-
-            <button id="bs-calculate-btn" class="btn-primary" aria-label="Calculate Black-Scholes option price">
-              Calculate Price
-            </button>
-          </div>
-
-          <!-- BS Results -->
-          <div id="bs-results-section" class="hidden">
-            <div class="bs-results">
-              <div class="bs-result-card">
-                <div class="bs-result-label">Call Option Price</div>
-                <div class="bs-result-value" id="bs-call-price">—</div>
-                <div class="bs-result-sublabel" id="bs-call-moneyness"></div>
-              </div>
-              <div class="bs-result-card">
-                <div class="bs-result-label">Put Option Price</div>
-                <div class="bs-result-value" id="bs-put-price">—</div>
-                <div class="bs-result-sublabel" id="bs-put-moneyness"></div>
-              </div>
-            </div>
-
-            <!-- Greeks from BS -->
-            <h2>The Greeks</h2>
-            <div class="greeks-grid" id="bs-greeks-grid"></div>
-          </div>
-        </div>
-
-        <!-- ==================== TAB 3: GREEKS ==================== -->
-        <div id="greeks-tab" class="hidden">
-          <div class="calc-form">
-            <h2 class="form-section-title">Greeks Explorer</h2>
-            <p class="form-hint" style="margin-bottom: 1rem">
-              The Greeks measure how an option's price changes in response to
-              different factors. Understanding them is essential for managing
-              risk.
-            </p>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="gk-stock">Stock Price ($)</label>
-                <input
-                  type="number"
-                  id="gk-stock"
-                  placeholder="e.g. 100"
-                  min="0"
-                  step="any"
-                />
-              </div>
-              <div class="form-group">
-                <label for="gk-strike">Strike Price ($)</label>
-                <input
-                  type="number"
-                  id="gk-strike"
-                  placeholder="e.g. 105"
-                  min="0"
-                  step="any"
-                />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="gk-time">Time to Expiration (days)</label>
-                <input
-                  type="number"
-                  id="gk-time"
-                  placeholder="e.g. 30"
-                  min="1"
-                  step="1"
-                />
-              </div>
-              <div class="form-group">
-                <label for="gk-volatility">Implied Volatility (%)</label>
-                <input
-                  type="number"
-                  id="gk-volatility"
-                  placeholder="e.g. 25"
-                  min="0"
-                  step="any"
-                />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="gk-rate">Risk-Free Rate (%)</label>
-                <input
-                  type="number"
-                  id="gk-rate"
-                  placeholder="e.g. 5"
-                  min="0"
-                  step="any"
-                  value="5"
-                />
-              </div>
-              <div class="form-group">
-                <label for="gk-dividend">Dividend Yield (%)</label>
-                <input
-                  type="number"
-                  id="gk-dividend"
-                  placeholder="e.g. 0"
-                  min="0"
-                  max="30"
-                  step="any"
-                  value="0"
-                />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="gk-type">Option Type</label>
-                <select id="gk-type">
-                  <option value="call">Call</option>
-                  <option value="put">Put</option>
-                </select>
-              </div>
-              <div class="form-group"></div>
-            </div>
-
-            <button id="gk-calculate-btn" class="btn-primary" aria-label="Calculate option Greeks">
-              Calculate Greeks
-            </button>
-          </div>
-
-          <!-- Greeks Results -->
-          <div id="gk-results-section" class="hidden">
-            <div class="greeks-grid" id="gk-greeks-grid"></div>
-          </div>
-
-          <!-- Greeks Sensitivity Chart -->
-          <div id="gk-chart-section" class="chart-panel hidden">
-            <h2>Greeks Sensitivity</h2>
-            <div class="proj-chart-controls">
-              <button id="gk-delta-btn" class="btn-toggle active">Delta</button>
-              <button id="gk-gamma-btn" class="btn-toggle">Gamma</button>
-              <button id="gk-theta-btn" class="btn-toggle">Theta</button>
-              <button id="gk-vega-btn" class="btn-toggle">Vega</button>
-            </div>
-            <div class="canvas-chart">
-              <canvas id="gk-chart-canvas" role="img" aria-label="Greeks sensitivity chart showing option greek vs stock price"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- ==================== TAB 4: P&L CALCULATOR ==================== -->
-        <div id="pnl-tab" class="hidden">
-          <div class="calc-form">
-            <h2 class="form-section-title">Profit & Loss Calculator</h2>
-            <p class="form-hint" style="margin-bottom: 1rem">
-              Enter your actual trade details to calculate your current P&L.
-            </p>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="pnl-type">Position Type</label>
-                <select id="pnl-type">
-                  <option value="long-call">Long Call</option>
-                  <option value="long-put">Long Put</option>
-                  <option value="short-call">Short Call</option>
-                  <option value="short-put">Short Put</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="pnl-contracts">Number of Contracts</label>
-                <input
-                  type="number"
-                  id="pnl-contracts"
-                  placeholder="e.g. 5"
-                  min="1"
-                  step="1"
-                  value="1"
-                />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="pnl-strike">Strike Price ($)</label>
-                <input
-                  type="number"
-                  id="pnl-strike"
-                  placeholder="e.g. 100"
-                  min="0"
-                  step="any"
-                />
-              </div>
-              <div class="form-group">
-                <label for="pnl-premium">Premium Paid/Received ($)</label>
-                <input
-                  type="number"
-                  id="pnl-premium"
-                  placeholder="e.g. 3.50"
-                  min="0"
-                  step="any"
-                />
-                <span class="form-hint">Per share (not per contract)</span>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="pnl-current-stock">Current Stock Price ($)</label>
-                <input
-                  type="number"
-                  id="pnl-current-stock"
-                  placeholder="e.g. 108"
-                  min="0"
-                  step="any"
-                />
-              </div>
-              <div class="form-group">
-                <label for="pnl-current-premium"
-                  >Current Option Price ($)</label
-                >
-                <input
-                  type="number"
-                  id="pnl-current-premium"
-                  placeholder="e.g. 9.20"
-                  min="0"
-                  step="any"
-                />
-                <span class="form-hint"
-                  >Current market price of the option per share.</span
-                >
-              </div>
-            </div>
-
-            <button id="pnl-calculate-btn" class="btn-primary" aria-label="Calculate option P&L">
-              Calculate P&L
-            </button>
-          </div>
-
-          <!-- P&L Results -->
-          <div id="pnl-results-section" class="results-panel hidden">
-            <h2>Position P&L</h2>
-            <div class="results-grid results-grid-3" id="pnl-results"></div>
-          </div>
-
-          <!-- P&L at Expiration Chart -->
-          <div id="pnl-chart-section" class="chart-panel hidden">
-            <h2>P&L at Expiration</h2>
-            <div class="canvas-chart">
-              <canvas id="pnl-chart-canvas" role="img" aria-label="Options P&L chart showing profit and loss vs stock price"></canvas>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <footer>
-        <p>&copy; 2026 Financial Calculator</p>
-      </footer>
-    </div>
-
-    <script type="module" src="../js/options.js"></script>
-    <script src="../js/prefetch.js"></script>
-  </body>
-</html>
-
-
-============================================================
- FILE: /Users/careycarroll/Github Projects/financial-calculator/pages/projections.html
-============================================================
-
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Investment Projections | Financial Calculator</title>
-    <link rel="stylesheet" href="../css/base.css" />
-    <link rel="stylesheet" href="../css/common-calculator.css" />
-    <link rel="stylesheet" href="../css/projections.css" />
-  </head>
-  <body>
-    <!-- Top Nav -->
-    <nav class="top-nav">
-      <div class="top-nav-inner">
-        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
-        <div class="top-nav-links">
-          <a href="../index.html" class="top-nav-link active">Calculators</a>
-          <a href="news.html" class="top-nav-link">News Feed</a>
-        </div>
-      </div>
-    </nav>
-
-    <div class="page-container">
-      <header>
-        <h1>📈 Investment Projections</h1>
-        <p class="tagline">
-          See how your portfolio could grow across multiple scenarios with S&P
-          500 benchmarking.
-        </p>
-      </header>
-
-      <main>
-        <!-- Setup -->
-        <div class="calc-form">
-          <h2 class="form-section-title">Portfolio Setup</h2>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="proj-portfolio">Current Portfolio Value ($)</label>
-              <input
-                type="number"
-                id="proj-portfolio"
-                placeholder="e.g. 100000"
-                min="0"
-                step="any"
-              />
-            </div>
-            <div class="form-group">
-              <label for="proj-monthly">Monthly Contribution ($)</label>
-              <input
-                type="number"
-                id="proj-monthly"
-                placeholder="e.g. 1500"
-                min="0"
-                step="any"
-              />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="proj-contrib-increase"
-                >Annual Contribution Increase (%)</label
-              >
-              <input
-                type="number"
-                id="proj-contrib-increase"
-                placeholder="e.g. 3"
-                min="0"
-                max="20"
-                step="any"
-                value="0"
-              />
-              <span class="form-hint"
-                >If your contributions grow each year (e.g., annual
-                raises).</span
-              >
-            </div>
-            <div class="form-group">
-              <label for="proj-horizon">Time Horizon (years)</label>
-              <input
-                type="number"
-                id="proj-horizon" aria-required="true"
-                placeholder="e.g. 30"
-                min="1"
-                max="60"
-                step="1"
-              />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="proj-return">Expected Annual Return (%)</label>
-              <input
-                type="number"
-                id="proj-return" aria-required="true"
-                placeholder="e.g. 7"
-                min="0"
-                max="30"
-                step="any"
-                value="7"
-              />
-            </div>
-            <div class="form-group">
-              <label for="proj-deviation">Deviation Range (± %)</label>
-              <input
-                type="number"
-                id="proj-deviation"
-                placeholder="e.g. 3"
-                min="0.5"
-                max="10"
-                step="any"
-                value="3"
-              />
-              <span class="form-hint"
-                >Creates scenarios above and below your expected return.</span
-              >
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="proj-inflation">Inflation Rate (%)</label>
-              <input
-                type="number"
-                id="proj-inflation"
-                placeholder="e.g. 3"
-                min="0"
-                max="10"
-                step="any"
-                value="3"
-              />
-            </div>
-            <div class="form-group">
-              <label for="proj-sp500">Show S&P 500 Benchmark</label>
-              <select id="proj-sp500">
-                <option value="yes" selected>Yes</option>
-                <option value="no">No</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Milestones -->
-          <div class="form-row">
-            <div class="form-group">
-              <label for="proj-milestone-1">Milestone 1 ($)</label>
-              <input
-                type="number"
-                id="proj-milestone-1"
-                placeholder="e.g. 500000"
-                min="0"
-                step="any"
-              />
-            </div>
-            <div class="form-group">
-              <label for="proj-milestone-2">Milestone 2 ($)</label>
-              <input
-                type="number"
-                id="proj-milestone-2"
-                placeholder="e.g. 1000000"
-                min="0"
-                step="any"
-              />
-            </div>
-            <div class="form-group">
-              <label for="proj-milestone-3">Milestone 3 ($)</label>
-              <input
-                type="number"
-                id="proj-milestone-3"
-                placeholder="e.g. 2000000"
-                min="0"
-                step="any"
-              />
-            </div>
-          </div>
-
-          <button id="proj-calculate-btn" class="btn-primary" aria-label="Calculate portfolio projection">
-            Calculate Projections
-          </button>
-        </div>
-
-        <!-- Results Summary -->
-        <div id="proj-results" aria-live="polite" class="table-panel hidden">
-          <h2>Scenario Summary</h2>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Scenario</th>
-                  <th>Annual Return</th>
-                  <th>Final Value</th>
-                  <th>Total Contributed</th>
-                  <th>Investment Growth</th>
-                  <th>Growth Multiple</th>
-                </tr>
-              </thead>
-              <tbody id="proj-results-body"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Projection Chart -->
-        <div id="proj-chart-section" class="chart-panel hidden">
-          <h2>Portfolio Projection</h2>
-          <div class="proj-chart-controls">
-            <button id="proj-nominal-btn" class="btn-toggle active" aria-label="Show nominal returns">
-              Nominal
-            </button>
-            <button id="proj-real-btn" class="btn-toggle" aria-label="Show inflation-adjusted real returns">
-              Inflation-Adjusted
-            </button>
-          </div>
-          <div class="canvas-chart">
-            <canvas id="proj-chart-canvas" role="img" aria-label="Portfolio projection chart showing growth scenarios over time"></canvas>
-          </div>
-          <div class="chart-legend" id="proj-chart-legend"></div>
-        </div>
-
-        <!-- Milestones -->
-        <div id="proj-milestones-section" class="table-panel hidden">
-          <h2>Milestone Tracker</h2>
-          <p class="form-hint" style="margin-bottom: 1rem">
-            When each scenario reaches your target milestones.
-          </p>
-          <div class="table-wrapper">
-            <table>
-              <thead id="proj-milestones-header"></thead>
-              <tbody id="proj-milestones-body"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Contributions vs Growth -->
-        <div id="proj-breakdown-section" class="table-panel hidden">
-          <h2>Contributions vs Growth</h2>
-          <p class="form-hint" style="margin-bottom: 1rem">
-            How much of your final portfolio comes from what you put in vs what
-            the market gave you.
-          </p>
-          <div id="proj-breakdown-bars"></div>
-        </div>
-      </main>
-
-      <footer>
-        <p>&copy; 2026 Financial Calculator</p>
-      </footer>
-    </div>
-
-    <script type="module" src="../js/projections.js"></script>
-    <script src="../js/prefetch.js"></script>
-  </body>
-</html>
-
-
-============================================================
- FILE: /Users/careycarroll/Github Projects/financial-calculator/pages/pv.html
-============================================================
-
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PV Calculator | Financial Calculator</title>
-    <link rel="stylesheet" href="../css/base.css" />
-    <link rel="stylesheet" href="../css/common-calculator.css" />
-  </head>
-  <body>
-    <!-- Top Nav -->
-    <nav class="top-nav">
-      <div class="top-nav-inner">
-        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
-        <div class="top-nav-links">
-          <a href="../index.html" class="top-nav-link active">Calculators</a>
-          <a href="news.html" class="top-nav-link">News Feed</a>
-        </div>
-      </div>
-    </nav>
-
-    <div class="page-container">
-      <header>
-        <h1>💰 Present Value Calculator</h1>
-        <p class="tagline">
-          Find out what a future sum or series of payments is worth in today's
-          dollars.
-        </p>
-      </header>
-
-      <main>
-        <!-- Mode Selection -->
-        <div class="calc-form">
-          <h2 class="form-section-title">Calculation Type</h2>
-          <div class="mode-toggle">
-            <button id="mode-lump" class="btn-toggle active" aria-label="Lump sum present value mode">
-              Single Future Sum
-            </button>
-            <button id="mode-annuity" class="btn-toggle" aria-label="Annuity present value mode">Annuity</button>
-            <button id="mode-compare" class="btn-toggle" aria-label="Compare lump sum vs annuity mode">
-              Lump Sum vs. Annuity
-            </button>
-          </div>
-        </div>
-
-        <!-- Inputs -->
-        <div class="calc-form">
-          <h2 class="form-section-title">Inputs</h2>
-
-          <!-- Lump Sum Input -->
-          <div id="lump-fields">
-            <div class="form-group">
-              <label for="pv-future-value">Future Value ($)</label>
-              <input
-                type="number"
-                id="pv-future-value"
-                placeholder="e.g. 100000"
-                min="0"
-                step="any"
-              />
-              <span class="form-hint"
-                >The amount you expect to receive in the future.</span
-              >
-            </div>
-          </div>
-
-          <!-- Annuity Input -->
-          <div id="annuity-fields" class="hidden">
-            <div class="form-group">
-              <label for="pv-payment">Payment per Period ($)</label>
-              <input
-                type="number"
-                id="pv-payment"
-                placeholder="e.g. 5000"
-                min="0"
-                step="any"
-              />
-              <span class="form-hint"
-                >The equal payment received each period.</span
-              >
-            </div>
-          </div>
-
-          <!-- Compare Input -->
-          <!-- Compare Input -->
-          <div id="compare-fields" class="hidden">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="pv-compare-lump">Lump Sum Offered ($)</label>
-                <input
-                  type="number"
-                  id="pv-compare-lump"
-                  placeholder="e.g. 500000"
-                  min="0"
-                  step="any"
-                />
-                <span class="form-hint"
-                  >The one-time amount offered today.</span
-                >
-              </div>
-              <div class="form-group">
-                <label for="pv-compare-payment"
-                  >Annuity Payment per Period ($)</label
-                >
-                <input
-                  type="number"
-                  id="pv-compare-payment"
-                  placeholder="e.g. 3000"
-                  min="0"
-                  step="any"
-                />
-                <span class="form-hint">The recurring payment amount.</span>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="pv-compare-years">Annuity Duration (Years)</label>
-              <input
-                type="number"
-                id="pv-compare-years"
-                placeholder="e.g. 25"
-                min="1"
-                step="1"
-              />
-              <span class="form-hint"
-                >How many years the annuity payments last.</span
-              >
-            </div>
-
-            <!-- Tax Adjustment -->
-            <div class="tax-section">
-              <div class="toggle-header">
-                <h3 class="form-section-title">Tax Adjustment</h3>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="pv-tax-toggle" />
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-              <p class="form-hint">
-                Enable to see how taxes affect the comparison. Enter your
-                estimated effective tax rates.
-              </p>
-
-              <div id="pv-tax-fields" class="conditional-fields hidden">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="pv-lump-tax-rate">Lump Sum Tax Rate (%)</label>
-                    <input
-                      type="number"
-                      id="pv-lump-tax-rate"
-                      placeholder="e.g. 33"
-                      min="0"
-                      max="100"
-                      step="any"
-                    />
-                    <span class="form-hint"
-                      >Total tax on the lump sum (federal + state). Enter 0 if
-                      rolling to an IRA.</span
-                    >
-                  </div>
-                  <div class="form-group">
-                    <label for="pv-annuity-tax-rate"
-                      >Annuity Tax Rate (%)</label
-                    >
-                    <input
-                      type="number"
-                      id="pv-annuity-tax-rate"
-                      placeholder="e.g. 22"
-                      min="0"
-                      max="100"
-                      step="any"
-                    />
-                    <span class="form-hint"
-                      >Effective tax rate on each annuity payment.</span
-                    >
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label for="pv-investment-tax-rate"
-                    >Investment Gains Tax Rate (%)</label
-                  >
-                  <input
-                    type="number"
-                    id="pv-investment-tax-rate"
-                    placeholder="e.g. 15"
-                    min="0"
-                    max="100"
-                    step="any"
-                  />
-                  <span class="form-hint"
-                    >Tax on investment returns if you invest the lump sum (e.g.,
-                    15% for long-term capital gains, 0% for tax-deferred
-                    accounts).</span
-                  >
-                </div>
-                <div class="tax-disclaimer">
-                  <p>
-                    ⚠️ These are simplified estimates. Tax treatment varies
-                    significantly by payout type (pension, lottery, settlement),
-                    state, and individual circumstances. Consult a tax
-                    professional for your specific situation.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Shared Inputs -->
-          <div id="shared-fields">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="pv-rate">Discount Rate (%)</label>
-                <input
-                  type="number"
-                  id="pv-rate" aria-required="true"
-                  placeholder="e.g. 7"
-                  min="0"
-                  step="any"
-                />
-                <span class="form-hint"
-                  >Annual rate used to discount future cash flows.</span
-                >
-              </div>
-              <div class="form-group">
-                <label for="pv-compounding">Compounding</label>
-                <select id="pv-compounding">
-                  <option value="1">Annually</option>
-                  <option value="2">Semi-Annually</option>
-                  <option value="4">Quarterly</option>
-                  <option value="12" selected>Monthly</option>
-                  <option value="365">Daily</option>
-                </select>
-              </div>
-            </div>
-
-            <div id="years-row" class="form-row">
-              <div class="form-group">
-                <label for="pv-periods">Number of Years</label>
-                <input
-                  type="number"
-                  id="pv-periods" aria-required="true"
-                  placeholder="e.g. 10"
-                  min="1"
-                  step="1"
-                />
-              </div>
-              <div class="form-group"></div>
-            </div>
-          </div>
-
-          <button id="pv-calculate-btn" class="btn-primary" aria-label="Calculate present value">
-            Calculate Present Value
-          </button>
-        </div>
-
-        <!-- Results -->
-        <div id="pv-results" aria-live="polite" class="results-panel hidden">
-          <h2>Results</h2>
-          <div id="pv-standard-results" class="results-grid">
-            <div class="result-item">
-              <span class="result-label">Present Value</span>
-              <span id="pv-result" class="result-value accent">—</span>
-            </div>
-            <div class="result-item">
-              <span class="result-label" id="pv-fv-label">Future Value</span>
-              <span id="pv-fv-display" class="result-value">—</span>
-            </div>
-            <div class="result-item">
-              <span class="result-label">Total Interest (Discount)</span>
-              <span id="pv-discount" class="result-value">—</span>
-            </div>
-            <div class="result-item">
-              <span class="result-label">Effective Rate per Period</span>
-              <span id="pv-effective-rate" class="result-value">—</span>
-            </div>
-          </div>
-
-          <!-- Compare Results -->
-          <!-- Compare Results -->
-          <div id="pv-compare-results" class="hidden">
-            <!-- Tax indicator -->
-            <div id="pv-tax-indicator" class="tax-indicator hidden">
-              <span>📊 Showing after-tax values</span>
-            </div>
-
-            <div class="comparison-grid">
-              <div class="comparison-column" id="pv-lump-column">
-                <h3>💵 Lump Sum</h3>
-                <div class="comparison-item">
-                  <span class="result-label">Amount Offered</span>
-                  <span id="pv-compare-lump-amount" class="result-value"
-                    >—</span
-                  >
-                </div>
-                <div id="pv-lump-tax-row" class="comparison-item hidden">
-                  <span class="result-label">Taxes Owed</span>
-                  <span
-                    id="pv-compare-lump-tax"
-                    class="result-value tax-negative"
-                    >—</span
-                  >
-                </div>
-                <div id="pv-lump-after-tax-row" class="comparison-item hidden">
-                  <span class="result-label">After-Tax Amount</span>
-                  <span id="pv-compare-lump-after-tax" class="result-value"
-                    >—</span
-                  >
-                </div>
-                <div class="comparison-item">
-                  <span class="result-label">Present Value</span>
-                  <span id="pv-compare-lump-pv" class="result-value">—</span>
-                </div>
-              </div>
-              <div class="comparison-column" id="pv-annuity-column">
-                <h3>📅 Annuity</h3>
-                <div class="comparison-item">
-                  <span class="result-label">Total Payments</span>
-                  <span id="pv-compare-annuity-total" class="result-value"
-                    >—</span
-                  >
-                </div>
-                <div id="pv-annuity-tax-row" class="comparison-item hidden">
-                  <span class="result-label">Total Taxes</span>
-                  <span
-                    id="pv-compare-annuity-tax"
-                    class="result-value tax-negative"
-                    >—</span
-                  >
-                </div>
-                <div
-                  id="pv-annuity-after-tax-row"
-                  class="comparison-item hidden"
-                >
-                  <span class="result-label">After-Tax Total</span>
-                  <span id="pv-compare-annuity-after-tax" class="result-value"
-                    >—</span
-                  >
-                </div>
-                <div class="comparison-item">
-                  <span class="result-label">Present Value</span>
-                  <span id="pv-compare-annuity-pv" class="result-value">—</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="savings-banner" id="pv-verdict-banner">
-              <div class="savings-item">
-                <span class="savings-label">Better Option</span>
-                <span id="pv-verdict" class="savings-value">—</span>
-              </div>
-              <div class="savings-item">
-                <span class="savings-label">Advantage</span>
-                <span id="pv-advantage" class="savings-value">—</span>
-              </div>
-              <div class="savings-item">
-                <span class="savings-label">Breakeven Rate</span>
-                <span id="pv-breakeven" class="savings-value">—</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Breakdown Chart -->
-        <div id="pv-chart-section" class="chart-panel hidden">
-          <h2>Value Over Time</h2>
-          <div class="canvas-chart">
-            <canvas id="pv-bar-canvas" role="img" aria-label="Present value breakdown chart"></canvas>
-          </div>
-          <
-          <div class="chart-legend" id="pv-chart-legend">
-            <span class="legend-item"
-              ><span class="legend-color legend-principal"></span> Present Value
-              Portion</span
-            >
-            <span class="legend-item"
-              ><span class="legend-color legend-interest"></span> Interest
-              (Discount)</span
-            >
-          </div>
-        </div>
-
-        <!-- Breakdown Table -->
-        <div id="pv-table-section" class="table-panel hidden">
-          <h2>Year-by-Year Breakdown</h2>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Year</th>
-                  <th>Discount Factor</th>
-                  <th id="pv-table-value-header">Present Value</th>
-                  <th>Interest Portion</th>
-                </tr>
-              </thead>
-              <tbody id="pv-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </main>
-
-      <footer>
-        <p>&copy; 2026 Financial Calculator</p>
-      </footer>
-    </div>
-
-    <script type="module" src="../js/pv.js"></script>
-    <script src="../js/prefetch.js"></script>
-  </body>
-</html>
-
-
-============================================================
- FILE: /Users/careycarroll/Github Projects/financial-calculator/pages/valuator.html
-============================================================
-
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stock Evaluator | Financial Calculator</title>
-    <link rel="stylesheet" href="../css/base.css" />
-    <link rel="stylesheet" href="../css/common-calculator.css" />
-    <link rel="stylesheet" href="../css/valuator.css" />
-  </head>
-  <body>
-    <!-- Top Nav -->
-    <nav class="top-nav">
-      <div class="top-nav-inner">
-        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
-        <div class="top-nav-links">
-          <a href="../index.html" class="top-nav-link active">Calculators</a>
-          <a href="news.html" class="top-nav-link">News Feed</a>
-        </div>
-      </div>
-    </nav>
-
-    <div class="page-container">
-      <header>
-        <h1>🔍 Stock Evaluator</h1>
-        <p class="tagline">
-          Multi-method fundamental analysis to determine if a stock is over or
-          undervalued.
-        </p>
-      </header>
-
-      <main>
-        <!-- Mode Toggle — always visible -->
-        <div class="calc-form" style="margin-bottom: 1rem; padding: 1rem 2rem;">
-          <div class="val-mode-tabs">
-            <button id="val-mode-api-btn" class="val-mode-tab active" type="button">
-              API Valuation
-            </button>
-            <button id="val-mode-manual-btn" class="val-mode-tab" type="button">
-              Manual Input
-            </button>
-          </div>
-        </div>
-
-        <!-- Search & API Settings -->
-        <div id="tile-search">
-          <div class="calc-form">
-            <div class="val-api-panel">
-              <div class="val-search-row">
-                <div class="val-search-input-wrap">
-                  <input
-                    type="text"
-                    id="val-ticker"
-                    placeholder="Enter ticker symbol (e.g. AAPL)"
-                  />
-                  <button
-                    id="val-evaluate-btn"
-                    class="btn-primary val-evaluate-btn"
-                  >
-                    Evaluate
-                  </button>
-                </div>
-                <div class="val-api-toggle">
-                  <label class="val-toggle-label">
-                    <input type="checkbox" id="val-use-api-toggle" />
-                    Use API for evaluation
-                  </label>
-                  <p class="form-hint" style="margin: 0">
-                    Uncheck to preserve API calls and show research links only.
-                  </p>
-                </div>
-                <button id="val-settings-btn" class="btn-secondary">
-                  ⚙️ API Keys
-                </button>
-              </div>
-
-              <!-- API Usage Bar -->
-              <div id="val-usage-bar" class="val-usage-bar">
-                <div class="val-usage-row" id="val-usage-indicators"></div>
-              </div>
-
-              <!-- API Key Settings (hidden by default) -->
-              <div id="val-settings-panel" class="val-settings-panel hidden">
-                <h3>API Key Configuration</h3>
-                <p class="form-hint">
-                  Enter your free API keys. Data providers are used in
-                  priority order.
-                </p>
-                <div class="val-key-grid">
-                  <div class="val-key-row">
-                    <label>1. Financial Modeling Prep</label>
-                    <input
-                      type="text"
-                      id="val-key-fmp"
-                      placeholder="Get free key at financialmodelingprep.com"
-                    />
-                    <a
-                      href="https://site.financialmodelingprep.com/developer/docs"
-                      target="_blank"
-                      class="val-key-link"
-                      >Get Key →</a
-                    >
-                  </div>
-                  <div class="val-key-row">
-                    <label>2. Finnhub</label>
-                    <input
-                      type="text"
-                      id="val-key-finnhub"
-                      placeholder="Get free key at finnhub.io"
-                    />
-                    <a
-                      href="https://finnhub.io/register"
-                      target="_blank"
-                      class="val-key-link"
-                      >Get Key →</a
-                    >
-                  </div>
-                  <div class="val-key-row">
-                    <label>3. Alpha Vantage</label>
-                    <input
-                      type="text"
-                      id="val-key-alphavantage"
-                      placeholder="Get free key at alphavantage.co"
-                    />
-                    <a
-                      href="https://www.alphavantage.co/support/#api-key"
-                      target="_blank"
-                      class="val-key-link"
-                      >Get Key →</a
-                    >
-                  </div>
-                  <div class="val-key-row">
-                    <label>4. Yahoo Finance</label>
-                    <input
-                      type="text"
-                      id="val-key-yahoo"
-                      placeholder="Get free key at rapidapi.com"
-                    />
-                    <a
-                      href="https://rapidapi.com/sparior/api/yahoo-finance15"
-                      target="_blank"
-                      class="val-key-link"
-                      >Get Key →</a
-                    >
-                  </div>
-                  <div class="val-key-row">
-                    <label>5. IEX Cloud</label>
-                    <input
-                      type="text"
-                      id="val-key-iex"
-                      placeholder="Get free key at iexcloud.io"
-                    />
-                    <a
-                      href="https://iexcloud.io/cloud-login#/register"
-                      target="_blank"
-                      class="val-key-link"
-                      >Get Key →</a
-                    >
-                  </div>
-                </div>
-                <button
-                  id="val-save-keys-btn"
-                  class="btn-primary"
-                  style="max-width: 200px; margin-top: 1rem"
-                >
-                  Save Keys
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Manual Inputs -->
-        <div class="hidden val-manual-panel-item" id="tile-manual-inputs">
-          <div class="calc-form">
-            <div class="val-manual-panel">
-              <h3>Manual valuation inputs</h3>
-              <p class="form-hint">
-                Enter the values needed for the calculation engine.
-              </p>
-              <div class="manual-input-grid">
-                <div class="manual-input-group">
-                  <label for="val-manual-ticker">Ticker</label>
-                  <input type="text" id="val-manual-ticker" placeholder="AAPL" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-company">Company Name</label>
-                  <input type="text" id="val-manual-company" placeholder="Apple Inc." />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-price">Current Share Price</label>
-                  <input type="text" id="val-manual-price" placeholder="150" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-marketcap">Market Cap</label>
-                  <input type="text" id="val-manual-marketcap" placeholder="2500000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-shares">Shares Outstanding (optional)</label>
-                  <input type="text" id="val-manual-shares" placeholder="17000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-sector">Sector</label>
-                  <input type="text" id="val-manual-sector" placeholder="Technology" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-industry">Industry</label>
-                  <input type="text" id="val-manual-industry" placeholder="Consumer Electronics" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-exchange">Exchange</label>
-                  <input type="text" id="val-manual-exchange" placeholder="NASDAQ" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-revenue">Revenue</label>
-                  <input type="text" id="val-manual-revenue" placeholder="260000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-operating-income">Operating Income</label>
-                  <input type="text" id="val-manual-operating-income" placeholder="100000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-net-income">Net Income</label>
-                  <input type="text" id="val-manual-net-income" placeholder="90000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-ebitda">EBITDA</label>
-                  <input type="text" id="val-manual-ebitda" placeholder="110000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-eps">EPS</label>
-                  <input type="text" id="val-manual-eps" placeholder="5.95" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-total-equity">Total Equity</label>
-                  <input type="text" id="val-manual-total-equity" placeholder="650000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-total-debt">Total Debt</label>
-                  <input type="text" id="val-manual-total-debt" placeholder="120000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-cash">Cash &amp; Equivalents</label>
-                  <input type="text" id="val-manual-cash" placeholder="60000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-total-assets">Total Assets</label>
-                  <input type="text" id="val-manual-total-assets" placeholder="350000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-current-assets">Total Current Assets</label>
-                  <input type="text" id="val-manual-current-assets" placeholder="150000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-current-liabilities">Total Current Liabilities</label>
-                  <input type="text" id="val-manual-current-liabilities" placeholder="120000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-ppe">Property, Plant &amp; Equipment</label>
-                  <input type="text" id="val-manual-ppe" placeholder="120000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-goodwill">Goodwill</label>
-                  <input type="text" id="val-manual-goodwill" placeholder="0" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-intangibles">Intangible Assets</label>
-                  <input type="text" id="val-manual-intangibles" placeholder="0" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-fcf">Free Cash Flow</label>
-                  <input type="text" id="val-manual-fcf" placeholder="90000000000" />
-                </div>
-                <div class="manual-input-group">
-                  <label for="val-manual-dividends">Dividends Paid</label>
-                  <input type="text" id="val-manual-dividends" placeholder="15000000000" />
-                </div>
-              </div>
-              <button
-                id="val-manual-evaluate-btn"
-                class="btn-primary"
-                style="margin-top: 1rem"
-              >
-                Evaluate manually
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Loading State -->
-        <div class="hidden" id="tile-loading">
-          <div class="val-loading">
-            <div class="val-spinner"></div>
-            <span id="val-loading-text">Fetching financial data...</span>
-          </div>
-        </div>
-
-        <!-- Verdict Banner -->
-        <div class="hidden" id="tile-verdict">
-          <div class="val-verdict-panel">
-            <div class="val-verdict-header">
-              <div class="val-verdict-company">
-                <h2 id="val-company-name">—</h2>
-                <span id="val-company-meta" class="val-company-meta">—</span>
-              </div>
-              <div class="val-verdict-price">
-                <span class="val-price-label">Current Price</span>
-                <span id="val-current-price" class="val-price-value">—</span>
-              </div>
-            </div>
-            <div class="val-verdict-body">
-              <div class="val-verdict-rating-wrap">
-                <div id="val-verdict-badge" class="val-verdict-badge">—</div>
-                <div class="val-verdict-details">
-                  <div class="val-verdict-fair">
-                    <span class="val-detail-label">Weighted Fair Value</span>
-                    <span id="val-fair-value" class="val-detail-value">—</span>
-                  </div>
-                  <div class="val-verdict-range">
-                    <span class="val-detail-label">Fair Value Range</span>
-                    <span id="val-fair-range" class="val-detail-value">—</span>
-                  </div>
-                </div>
-              </div>
-              <div class="val-verdict-meter">
-                <div class="val-meter-track">
-                  <div id="val-meter-fill" class="val-meter-fill" style="width: 50%"></div>
-                  <div id="val-meter-marker" class="val-meter-marker" style="left: 50%"></div>
-                </div>
-                <div class="val-meter-labels">
-                  <span>Overvalued</span>
-                  <span>Fair</span>
-                  <span>Undervalued</span>
-                </div>
-              </div>
-              <div class="val-verdict-provider">
-                <span id="val-data-provider">—</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Asset-Based Valuation -->
-        <div class="hidden" id="tile-asset">
-          <div class="results-panel">
-            <h2>Asset-Based Valuation</h2>
-            <div class="val-metric-list" id="val-asset-metrics"></div>
-          </div>
-        </div>
-
-        <!-- Income-Based Valuation -->
-        <div class="hidden" id="tile-income">
-          <div class="results-panel">
-            <h2>Income-Based Valuation</h2>
-            <div class="val-metric-list" id="val-income-metrics"></div>
-          </div>
-        </div>
-
-        <!-- Market Multiples -->
-        <div class="hidden" id="tile-multiples">
-          <div class="results-panel">
-            <h2>Market Multiples</h2>
-            <div class="val-metric-list" id="val-multiples-metrics"></div>
-          </div>
-        </div>
-
-        <!-- Enterprise Value -->
-        <div class="hidden" id="tile-enterprise">
-          <div class="results-panel">
-            <h2>Enterprise Value</h2>
-            <div class="val-metric-list" id="val-enterprise-metrics"></div>
-          </div>
-        </div>
-
-        <!-- Equity Multiples -->
-        <div class="hidden" id="tile-equity">
-          <div class="results-panel">
-            <h2>Equity Multiples</h2>
-            <div class="val-metric-list" id="val-equity-metrics"></div>
-          </div>
-        </div>
-
-        <!-- WACC & Cost of Capital -->
-        <div class="hidden" id="tile-wacc">
-          <div class="results-panel">
-            <h2>Cost of Capital</h2>
-            <div class="val-metric-list" id="val-wacc-metrics"></div>
-          </div>
-        </div>
-
-        <!-- Valuation Summary Chart -->
-        <div class="hidden" id="tile-summary-chart">
-          <div class="chart-panel">
-            <h2>Valuation Summary</h2>
-            <p class="form-hint" style="margin-bottom: 1rem">
-              Each method's fair value estimate vs. the current market price.
-            </p>
-            <div class="val-summary-chart" id="val-summary-chart"></div>
-          </div>
-        </div>
-
-        <!-- Research Links -->
-        <div class="hidden" id="tile-links">
-          <div class="results-panel">
-            <h2>Research Links</h2>
-            <p
-              id="val-research-message"
-              class="form-hint val-research-message"
-              style="margin-bottom: 1rem"
-            >
-              If API access is unavailable or rate limits are reached, use
-              these research sources to continue your analysis.
-            </p>
-            <div class="val-links-grid" id="val-research-links"></div>
-          </div>
-        </div>
-
-        <!-- DCF Sensitivity -->
-        <div class="hidden" id="tile-dcf-sensitivity">
-          <div class="table-panel">
-            <h2>DCF Sensitivity Analysis</h2>
-            <p class="form-hint" style="margin-bottom: 1rem">
-              How the DCF fair value changes with different WACC and growth
-              rate assumptions.
-            </p>
-            <div class="table-wrapper">
-              <table id="val-dcf-sensitivity-table">
-                <thead id="val-dcf-sensitivity-header"></thead>
-                <tbody id="val-dcf-sensitivity-body"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <footer>
-        <p>&copy; 2026 Financial Calculator</p>
-      </footer>
-    </div>
-
-    <!-- Valuator (order matters: api-manager → valuator → ui) -->
-    <script type="module" src="../js/valuator-ui.js"></script>
-    <script src="../js/prefetch.js"></script>
-  </body>
-</html>
-
-
-============================================================
- FILE: /Users/careycarroll/Github Projects/financial-calculator/proxy.js
-============================================================
-
-const http = require("http");
-const http2 = require("http2");
-
-const PORT = 3001;
-
-const server = http.createServer(async (req, res) => {
-  // CORS on every response
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "*");
-
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
-
-  const url = new URL(req.url, `http://localhost:${PORT}`);
-  const target = url.searchParams.get("url");
-
-  if (!target) {
-    res.writeHead(400, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Missing ?url= parameter" }));
-    return;
-  }
-
-  const allowed = ["data.sec.gov", "www.sec.gov", "efts.sec.gov"];
-  let targetUrl;
-  try {
-    targetUrl = new URL(target);
-  } catch {
-    res.writeHead(400, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Invalid URL" }));
-    return;
-  }
-
-  if (!allowed.includes(targetUrl.hostname)) {
-    res.writeHead(403, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Domain not allowed" }));
-    return;
-  }
-
-  console.log(`Proxying: ${target}`);
-
-  try {
-    const data = await fetchH2(targetUrl);
-    console.log(`Success: ${data.length} bytes`);
-    res.writeHead(200, {
-      "Content-Type": "application/json",
-      "Content-Length": Buffer.byteLength(data),
-      "Access-Control-Allow-Origin": "*",
-    });
-    res.end(data);
-  } catch (err) {
-    console.error("Error:", err.message);
-    res.writeHead(500, {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    });
-    res.end(JSON.stringify({ error: err.message }));
-  }
-});
-
-function fetchH2(targetUrl) {
-  return new Promise((resolve, reject) => {
-    const client = http2.connect(`https://${targetUrl.hostname}`);
-
-    client.on("error", (err) => {
-      reject(err);
-      client.close();
-    });
-
-    const req = client.request({
-      ":method": "GET",
-      ":path": targetUrl.pathname + targetUrl.search,
-      "user-agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-      accept: "application/json",
-      "accept-encoding": "identity",
-    });
-
-    req.on("response", (headers) => {
-      const status = headers[":status"];
-      if (status !== 200) {
-        reject(new Error(`SEC returned HTTP ${status}`));
-        client.close();
-        return;
-      }
-
-      const chunks = [];
-      req.on("data", (chunk) => chunks.push(chunk));
-      req.on("end", () => {
-        resolve(Buffer.concat(chunks).toString("utf-8"));
-        client.close();
-      });
-    });
-
-    req.on("error", (err) => {
-      reject(err);
-      client.close();
-    });
-
-    req.end();
-  });
-}
-
-server.listen(PORT, () => {
-  console.log(`SEC proxy (HTTP/2) running at http://localhost:${PORT}`);
-  console.log(
-    `Test: http://localhost:${PORT}/?url=https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json`,
-  );
-});
-
+                <label for="bs-volatility">Implied Volatilit
