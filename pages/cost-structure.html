@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cost Structure & Allocation | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/common-calculator.css" />
+    <link rel="stylesheet" href="../css/cost-structure.css" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-container">
+      <header>
+        <h1>🏗️ Cost Structure & Allocation</h1>
+        <p class="tagline">Compare fixed vs variable cost structures, allocate overhead, classify costs, and avoid the unit cost trap.</p>
+      </header>
+
+      <main>
+        <div class="cs-tabs">
+          <button id="tab-cs-compare" class="cs-tab active" aria-label="Cost structure comparison tab">📊 Cost Structure</button>
+          <button id="tab-cs-allocate" class="cs-tab" aria-label="Cost allocation tab">🏷️ Cost Allocation</button>
+          <button id="tab-cs-classifier" class="cs-tab" aria-label="Cost classifier tab">🔍 Cost Classifier</button>
+          <button id="tab-cs-unit-trap" class="cs-tab" aria-label="Unit cost trap tab">⚠️ Unit Cost Trap</button>
+        </div>
+
+        <!-- ==================== TAB 1: COST STRUCTURE COMPARISON ==================== -->
+        <div id="cs-compare-tab">
+
+          <div class="cs-explainer">
+            <button class="cs-explainer-toggle" id="cs-compare-explainer-toggle" aria-expanded="false">
+              💡 How Cost Structure Comparison Works <span class="cs-explainer-chevron">▼</span>
+            </button>
+            <div class="cs-explainer-body hidden" id="cs-compare-explainer-body">
+              <p><strong>Cost structure</strong> is the mix of fixed costs (FC) and variable costs (VC). Two firms can have the same price but very different risk/return profiles.</p>
+              <p><strong>Breakeven units</strong> increase when fixed costs are higher (holding price and VC/unit constant).</p>
+              <p><strong>DOL (Degree of Operating Leverage)</strong> is: <strong>DOL = Contribution Margin ÷ Operating Income</strong>. Near breakeven, operating income is close to $0, so DOL becomes extremely large or undefined.</p>
+              <p>Add multiple scenarios to compare side-by-side and on the same chart.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Scenarios</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Add scenarios. Each scenario has its own Price, VC per unit, and Fixed Costs.</p>
+
+            <div id="cs-scenarios" class="cs-scenarios"></div>
+
+            <div class="cs-actions">
+              <button id="cs-add-scenario" class="btn-secondary">+ Add Scenario</button>
+              <button id="cs-compare-calc" class="btn-primary">Calculate</button>
+            </div>
+          </div>
+
+          <div id="cs-compare-results" class="results-panel hidden" aria-live="polite">
+            <h2>Comparison Results</h2>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Scenario</th>
+                    <th>Price</th>
+                    <th>VC / Unit</th>
+                    <th>Fixed Costs</th>
+                    <th>CM / Unit</th>
+                    <th>Breakeven Units</th>
+                    <th>Operating Income @ Q</th>
+                    <th>DOL @ Q</th>
+                  </tr>
+                </thead>
+                <tbody id="cs-compare-tbody"></tbody>
+              </table>
+            </div>
+            <div class="form-row" style="margin-top:1rem;">
+              <div class="form-group">
+                <label for="cs-compare-q">Volume for “@ Q” metrics (units)</label>
+                <input type="number" id="cs-compare-q" min="0" step="1" value="1000" />
+              </div>
+              <div class="form-group"></div>
+            </div>
+          </div>
+
+          <div id="cs-compare-chart-section" class="chart-panel hidden">
+            <h2>Revenue & Total Cost vs Volume</h2>
+            <div class="canvas-chart">
+              <canvas id="cs-compare-canvas" role="img" aria-label="Chart comparing revenue and total cost lines across scenarios"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 2: COST ALLOCATION ==================== -->
+        <div id="cs-allocate-tab" class="hidden">
+
+          <div class="cs-explainer">
+            <button class="cs-explainer-toggle" id="cs-alloc-explainer-toggle" aria-expanded="false">
+              💡 How Cost Allocation Works <span class="cs-explainer-chevron">▼</span>
+            </button>
+            <div class="cs-explainer-body hidden" id="cs-alloc-explainer-body">
+              <p><strong>Indirect costs (overhead)</strong> are pooled and allocated to cost objects using an allocation base (e.g., DLH, machine hours, revenue).</p>
+              <p><strong>Overhead rate</strong> is: <strong>OH Rate = Total Overhead Pool ÷ Total Allocation Base</strong>.</p>
+              <p><strong>Death spiral intuition:</strong> if you drop a cost object, the remaining objects may have to absorb the same overhead pool, increasing the overhead rate and making more objects look unprofitable.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Overhead Pool</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cs-oh-pool">Total Overhead ($)</label>
+                <input type="number" id="cs-oh-pool" min="0" step="any" value="1120000" />
+              </div>
+              <div class="form-group">
+                <label for="cs-alloc-base">Allocation Base</label>
+                <select id="cs-alloc-base">
+                  <option value="dlh">Direct Labor Hours (DLH)</option>
+                  <option value="dlc">Direct Labor Cost (DLC $)</option>
+                  <option value="mh">Machine Hours</option>
+                  <option value="revenue">Revenue ($)</option>
+                  <option value="units">Units</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row hidden" id="cs-alloc-custom-row">
+              <div class="form-group">
+                <label for="cs-alloc-custom-name">Custom Base Name</label>
+                <input type="text" id="cs-alloc-custom-name" placeholder="e.g. Computing Hours" />
+              </div>
+              <div class="form-group"></div>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Cost Objects</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Each object has revenue, direct costs, and an allocation-base quantity. Drop an object to see the overhead rate change.</p>
+
+            <div id="cs-objects" class="cs-objects"></div>
+
+            <div class="cs-actions">
+              <button id="cs-add-object" class="btn-secondary">+ Add Cost Object</button>
+              <button id="cs-alloc-calc" class="btn-primary">Calculate</button>
+            </div>
+          </div>
+
+          <div id="cs-alloc-results" class="results-panel hidden" aria-live="polite">
+            <h2>Allocation Results</h2>
+
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Total Overhead</span>
+                <span id="cs-oh-total" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Total Base</span>
+                <span id="cs-base-total" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">OH Rate</span>
+                <span id="cs-oh-rate" class="result-value accent">—</span>
+              </div>
+            </div>
+
+            <div class="table-wrapper" style="margin-top:1rem;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Object</th>
+                    <th>Revenue</th>
+                    <th>Direct Costs</th>
+                    <th>Base Qty</th>
+                    <th>Allocated OH</th>
+                    <th>Profit</th>
+                    <th>Margin</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="cs-alloc-tbody"></tbody>
+              </table>
+            </div>
+
+            <div id="cs-death-spiral-flag" class="cm-flag hidden" style="margin-top:1rem;"></div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 3: COST CLASSIFIER ==================== -->
+        <div id="cs-classifier-tab" class="hidden">
+
+          <div class="cs-explainer">
+            <button class="cs-explainer-toggle" id="cs-class-explainer-toggle" aria-expanded="false">
+              💡 How Cost Classification Works <span class="cs-explainer-chevron">▼</span>
+            </button>
+            <div class="cs-explainer-body hidden" id="cs-class-explainer-body">
+              <p>This tab helps you classify costs as <strong>Fixed</strong>, <strong>Variable</strong>, or <strong>Mixed</strong> using quantitative methods.</p>
+              <p><strong>High-Low method</strong> uses the highest and lowest activity periods to estimate VC/unit and FC.</p>
+              <p><strong>Least squares regression</strong> fits a line: <strong>Total Cost = FC + (VC per unit × Activity)</strong>.</p>
+              <p><strong>Manipulation detection:</strong> watch for outliers, step costs, and changes outside the relevant range.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Dataset</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cs-activity-name">Activity Driver Name</label>
+                <input type="text" id="cs-activity-name" value="Units" />
+              </div>
+              <div class="form-group">
+                <label for="cs-periods"># Periods</label>
+                <input type="number" id="cs-periods" min="2" step="1" value="6" />
+              </div>
+              <div class="form-group">
+                <label for="cs-lines"># Cost Line Items</label>
+                <input type="number" id="cs-lines" min="1" step="1" value="3" />
+              </div>
+            </div>
+
+            <button id="cs-build-grid" class="btn-secondary">Build / Reset Grid</button>
+
+            <div id="cs-grid-wrap" class="cs-grid-wrap" style="margin-top:1rem;"></div>
+
+            <div class="cs-actions">
+              <button id="cs-classify" class="btn-primary">Analyze & Classify</button>
+            </div>
+          </div>
+
+          <div id="cs-class-results" class="results-panel hidden" aria-live="polite">
+            <h2>Classifier Results</h2>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Line Item</th>
+                    <th>Classification</th>
+                    <th>High-Low VC / Unit</th>
+                    <th>High-Low FC</th>
+                    <th>Regression VC / Unit</th>
+                    <th>Regression FC</th>
+                    <th>R²</th>
+                  </tr>
+                </thead>
+                <tbody id="cs-class-tbody"></tbody>
+              </table>
+            </div>
+
+            <div class="cs-subgrid" style="margin-top:1rem;">
+              <div class="cs-subpanel">
+                <h3>Step-by-Step (High-Low)</h3>
+                <div id="cs-highlow-steps" class="cs-steps"></div>
+              </div>
+              <div class="cs-subpanel">
+                <h3>Step-by-Step (Regression)</h3>
+                <div id="cs-reg-steps" class="cs-steps"></div>
+              </div>
+            </div>
+
+            <div class="cs-subpanel" style="margin-top:1rem;">
+              <h3>Manipulation / Data Quality Checks</h3>
+              <ul class="cs-bullets">
+                <li><strong>Outliers:</strong> one unusual period can distort High-Low and regression.</li>
+                <li><strong>Step costs:</strong> costs that jump at thresholds won’t fit a single straight line well.</li>
+                <li><strong>Relevant range:</strong> the linear model is an approximation within a normal activity band.</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 4: UNIT COST TRAP ==================== -->
+        <div id="cs-unit-trap-tab" class="hidden">
+
+          <div class="cs-explainer">
+            <button class="cs-explainer-toggle" id="cs-unit-explainer-toggle" aria-expanded="false">
+              💡 The Unit Cost Trap <span class="cs-explainer-chevron">▼</span>
+            </button>
+            <div class="cs-explainer-body hidden" id="cs-unit-explainer-body">
+              <p><strong>Unit cost</strong> (average cost) includes fixed costs spread over units. If volume changes, unit cost changes.</p>
+              <p>The trap is using a unit cost computed at one volume and multiplying by a different volume to estimate total cost.</p>
+              <p>Always reason in <strong>total dollars</strong>: <strong>Total Cost = FC + (VC/unit × Units)</strong>.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Inputs</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cs-ut-fc">Fixed Costs (FC)</label>
+                <input type="number" id="cs-ut-fc" min="0" step="any" value="100" />
+              </div>
+              <div class="form-group">
+                <label for="cs-ut-vc">Variable Cost per Unit (VC/unit)</label>
+                <input type="number" id="cs-ut-vc" min="0" step="any" value="1" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cs-ut-q1">Volume 1 (Units)</label>
+                <input type="number" id="cs-ut-q1" min="1" step="1" value="100" />
+              </div>
+              <div class="form-group">
+                <label for="cs-ut-q2">Volume 2 (Units)</label>
+                <input type="number" id="cs-ut-q2" min="1" step="1" value="120" />
+              </div>
+            </div>
+
+            <button id="cs-ut-calc" class="btn-primary">Show Trap</button>
+          </div>
+
+          <div id="cs-ut-results" class="results-panel hidden" aria-live="polite">
+            <h2>Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Unit Cost @ Q1</span>
+                <span id="cs-ut-uc1" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Wrong Total @ Q2 (UC1 × Q2)</span>
+                <span id="cs-ut-wrong" class="result-value negative">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Correct Total @ Q2 (FC + VC×Q2)</span>
+                <span id="cs-ut-correct" class="result-value positive">—</span>
+              </div>
+            </div>
+
+            <div class="cs-subpanel" style="margin-top:1rem;">
+              <h3>Common traps (MBA interview prep)</h3>
+              <ul class="cs-bullets">
+                <li>Using average cost to forecast totals when volume changes.</li>
+                <li>Assuming fixed costs “disappear” when volume drops (short run vs long run).</li>
+                <li>Ignoring step costs and capacity constraints.</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script type="module" src="../js/cost-structure.js"></script>
+    <script src="../js/font-scale.js"></script>
+    <script src="../js/prefetch.js"></script>
+  </body>
+</html>

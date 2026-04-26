@@ -1,0 +1,129 @@
+/* Cost Structure & Allocation */.cs-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0 1.25rem;
+}.cs-tab {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}.cs-tab:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.5);
+}.cs-tab.active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.55);
+  color: var(--text-primary);
+}.cs-explainer {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}.cs-explainer-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}.cs-explainer-body {
+  margin-top: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}.cs-explainer-chevron {
+  color: var(--text-secondary);
+}.cs-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}.cs-scenarios,.cs-objects {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}.cs-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem;
+}.cs-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}.cs-card-title {
+  font-weight: 800;
+  color: var(--text-primary);
+}.cs-remove {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 10px;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}.cs-remove:hover {
+  border-color: rgba(244, 114, 182, 0.6);
+  color: var(--text-primary);
+}.cs-grid-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-primary);
+}.cs-grid {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}.cs-grid th,.cs-grid td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0.5rem;
+  text-align: left;
+  vertical-align: middle;
+}.cs-grid th {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 800;
+}.cs-grid input[type="number"],.cs-grid input[type="text"] {
+  width: 100%;
+  min-width: 120px;
+}.cs-subgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {.cs-subgrid {
+    grid-template-columns: 1fr;
+  }
+}.cs-subpanel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem;
+}.cs-subpanel h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  color: var(--accent);
+}.cs-steps {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  white-space: pre-wrap;
+}.cs-bullets {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text-secondary);
+}.cs-bullets li {
+  margin: 0.35rem 0;
+}
