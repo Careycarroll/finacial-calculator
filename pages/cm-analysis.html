@@ -31,6 +31,7 @@
           <button id="tab-single" class="cm-tab active" aria-label="Single product analysis">📦 Single Product</button>
           <button id="tab-multi" class="cm-tab" aria-label="Multi-product bundle analysis">🗂️ Multi-Product</button>
           <button id="tab-sensitivity" class="cm-tab" aria-label="Sensitivity and what-if analysis">🎛️ Sensitivity</button>
+          <button id="tab-ol" class="cm-tab" aria-label="Operating leverage analysis">⚖️ Operating Leverage</button>
         </div>
 
         <!-- ==================== TAB 1: SINGLE PRODUCT ==================== -->
@@ -193,6 +194,10 @@
               <div class="result-item">
                 <span class="result-label">Operating Income</span>
                 <span id="sp-operating-income" class="result-value">—</span>
+                  <div class="result-item" style="margin-top:0.75rem;">
+                    <span class="result-label">DOL (CM ÷ Operating Income)</span>
+                    <span id="sp-dol" class="result-value accent">—</span>
+                  </div>
               </div>
               <div class="result-item">
                 <span class="result-label">Breakeven (Units)</span>
@@ -213,7 +218,24 @@
           </div>
 
           <!-- Step-by-Step Calculations -->
-          <div id="sp-steps-section" class="hidden" style="margin-bottom:2rem;">
+          
+          <div id="sp-dol-section" class="hidden" style="margin-bottom:1.25rem;">
+            <div class="cm-explainer" style="border-color: var(--accent);">
+              <button class="cm-explainer-toggle" id="sp-dol-explainer-toggle" aria-expanded="false">
+                ⚖️ Operating Leverage (DOL) — Step-by-Step <span class="cm-explainer-chevron">▼</span>
+              </button>
+              <div class="cm-explainer-body hidden" id="sp-dol-explainer-body">
+                <p><strong>Degree of Operating Leverage (DOL)</strong> measures how sensitive operating income is to changes in sales.</p>
+                <p><strong>DOL = Contribution Margin ÷ Operating Income</strong></p>
+                <div id="sp-dol-steps" class="cm-steps-content"></div>
+                <p class="form-hint" style="margin-top:0.75rem;">
+                  Note: near breakeven, operating income is close to $0, so DOL becomes extremely large or undefined.
+                </p>
+              </div>
+            </div>
+          </div>
+
+<div id="sp-steps-section" class="hidden" style="margin-bottom:2rem;">
             <div class="cm-explainer" style="border-color: var(--accent);">
               <button class="cm-explainer-toggle" id="sp-steps-toggle" aria-expanded="true">
                 🧮 Step-by-Step Calculations <span class="cm-explainer-chevron">▼</span>
@@ -502,6 +524,182 @@
                 <thead id="sens-matrix-header"></thead>
                 <tbody id="sens-matrix-body"></tbody>
               </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 4: OPERATING LEVERAGE ==================== -->
+        <div id="ol-tab" class="hidden">
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Degree of Operating Leverage (DOL)</h2>
+
+            <div class="cm-explainer">
+              <button class="cm-explainer-toggle" id="ol-explainer-toggle" aria-expanded="false">
+                💡 How Operating Leverage Works <span class="cm-explainer-chevron">▼</span>
+              </button>
+              <div class="cm-explainer-body hidden" id="ol-explainer-body">
+                <p><strong>Operating leverage</strong> describes how sensitive operating income is to changes in sales volume.</p>
+                <p>The common formula is:</p>
+                <p><strong>DOL = Contribution Margin ÷ Operating Income</strong></p>
+                <p>High fixed costs (and lower variable costs) tend to create <strong>higher operating leverage</strong>: profits accelerate faster above breakeven, but losses also deepen faster below breakeven.</p>
+                <p><strong>Note:</strong> When operating income is near $0 (around breakeven), DOL becomes extremely large or undefined.</p>
+              </div>
+            </div>
+
+            <p class="form-hint" style="margin-bottom:1rem;">
+              Uses your Single Product inputs. Calculate Single Product first.
+            </p>
+
+            <div id="ol-no-data" class="cm-flag" style="display:block;">
+              ⚠️ Calculate the Single Product tab first to enable operating leverage analysis.
+            </div>
+
+            <div id="ol-controls" class="hidden">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="ol-low-fc-mult">Low Fixed Cost Scenario (FC multiplier)</label>
+                  <input type="number" id="ol-low-fc-mult" min="0" step="any" value="0.6" />
+                  <span class="form-hint">Example: 0.6 means 60% of your baseline fixed costs.</span>
+                </div>
+                <div class="form-group">
+                  <label for="ol-high-fc-mult">High Fixed Cost Scenario (FC multiplier)</label>
+                  <input type="number" id="ol-high-fc-mult" min="0" step="any" value="1.4" />
+                  <span class="form-hint">Example: 1.4 means 140% of your baseline fixed costs.</span>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="ol-low-vc-mult">Low Fixed Cost Scenario (VC multiplier)</label>
+                  <input type="number" id="ol-low-vc-mult" min="0" step="any" value="1.15" />
+                  <span class="form-hint">Keep total cost structure realistic: lower FC often implies higher VC.</span>
+                </div>
+                <div class="form-group">
+                  <label for="ol-high-vc-mult">High Fixed Cost Scenario (VC multiplier)</label>
+                  <input type="number" id="ol-high-vc-mult" min="0" step="any" value="0.90" />
+                </div>
+              </div>
+
+              <button id="ol-recalc" class="btn-secondary" style="margin-top:0.5rem;">Recalculate</button>
+              <div class="calc-form" style="margin-top:1.25rem;">
+                <h3 style="margin:0 0 0.75rem 0; font-size:1rem; color:var(--accent);">Class Mode (FC & VC per unit)</h3>
+
+                <div class="toggle-header" style="margin-bottom:0.75rem;">
+                  <div style="font-weight:600; color:var(--text-primary);">Lock to multipliers</div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="ol-lock-multipliers" checked />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <p class="form-hint" style="margin-bottom:1rem;">
+                  When locked, edit multipliers and the tool shows the implied Fixed Costs and Variable Cost per unit.
+                  When unlocked, edit Fixed Costs / VC per unit and the tool computes the implied multipliers.
+                </p>
+
+                <div class="results-grid results-grid-3" style="margin-bottom:1rem;">
+                  <div class="result-item">
+                    <span class="result-label">Baseline Price</span>
+                    <span id="ol-base-price" class="result-value">—</span>
+                  </div>
+                  <div class="result-item">
+                    <span class="result-label">Baseline VC / Unit</span>
+                    <span id="ol-base-vc" class="result-value">—</span>
+                  </div>
+                  <div class="result-item">
+                    <span class="result-label">Baseline Fixed Costs</span>
+                    <span id="ol-base-fc" class="result-value">—</span>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Scenario A Name</label>
+                    <input type="text" id="ol-scn-a-name" value="Low Fixed Cost / High Variable Cost" />
+                  </div>
+                  <div class="form-group">
+                    <label>Scenario B Name</label>
+                    <input type="text" id="ol-scn-b-name" value="High Fixed Cost / Low Variable Cost" />
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="ol-a-fc">Scenario A — Fixed Costs ($)</label>
+                    <input type="number" id="ol-a-fc" min="0" step="any" />
+                  </div>
+                  <div class="form-group">
+                    <label for="ol-a-vc">Scenario A — Variable Cost per Unit ($)</label>
+                    <input type="number" id="ol-a-vc" min="0" step="any" />
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="ol-b-fc">Scenario B — Fixed Costs ($)</label>
+                    <input type="number" id="ol-b-fc" min="0" step="any" />
+                  </div>
+                  <div class="form-group">
+                    <label for="ol-b-vc">Scenario B — Variable Cost per Unit ($)</label>
+                    <input type="number" id="ol-b-vc" min="0" step="any" />
+                  </div>
+                </div>
+
+                <div class="results-grid results-grid-3">
+                  <div class="result-item">
+                    <span class="result-label">Scenario A — FC multiplier</span>
+                    <span id="ol-a-fc-mult" class="result-value">—</span>
+                  </div>
+                  <div class="result-item">
+                    <span class="result-label">Scenario A — VC multiplier</span>
+                    <span id="ol-a-vc-mult" class="result-value">—</span>
+                  </div>
+                  <div class="result-item">
+                    <span class="result-label">Scenario A — Breakeven units</span>
+                    <span id="ol-a-be" class="result-value">—</span>
+                  </div>
+
+                  <div class="result-item">
+                    <span class="result-label">Scenario B — FC multiplier</span>
+                    <span id="ol-b-fc-mult" class="result-value">—</span>
+                  </div>
+                  <div class="result-item">
+                    <span class="result-label">Scenario B — VC multiplier</span>
+                    <span id="ol-b-vc-mult" class="result-value">—</span>
+                  </div>
+                  <div class="result-item">
+                    <span class="result-label">Scenario B — Breakeven units</span>
+                    <span id="ol-b-be" class="result-value">—</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div id="ol-results" class="results-panel hidden" aria-live="polite">
+            <h2>Operating Leverage Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Baseline DOL</span>
+                <span id="ol-dol-base" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Low-FC DOL</span>
+                <span id="ol-dol-low" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">High-FC DOL</span>
+                <span id="ol-dol-high" class="result-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="ol-chart-section" class="chart-panel hidden">
+            <h2>Operating Income vs Volume (Cost Structure Comparison)</h2>
+            <div class="canvas-chart">
+              <canvas id="ol-chart-canvas" role="img" aria-label="Line chart comparing operating income across volume for high fixed cost vs low fixed cost scenarios"></canvas>
             </div>
           </div>
 
