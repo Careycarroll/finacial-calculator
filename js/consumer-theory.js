@@ -134,6 +134,513 @@ function utilityFnLabel(fn) {
 }
 
 // ===================================================================
+// EQUATION PARSER — From Equation mode
+// ===================================================================
+
+// Module-level parsed state for demand and supply
+let demandParsed = null;
+let supplyParsed = null;
+
+/**
+ * parseEquation(str)
+ *
+ * Parses a linear equation string into structured terms.
+ *
+ * Handles:
+ *   - Leading scalar:  20*(750 - 2*p + p_hotel + 450*e)
+ *                      20(750 - 2*p)   [implicit multiply]
+ *   - No scalar:       750 - 2*p + p_hotel   [scalar defaults to 1]
+ *   - Bare number:     16 - 2*p
+ *   - Named variables: any [a-zA-Z][a-zA-Z0-9_]* token
+ *   - Own-price:       exact match on "p" or "P" (case-insensitive)
+ *   - Implicit coef:   p_hotel  →  1·p_hotel
+ *   - Negative terms:  -2*p, -(2*p)
+ *
+ * Returns:
+ *   {
+ *     scalar: number,          // leading multiplier (1 if absent)
+ *     terms: [                 // flat list after scalar is factored in
+ *       { coef: number, variable: string|null }
+ *       // variable === null  →  constant term
+ *       // variable === "p"   →  own-price term
+ *       // otherwise          →  shift variable
+ *     ],
+ *     ownPriceVar: string|null,  // name of the own-price variable detected
+ *     variables: string[],       // all unique variable names found
+ *     error: string|null         // human-readable parse error, or null
+ *   }
+ */
+function parseEquation(str) {
+  const raw = str.trim();
+  if (!raw) return { scalar: 1, terms: [], ownPriceVar: null, variables: [], error: "Equation is empty." };
+
+  let scalar = 1;
+  let inner = raw;
+
+  // ── Detect leading scalar: number followed by * or ( ──
+  // Matches: 20*(  |  20(  |  -20*(  |  -20(
+  const scalarMatch = raw.match(/^(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*\*?\s*\(/);
+  if (scalarMatch) {
+    scalar = parseFloat(scalarMatch[1]);
+    // Find the matching closing paren for the opening paren after the scalar
+    const openIdx = raw.indexOf("(", scalarMatch[0].length - 1);
+    const closeIdx = findMatchingParen(raw, openIdx);
+    if (closeIdx === -1) {
+      return { scalar, terms: [], ownPriceVar: null, variables: [], error: "Mismatched parentheses." };
+    }
+    inner = raw.slice(openIdx + 1, closeIdx).trim();
+  } else {
+    // No leading scalar — strip outer parens if the whole expression is wrapped
+    const outerMatch = raw.match(/^\((.+)\)$/);
+    if (outerMatch) inner = outerMatch[1].trim();
+  }
+
+  // ── Tokenize inner expression into signed terms ──
+  // Split on + or - that are not inside parens and not part of scientific notation
+  const termStrings = splitTerms(inner);
+  if (termStrings === null) {
+    return { scalar, terms: [], ownPriceVar: null, variables: [], error: "Could not parse expression — check parentheses." };
+  }
+
+  const terms = [];
+  for (const ts of termStrings) {
+    const term = parseTerm(ts.trim());
+    if (term === null) {
+      return { scalar, terms: [], ownPriceVar: null, variables: [],
+        error: "Unrecognised term: \"" + ts.trim() + "\". Expected a number, a variable, or coef*variable." };
+    }
+    // Factor scalar through each coefficient
+    terms.push({ coef: scalar * term.coef, variable: term.variable });
+  }
+
+  // ── Identify own-price variable ──
+  const allVars = [...new Set(terms.filter(t => t.variable !== null).map(t => t.variable))];
+  let ownPriceVar = null;
+
+  // Exact case-insensitive match on "p"
+  ownPriceVar = allVars.find(v => v.toLowerCase() === "p") || null;
+
+  // If no "p" found and exactly one variable exists, treat it as own-price
+  if (!ownPriceVar && allVars.length === 1) {
+    ownPriceVar = allVars[0];
+  }
+  // If no "p" and multiple variables → ownPriceVar stays null → dropdown shown
+
+  return { scalar, terms, ownPriceVar, variables: allVars, error: null };
+}
+
+/**
+ * findMatchingParen(str, openIdx)
+ * Returns the index of the closing paren matching the open paren at openIdx.
+ * Returns -1 if not found.
+ */
+function findMatchingParen(str, openIdx) {
+  let depth = 0;
+  for (let i = openIdx; i < str.length; i++) {
+    if (str[i] === "(") depth++;
+    else if (str[i] === ")") {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/**
+ * splitTerms(expr)
+ * Splits a linear expression string on top-level + and - operators.
+ * Returns array of signed term strings, or null on paren mismatch.
+ *
+ * e.g. "750 - 2*p + p_hotel + 450*e"
+ *   → ["750", "-2*p", "p_hotel", "450*e"]
+ */
+function splitTerms(expr) {
+  const terms = [];
+  let depth = 0;
+  let current = "";
+  let i = 0;
+
+  while (i < expr.length) {
+    const ch = expr[i];
+    if (ch === "(") { depth++; current += ch; i++; continue; }
+    if (ch === ")") {
+      if (depth === 0) return null; // mismatched
+      depth--; current += ch; i++; continue;
+    }
+    if (depth === 0 && (ch === "+" || ch === "-")) {
+      // Check it's not scientific notation: digit e +/- digit
+      const prev = current.trimEnd();
+      const isScientific = /[eE]$/.test(prev);
+      if (!isScientific) {
+        if (current.trim()) terms.push(current.trim());
+        current = ch; // carry sign into next term
+        i++; continue;
+      }
+    }
+    current += ch;
+    i++;
+  }
+  if (current.trim()) terms.push(current.trim());
+  return terms.length > 0 ? terms : null;
+}
+
+/**
+ * parseTerm(str)
+ * Parses a single signed term string into { coef, variable }.
+ * variable === null means constant term.
+ * Returns null if the term cannot be parsed.
+ *
+ * Handles:
+ *   "750"          → { coef: 750,  variable: null }
+ *   "-2*p"         → { coef: -2,   variable: "p" }
+ *   "+p_hotel"     → { coef: 1,    variable: "p_hotel" }
+ *   "-p_hotel"     → { coef: -1,   variable: "p_hotel" }
+ *   "450*e"        → { coef: 450,  variable: "e" }
+ *   "e"            → { coef: 1,    variable: "e" }
+ *   "-e"           → { coef: -1,   variable: "e" }
+ *   "2p"           → { coef: 2,    variable: "p" }  [implicit multiply]
+ */
+function parseTerm(str) {
+  // Strip leading +
+  let s = str.replace(/^\+/, "").trim();
+
+  // Pure number (constant term)
+  if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(s)) {
+    return { coef: parseFloat(s), variable: null };
+  }
+
+  // coef * variable  or  coef*variable
+  const mulMatch = s.match(/^(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*\*\s*([a-zA-Z][a-zA-Z0-9_]*)$/);
+  if (mulMatch) {
+    return { coef: parseFloat(mulMatch[1]), variable: mulMatch[2] };
+  }
+
+  // implicit multiply: 2p or 2p_hotel (number immediately followed by identifier)
+  const implicitMatch = s.match(/^(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)([a-zA-Z][a-zA-Z0-9_]*)$/);
+  if (implicitMatch) {
+    return { coef: parseFloat(implicitMatch[1]), variable: implicitMatch[2] };
+  }
+
+  // bare variable (coef = 1): p_hotel, e, p
+  const bareMatch = s.match(/^([a-zA-Z][a-zA-Z0-9_]*)$/);
+  if (bareMatch) {
+    return { coef: 1, variable: bareMatch[1] };
+  }
+
+  // negated variable: -p_hotel, -e
+  const negBareMatch = s.match(/^-([a-zA-Z][a-zA-Z0-9_]*)$/);
+  if (negBareMatch) {
+    return { coef: -1, variable: negBareMatch[1] };
+  }
+
+  return null; // unrecognised
+}
+
+/**
+ * collapseToLinear(parsed, shiftValues)
+ *
+ * Given a parsed equation and a map of shift variable values,
+ * returns { A, B } where the equation is Q = A + B*p.
+ *
+ * shiftValues: { variableName: number,... }
+ *
+ * Returns null if own-price term is missing (B = 0 is valid for supply/demand
+ * only if the curve is horizontal, but we flag it as an error).
+ */
+function collapseToLinear(parsed, shiftValues) {
+  let A = 0;
+  let B = 0;
+  const ownVar = parsed.ownPriceVar;
+
+  for (const term of parsed.terms) {
+    if (term.variable === null) {
+      // constant
+      A += term.coef;
+    } else if (term.variable === ownVar) {
+      // own-price coefficient
+      B += term.coef;
+    } else {
+      // shift variable — substitute known value
+      const val = shiftValues[term.variable];
+      if (val === undefined || isNaN(val)) return null;
+      A += term.coef * val;
+    }
+  }
+  return { A, B };
+}
+
+// ===================================================================
+// EQUATION UI — Parse confirmation + shift fields
+// ===================================================================
+
+/**
+ * renderParseConfirmation(side, parsed)
+ *
+ * Renders the read-only term breakdown and (if needed) the own-price
+ * override dropdown into the confirmation container for the given side.
+ *
+ * side: "d" (demand) or "s" (supply)
+ */
+function renderParseConfirmation(side, parsed) {
+  const confirmEl = document.getElementById("elas-eq-" + side + "-confirmation");
+  if (!confirmEl) return;
+
+  if (parsed.error || parsed.terms.length === 0) {
+    confirmEl.classList.remove("visible");
+    confirmEl.innerHTML = "";
+    return;
+  }
+
+  const ownVar = parsed.ownPriceVar;
+  const scalarStr = parsed.scalar !== 1 ? parsed.scalar : "";
+
+  // Build term chips HTML
+  let chipsHtml = "";
+  parsed.terms.forEach((term, i) => {
+    const isOwn = term.variable !== null && term.variable === ownVar;
+    const isConst = term.variable === null;
+    const chipClass = isOwn ? "own-price" : isConst ? "constant" : "shift";
+
+    // Sign operator between terms
+    if (i > 0) {
+      const sign = term.coef >= 0 ? "+" : "−";
+      const absCoef = Math.abs(term.coef);
+      chipsHtml += '<span class="ct-eq-op">' + sign + '</span>';
+      const label = term.variable !== null
+        ? (absCoef === 1 ? term.variable : absCoef + "·" + term.variable)
+        : String(absCoef);
+      chipsHtml += '<span class="ct-eq-term-chip ' + chipClass + '">' + label + '</span>';
+    } else {
+      // First term — include sign only if negative
+      const absCoef = Math.abs(term.coef);
+      const prefix = term.coef < 0 ? "−" : "";
+      const label = term.variable !== null
+        ? (absCoef === 1 ? term.variable : absCoef + "·" + term.variable)
+        : String(absCoef);
+      chipsHtml += '<span class="ct-eq-term-chip ' + chipClass + '">' + prefix + label + '</span>';
+    }
+  });
+
+  // Own-price dropdown — shown only when parser could not auto-detect
+  let dropdownHtml = "";
+  if (!ownVar && parsed.variables.length > 1) {
+    const options = parsed.variables.map(v =>
+      '<option value="' + v + '">' + v + '</option>'
+    ).join("");
+    dropdownHtml = '<div class="ct-eq-own-price-row">' +
+      '<span>Which variable is own-price (P)?</span>' +
+      '<select id="elas-eq-' + side + '-own-price-select">' + options + '</select>' +
+      '</div>';
+  }
+
+  confirmEl.innerHTML =
+    '<div class="ct-eq-confirmation-label">Parsed as</div>' +
+    '<div class="ct-eq-terms">' +
+      (scalarStr ? '<span class="ct-eq-scalar">' + scalarStr + '</span><span class="ct-eq-paren"> × (</span>' : '') +
+      chipsHtml +
+      (scalarStr ? '<span class="ct-eq-paren">)</span>' : '') +
+    '</div>' +
+    dropdownHtml;
+
+  confirmEl.classList.add("visible");
+
+  // Wire own-price dropdown change → re-render shift fields
+  if (!ownVar && parsed.variables.length > 1) {
+    const sel = document.getElementById("elas-eq-" + side + "-own-price-select");
+    if (sel) {
+      sel.addEventListener("change", () => {
+        const chosen = sel.value;
+        // Mutate parsed state so collapseToLinear uses the user's choice
+        if (side === "d") {
+          demandParsed = Object.assign({}, demandParsed, { ownPriceVar: chosen });
+          renderShiftFields("d", demandParsed);
+          updateCollapsedPreview("d", demandParsed);
+        } else {
+          supplyParsed = Object.assign({}, supplyParsed, { ownPriceVar: chosen });
+          renderShiftFields("s", supplyParsed);
+          updateCollapsedPreview("s", supplyParsed);
+        }
+      });
+    }
+  }
+}
+
+/**
+ * renderShiftFields(side, parsed)
+ *
+ * Renders labeled number inputs for each shift variable (non-own-price)
+ * into the shift fields container for the given side.
+ */
+function renderShiftFields(side, parsed) {
+  const container = document.getElementById("elas-eq-" + side + "-shift-fields");
+  if (!container) return;
+
+  const shiftVars = parsed.variables.filter(v => v !== parsed.ownPriceVar);
+
+  if (shiftVars.length === 0) {
+    container.classList.remove("visible");
+    container.innerHTML = "";
+    return;
+  }
+
+  // Preserve any existing values before re-rendering
+  const existing = {};
+  container.querySelectorAll(".ct-eq-shift-input").forEach(inp => {
+    existing[inp.dataset.variable] = inp.value;
+  });
+
+  let html = '<div class="ct-eq-shift-label">Known Values (shift variables)</div>';
+  shiftVars.forEach(v => {
+    const preserved = existing[v] || "";
+    html +=
+      '<div class="ct-eq-shift-row">' +
+        '<label for="elas-eq-' + side + '-shift-' + v + '">' + v + ' =</label>' +
+        '<input type="number" step="any"' +
+          ' id="elas-eq-' + side + '-shift-' + v + '"' +
+          ' class="ct-eq-shift-input"' +
+          ' data-variable="' + v + '"' +
+          ' placeholder="enter value"' +
+          ' value="' + preserved + '"' +
+          ' aria-label="Value for shift variable ' + v + '" />' +
+      '</div>';
+  });
+
+  container.innerHTML = html;
+  container.classList.add("visible");
+}
+
+/**
+ * updateCollapsedPreview(side, parsed)
+ *
+ * Reads current shift field values and renders the collapsed Q = A + B·p
+ * preview if all shift values are filled. Clears it otherwise.
+ */
+function updateCollapsedPreview(side, parsed) {
+  const previewEl = document.getElementById("elas-eq-" + side + "-collapsed");
+  if (!previewEl) return;
+
+  if (!parsed || parsed.error || !parsed.ownPriceVar) {
+    previewEl.classList.remove("visible");
+    previewEl.textContent = "";
+    return;
+  }
+
+  const shiftValues = collectShiftValues(side, parsed);
+  if (shiftValues === null) {
+    previewEl.classList.remove("visible");
+    previewEl.textContent = "";
+    return;
+  }
+
+  const collapsed = collapseToLinear(parsed, shiftValues);
+  if (!collapsed) {
+    previewEl.classList.remove("visible");
+    return;
+  }
+
+  const label = side === "d" ? "Q_d" : "Q_s";
+  const Bstr = collapsed.B >= 0
+    ? "+ " + fmtN(collapsed.B) + "·p"
+    : "− " + fmtN(Math.abs(collapsed.B)) + "·p";
+  previewEl.textContent = label + " = " + fmtN(collapsed.A) + " " + Bstr;
+  previewEl.classList.add("visible");
+}
+
+/**
+ * collectShiftValues(side, parsed)
+ *
+ * Reads all shift field inputs for the given side.
+ * Returns { varName: number,... } or null if any required field is empty/NaN.
+ */
+function collectShiftValues(side, parsed) {
+  const container = document.getElementById("elas-eq-" + side + "-shift-fields");
+  if (!container) return {};
+
+  const shiftVars = parsed.variables.filter(v => v !== parsed.ownPriceVar);
+  if (shiftVars.length === 0) return {};
+
+  const values = {};
+  for (const v of shiftVars) {
+    const inp = document.getElementById("elas-eq-" + side + "-shift-" + v);
+    if (!inp || inp.value.trim() === "") return null;
+    const val = safeParseFloat(inp.value);
+    if (isNaN(val)) return null;
+    values[v] = val;
+  }
+  return values;
+}
+
+/**
+ * buildEquationPanel(side, accentColor)
+ *
+ * Wires blur event on the equation textarea for the given side.
+ * On blur: parse → update module state → render confirmation + shift fields + collapsed preview.
+ * Also wires input on shift fields → update collapsed preview live.
+ */
+function buildEquationPanel(side, accentColor) {
+  const textarea = document.getElementById("elas-eq-" + side + "-raw");
+  const errorEl = document.getElementById("elas-eq-" + side + "-parse-error");
+  if (!textarea || !errorEl) return;
+
+  function runParse() {
+    const raw = textarea.value.trim();
+    errorEl.classList.remove("visible");
+    errorEl.textContent = "";
+    textarea.classList.remove("parse-error", "parse-ok");
+
+    if (!raw) {
+      if (side === "d") demandParsed = null;
+      else supplyParsed = null;
+      const confirmEl = document.getElementById("elas-eq-" + side + "-confirmation");
+      const shiftEl = document.getElementById("elas-eq-" + side + "-shift-fields");
+      const collapsedEl = document.getElementById("elas-eq-" + side + "-collapsed");
+      if (confirmEl) { confirmEl.classList.remove("visible"); confirmEl.innerHTML = ""; }
+      if (shiftEl) { shiftEl.classList.remove("visible"); shiftEl.innerHTML = ""; }
+      if (collapsedEl) { collapsedEl.classList.remove("visible"); collapsedEl.textContent = ""; }
+      return;
+    }
+
+    const parsed = parseEquation(raw);
+
+    if (parsed.error) {
+      textarea.classList.add("parse-error");
+      errorEl.textContent = "⚠ " + parsed.error;
+      errorEl.classList.add("visible");
+      if (side === "d") demandParsed = null;
+      else supplyParsed = null;
+      const confirmEl = document.getElementById("elas-eq-" + side + "-confirmation");
+      const shiftEl = document.getElementById("elas-eq-" + side + "-shift-fields");
+      const collapsedEl = document.getElementById("elas-eq-" + side + "-collapsed");
+      if (confirmEl) { confirmEl.classList.remove("visible"); confirmEl.innerHTML = ""; }
+      if (shiftEl) { shiftEl.classList.remove("visible"); shiftEl.innerHTML = ""; }
+      if (collapsedEl) { collapsedEl.classList.remove("visible"); collapsedEl.textContent = ""; }
+      return;
+    }
+
+    textarea.classList.add("parse-ok");
+    if (side === "d") demandParsed = parsed;
+    else supplyParsed = parsed;
+
+    renderParseConfirmation(side, parsed);
+    renderShiftFields(side, parsed);
+    updateCollapsedPreview(side, parsed);
+
+    // Wire shift field inputs → live collapsed preview update
+    const shiftContainer = document.getElementById("elas-eq-" + side + "-shift-fields");
+    if (shiftContainer) {
+      shiftContainer.querySelectorAll(".ct-eq-shift-input").forEach(inp => {
+        inp.addEventListener("input", () => {
+          const current = side === "d" ? demandParsed : supplyParsed;
+          if (current) updateCollapsedPreview(side, current);
+        });
+      });
+    }
+  }
+
+  textarea.addEventListener("blur", runParse);
+}
+
+// ===================================================================
 // ELASTICITY MODE TOGGLE
 // ===================================================================
 
@@ -186,32 +693,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("elas-solve-p-group").classList.add("hidden");
   });
 
-  [
-    "elas-eq-d-const",
-    "elas-eq-d-coef",
-    "elas-eq-s-const",
-    "elas-eq-s-coef",
-  ].forEach((id) => {
-    document
-      .getElementById(id)
-      .addEventListener("input", updateElasEquationPreviews);
-  });
+  // old equation preview listeners removed — handled by buildEquationPanel
+
+  // Wire equation parser panels
+  buildEquationPanel("d", "#f472b6");
+  buildEquationPanel("s", "#2dd4bf");
 });
 
-function updateElasEquationPreviews() {
-  const dConst = document.getElementById("elas-eq-d-const").value;
-  const dCoef = document.getElementById("elas-eq-d-coef").value;
-  const sConst = document.getElementById("elas-eq-s-const").value;
-  const sCoef = document.getElementById("elas-eq-s-coef").value;
-  const dC = dConst !== "" ? dConst : "a";
-  const dB = dCoef !== "" ? dCoef : "b";
-  const sC = sConst !== "" ? sConst : "c";
-  const sD = sCoef !== "" ? sCoef : "d";
-  document.getElementById("elas-eq-demand-preview").textContent =
-    "Q_d = " + dC + " + (" + dB + ")·P";
-  document.getElementById("elas-eq-supply-preview").textContent =
-    "Q_s = " + sC + " + (" + sD + ")·P";
-}
+// updateElasEquationPreviews removed — replaced by parseEquation + buildEquationPanel
 
 // ===================================================================
 // TAB 1 — PRICE ELASTICITY
@@ -261,36 +750,69 @@ function handleElasticityCalculate() {
   let epsilon, p, q, curveType;
 
   if (elasticityMode === "equation") {
-    const valid = validateInputs(
-      [
-        { id: "elas-eq-d-const", label: "Demand constant", required: true },
-        {
-          id: "elas-eq-d-coef",
-          label: "Demand price coefficient",
-          required: true,
-        },
-        { id: "elas-eq-s-const", label: "Supply constant", required: true },
-        {
-          id: "elas-eq-s-coef",
-          label: "Supply price coefficient",
-          required: true,
-        },
-      ],
-      "#elasticity-tab",
-    );
-    if (!valid) return;
+    // ── Validate parsed state exists ──
+    if (!demandParsed || demandParsed.error) {
+      const dTextarea = document.getElementById("elas-eq-d-raw");
+      if (dTextarea) dTextarea.classList.add("parse-error");
+      const dErr = document.getElementById("elas-eq-d-parse-error");
+      if (dErr) { dErr.textContent = "⚠ Enter and complete a valid demand equation."; dErr.classList.add("visible"); }
+      return;
+    }
+    if (!supplyParsed || supplyParsed.error) {
+      const sTextarea = document.getElementById("elas-eq-s-raw");
+      if (sTextarea) sTextarea.classList.add("parse-error");
+      const sErr = document.getElementById("elas-eq-s-parse-error");
+      if (sErr) { sErr.textContent = "⚠ Enter and complete a valid supply equation."; sErr.classList.add("visible"); }
+      return;
+    }
+    if (!demandParsed.ownPriceVar) {
+      const dErr = document.getElementById("elas-eq-d-parse-error");
+      if (dErr) { dErr.textContent = "⚠ Could not identify own-price variable — select it from the dropdown."; dErr.classList.add("visible"); }
+      return;
+    }
+    if (!supplyParsed.ownPriceVar) {
+      const sErr = document.getElementById("elas-eq-s-parse-error");
+      if (sErr) { sErr.textContent = "⚠ Could not identify own-price variable — select it from the dropdown."; sErr.classList.add("visible"); }
+      return;
+    }
 
-    const dA = safeParseFloat(document.getElementById("elas-eq-d-const").value);
-    const dB = safeParseFloat(document.getElementById("elas-eq-d-coef").value);
-    const sC = safeParseFloat(document.getElementById("elas-eq-s-const").value);
-    const sD = safeParseFloat(document.getElementById("elas-eq-s-coef").value);
+    // ── Collect shift variable values ──
+    const dShiftValues = collectShiftValues("d", demandParsed);
+    if (dShiftValues === null) {
+      const dErr = document.getElementById("elas-eq-d-parse-error");
+      if (dErr) { dErr.textContent = "⚠ Fill in all shift variable values for demand."; dErr.classList.add("visible"); }
+      return;
+    }
+    const sShiftValues = collectShiftValues("s", supplyParsed);
+    if (sShiftValues === null) {
+      const sErr = document.getElementById("elas-eq-s-parse-error");
+      if (sErr) { sErr.textContent = "⚠ Fill in all shift variable values for supply."; sErr.classList.add("visible"); }
+      return;
+    }
+
+    // ── Collapse to Q = A + B*p ──
+    const dCollapsed = collapseToLinear(demandParsed, dShiftValues);
+    const sCollapsed = collapseToLinear(supplyParsed, sShiftValues);
+    if (!dCollapsed) {
+      const dErr = document.getElementById("elas-eq-d-parse-error");
+      if (dErr) { dErr.textContent = "⚠ Could not collapse demand equation — check shift variable values."; dErr.classList.add("visible"); }
+      return;
+    }
+    if (!sCollapsed) {
+      const sErr = document.getElementById("elas-eq-s-parse-error");
+      if (sErr) { sErr.textContent = "⚠ Could not collapse supply equation — check shift variable values."; sErr.classList.add("visible"); }
+      return;
+    }
+
+    const dA = dCollapsed.A;
+    const dB = dCollapsed.B;
+    const sC = sCollapsed.A;
+    const sD = sCollapsed.B;
 
     const denom = dB - sD;
     if (Math.abs(denom) < 1e-10) {
-      showFieldError(
-        "elas-eq-d-coef",
-        "Curves are parallel — no equilibrium exists.",
-      );
+      const dErr = document.getElementById("elas-eq-d-parse-error");
+      if (dErr) { dErr.textContent = "⚠ Curves are parallel — no equilibrium exists."; dErr.classList.add("visible"); }
       return;
     }
 
@@ -298,15 +820,17 @@ function handleElasticityCalculate() {
     const qStar = dA + dB * pStar;
 
     if (pStar <= 0 || qStar <= 0) {
-      showFieldError(
-        "elas-eq-d-const",
-        "Equilibrium has non-positive P* or Q* — check your equations.",
-      );
+      const dErr = document.getElementById("elas-eq-d-parse-error");
+      if (dErr) { dErr.textContent = "⚠ Equilibrium has non-positive P* or Q* — check your equations."; dErr.classList.add("visible"); }
       return;
     }
 
     const epsilonD = dB * (pStar / qStar);
     const epsilonS = sD * (pStar / qStar);
+
+    // ── Capture raw strings for step renderer ──
+    const dRawStr = document.getElementById("elas-eq-d-raw").value.trim();
+    const sRawStr = document.getElementById("elas-eq-s-raw").value.trim();
 
     lastElasData = {
       mode: "equation",
@@ -318,6 +842,13 @@ function handleElasticityCalculate() {
       qStar,
       epsilonD,
       epsilonS,
+      // parser context for step renderer
+      demandRaw: dRawStr,
+      supplyRaw: sRawStr,
+      demandParsed: demandParsed,
+      supplyParsed: supplyParsed,
+      dShiftValues,
+      sShiftValues,
     };
 
     const absD = Math.abs(epsilonD);
@@ -532,6 +1063,18 @@ function handleElasticityCalculate() {
     .scrollIntoView({ behavior: "smooth" });
 }
 
+/**
+ * fmtN(n)
+ * Formats a number for step-by-step display.
+ * Shows up to 2 decimal places, strips trailing zeros.
+ * e.g. 24200.0000 → "24200", 0.05333 → "0.05", -40.0 → "-40"
+ */
+function fmtN(n) {
+  if (!isFinite(n)) return String(n);
+  const s = parseFloat(n.toFixed(2));
+  return String(s);
+}
+
 function renderElasticitySteps(data) {
   const container = document.getElementById("elas-steps-content");
   const { mode } = data;
@@ -551,96 +1094,178 @@ function renderElasticitySteps(data) {
   };
 
   if (mode === "equation") {
-    const { dA, dB, sC, sD, pStar, qStar, epsilonD, epsilonS } = data;
-    const denom = dB - sD;
+    const {
+      dA, dB, sC, sD, pStar, qStar, epsilonD, epsilonS,
+      demandRaw, supplyRaw, demandParsed: dp, supplyParsed: sp,
+      dShiftValues, sShiftValues,
+    } = data;
     const absD = Math.abs(epsilonD);
     const absS = Math.abs(epsilonS);
     const clsD = classifyElasticity(absD);
     const clsS = classifyElasticity(absS);
+    const hasShifts = (dp && (Object.keys(dShiftValues || {}).length > 0 || Object.keys(sShiftValues || {}).length > 0));
 
+    // ── Step 1 — Original Equations ──
     sections.push(
       sec(
-        "Step 1 — Full Equations",
-        step(
-          `<span style="color:#f472b6;">Demand: Q_d = ${dA} + (${dB})·P</span>`,
-        ),
-        step(
-          `<span style="color:#2dd4bf;">Supply: Q_s = ${sC} + (${sD})·P</span>`,
-        ),
+        "Step 1 — Original Equations",
+        step(`<span style="color:#f472b6;">Demand: Q_d = ${demandRaw || (dA + " + (" + dB + ")·P")}</span>`),
+        step(`<span style="color:#2dd4bf;">Supply: Q_s = ${supplyRaw || (sC + " + (" + sD + ")·P")}</span>`),
       ),
     );
 
+    // ── Step 2 — Substitute Known Values (only if shift vars present) ──
+    if (hasShifts) {
+      const dSubSteps = [];
+      const sSubSteps = [];
+
+      // Demand substitution
+      if (dp && Object.keys(dShiftValues || {}).length > 0) {
+        const subList = Object.entries(dShiftValues).map(([k, v]) => k + " = " + v).join(",  ");
+        dSubSteps.push(step("Known: " + subList, "highlight"));
+
+        // Show each shift term being substituted
+        let runningConst = 0;
+        let ownCoef = 0;
+        const ownVar = dp.ownPriceVar;
+        dp.terms.forEach(term => {
+          if (term.variable === null) {
+            runningConst += term.coef;
+            dSubSteps.push(step("constant term: " + term.coef));
+          } else if (term.variable === ownVar) {
+            ownCoef += term.coef;
+          } else {
+            const val = dShiftValues[term.variable];
+            const contrib = term.coef * val;
+            runningConst += contrib;
+            dSubSteps.push(step(
+              "(" + term.coef + ") × " + term.variable + " = (" + term.coef + ") × " + val + " = " + fmtN(contrib)
+            ));
+          }
+        });
+        if (dp.scalar !== 1) {
+          dSubSteps.push(step(
+            "Apply scalar " + dp.scalar + ": A = " + dp.scalar + " × " + fmtN(runningConst / dp.scalar) + " = " + fmtN(dA)
+          ));
+          dSubSteps.push(step(
+            "Apply scalar " + dp.scalar + ": B = " + dp.scalar + " × " + fmtN(ownCoef) + " = " + fmtN(dB)
+          ));
+        }
+        dSubSteps.push(step(
+          "<strong>Demand collapsed: Q_d = " + fmtN(dA) + " + (" + fmtN(dB) + ")·P</strong>", "result"
+        ));
+      }
+
+      // Supply substitution
+      if (sp && Object.keys(sShiftValues || {}).length > 0) {
+        const subList = Object.entries(sShiftValues).map(([k, v]) => k + " = " + v).join(",  ");
+        sSubSteps.push(step("Known: " + subList, "highlight"));
+
+        let runningConst = 0;
+        let ownCoef = 0;
+        const ownVar = sp.ownPriceVar;
+        sp.terms.forEach(term => {
+          if (term.variable === null) {
+            runningConst += term.coef;
+            sSubSteps.push(step("constant term: " + term.coef));
+          } else if (term.variable === ownVar) {
+            ownCoef += term.coef;
+          } else {
+            const val = sShiftValues[term.variable];
+            const contrib = term.coef * val;
+            runningConst += contrib;
+            sSubSteps.push(step(
+              "(" + term.coef + ") × " + term.variable + " = (" + term.coef + ") × " + val + " = " + fmtN(contrib)
+            ));
+          }
+        });
+        if (sp.scalar !== 1) {
+          sSubSteps.push(step(
+            "Apply scalar " + sp.scalar + ": A = " + sp.scalar + " × " + fmtN(runningConst / sp.scalar) + " = " + fmtN(sC)
+          ));
+          sSubSteps.push(step(
+            "Apply scalar " + sp.scalar + ": B = " + sp.scalar + " × " + fmtN(ownCoef) + " = " + fmtN(sD)
+          ));
+        }
+        sSubSteps.push(step(
+          "<strong>Supply collapsed: Q_s = " + fmtN(sC) + " + (" + fmtN(sD) + ")·P</strong>", "result"
+        ));
+      }
+
+      if (dSubSteps.length > 0 || sSubSteps.length > 0) {
+        sections.push(sec("Step 2 — Substitute Known Values",...dSubSteps,...sSubSteps));
+      }
+    }
+
+    // ── Step 3 — Collapsed Form ──
     sections.push(
       sec(
-        "Step 2 — Solve for Equilibrium (Set Q_d = Q_s)",
-        step(`${dA} + (${dB})·P = ${sC} + (${sD})·P`),
-        step(`${dA} − ${sC} = (${sD})·P − (${dB})·P`),
-        step(`${(dA - sC).toFixed(4)} = (${(sD - dB).toFixed(4)})·P`),
-        step(`P* = ${(dA - sC).toFixed(4)} ÷ ${(sD - dB).toFixed(4)}`),
-        step(`<strong>P* = ${pStar.toFixed(4)}</strong>`, "result"),
+        hasShifts ? "Step 3 — Collapsed Linear Form" : "Step 2 — Linear Form",
+        step(`<span style="color:#f472b6;">Q_d = ${fmtN(dA)} + (${fmtN(dB)})·P</span>`),
+        step(`<span style="color:#2dd4bf;">Q_s = ${fmtN(sC)} + (${fmtN(sD)})·P</span>`),
       ),
     );
 
+    // ── Step 4 — Solve for Equilibrium ──
+    const stepOffset = hasShifts ? 4 : 3;
     sections.push(
       sec(
-        "Step 3 — Solve for Q*",
-        step(`Q* = ${dA} + (${dB}) × ${pStar.toFixed(4)}`),
-        step(`<strong>Q* = ${qStar.toFixed(4)}</strong>`, "result"),
+        "Step " + stepOffset + " — Solve for Equilibrium (Set Q_d = Q_s)",
+        step(`${fmtN(dA)} + (${fmtN(dB)})·P = ${fmtN(sC)} + (${fmtN(sD)})·P`),
+        step(`${fmtN(dA)} − ${fmtN(sC)} = (${fmtN(sD)})·P − (${fmtN(dB)})·P`),
+        step(`${fmtN(dA - sC)} = (${fmtN(sD - dB)})·P`),
+        step(`P* = ${fmtN(dA - sC)} ÷ ${fmtN(sD - dB)}`),
+        step(`<strong>P* = ${fmtN(pStar)}</strong>`, "result"),
       ),
     );
 
+    // ── Step 5 — Solve for Q* ──
     sections.push(
       sec(
-        "Step 4 — Demand Elasticity at Equilibrium",
+        "Step " + (stepOffset + 1) + " — Solve for Q*",
+        step(`Q* = ${fmtN(dA)} + (${fmtN(dB)}) × ${fmtN(pStar)}`),
+        step(`<strong>Q* = ${fmtN(qStar)}</strong>`, "result"),
+      ),
+    );
+
+    // ── Step 6 — Demand Elasticity ──
+    sections.push(
+      sec(
+        "Step " + (stepOffset + 2) + " — Demand Elasticity at Equilibrium",
         step("ε_d = (∂Q_d/∂P) × (P*/Q*)"),
-        step(`= ${dB} × (${pStar.toFixed(4)} / ${qStar.toFixed(4)})`),
+        step(`= ${fmtN(dB)} × (${fmtN(pStar)} / ${fmtN(qStar)})`),
         step(`<strong>ε_d = ${epsilonD.toFixed(4)}</strong>`, "result"),
         step(
           `<strong>${clsLabels[clsD]}</strong>`,
-          clsD === "elastic"
-            ? "negative"
-            : clsD === "inelastic"
-              ? "positive"
-              : "highlight",
+          clsD === "elastic" ? "negative" : clsD === "inelastic" ? "positive" : "highlight",
         ),
       ),
     );
 
+    // ── Step 7 — Supply Elasticity ──
     sections.push(
       sec(
-        "Step 5 — Supply Elasticity at Equilibrium",
+        "Step " + (stepOffset + 3) + " — Supply Elasticity at Equilibrium",
         step("ε_s = (∂Q_s/∂P) × (P*/Q*)"),
-        step(`= ${sD} × (${pStar.toFixed(4)} / ${qStar.toFixed(4)})`),
+        step(`= ${fmtN(sD)} × (${fmtN(pStar)} / ${fmtN(qStar)})`),
         step(`<strong>ε_s = ${epsilonS.toFixed(4)}</strong>`, "result"),
         step(
           `<strong>${clsLabels[clsS]}</strong>`,
-          clsS === "elastic"
-            ? "positive"
-            : clsS === "inelastic"
-              ? "highlight"
-              : "highlight",
+          clsS === "elastic" ? "positive" : "highlight",
         ),
       ),
     );
 
+    // ── Step 8 — Revenue Impact ──
     sections.push(
       sec(
-        "Step 6 — Revenue Impact (Demand)",
+        "Step " + (stepOffset + 4) + " — Revenue Impact (Demand)",
         step("Revenue = Price × Quantity"),
         clsD === "elastic"
-          ? step(
-              "Elastic demand: a price ↑ causes a larger quantity ↓ → Revenue FALLS",
-              "negative",
-            )
+          ? step("Elastic demand: a price ↑ causes a larger quantity ↓ → Revenue FALLS", "negative")
           : clsD === "inelastic"
-            ? step(
-                "Inelastic demand: a price ↑ causes a smaller quantity ↓ → Revenue RISES",
-                "positive",
-              )
-            : step(
-                "Unit elastic: price ↑ and quantity ↓ exactly offset → Revenue UNCHANGED",
-                "highlight",
-              ),
+            ? step("Inelastic demand: a price ↑ causes a smaller quantity ↓ → Revenue RISES", "positive")
+            : step("Unit elastic: price ↑ and quantity ↓ exactly offset → Revenue UNCHANGED", "highlight"),
       ),
     );
   } else if (mode === "point") {
@@ -1023,12 +1648,12 @@ function drawElasticityChart(data) {
       offCtx.fillStyle = "#f59e0b";
       offCtx.font = window.CHART_FONTS.boldSm;
       offCtx.textAlign = "right";
-      offCtx.fillText("P*=" + refP.toFixed(3), padding.left - 4, eqY + 4);
+      offCtx.fillText("P*=" + fmtN(refP), padding.left - 4, eqY + 4);
       offCtx.textAlign = "center";
-      offCtx.fillText("Q*=" + refQ.toFixed(3), eqX, padding.top + chartHeight + 32);
+      offCtx.fillText("Q*=" + fmtN(refQ), eqX, padding.top + chartHeight + 32);
       // E label with smart positioning
       offCtx.font = window.CHART_FONTS.boldSm;
-      const eqLabel = "E(" + refQ.toFixed(3) + ", " + refP.toFixed(3) + ")";
+      const eqLabel = "E(" + fmtN(refQ) + ", " + fmtN(refP) + ")";
       const eqLabelW = offCtx.measureText(eqLabel).width;
       const eqLabelH = 14;
       const eqPad = 4;
