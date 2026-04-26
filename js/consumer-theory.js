@@ -1485,6 +1485,17 @@ function drawElasticityChart(data) {
     pMax = Math.max(pZero, Math.abs(refP) * 1.8, 1);
   }
 
+  // Compute clean tick step without expanding axis bounds
+  function niceStep(rawMax, steps) {
+    const rawStep = rawMax / steps;
+    if (rawStep <= 0) return 1;
+    const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+    const nice = [1, 2, 2.5, 5, 10].find(f => f * mag >= rawStep) || 10;
+    return nice * mag;
+  }
+  const qTickStep = niceStep(qMax, 6);
+  const pTickStep = niceStep(pMax, 6);
+
   function toX(q) { return padding.left + (q / qMax) * chartWidth; }
   function toY(p) { return padding.top + chartHeight - (p / pMax) * chartHeight; }
   function fromX(x) { return ((x - padding.left) / chartWidth) * qMax; }
@@ -1506,9 +1517,8 @@ function drawElasticityChart(data) {
   function drawStatic() {
     offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
 
-    // Grid — 6 steps matching micro-econ style
-    for (let i = 0; i <= 6; i++) {
-      const p = (pMax / 6) * i;
+    // Grid — clean tick steps
+    for (let p = 0; p <= pMax * 1.001; p += pTickStep) {
       const y = toY(p);
       offCtx.strokeStyle = "rgba(148,163,184,0.12)";
       offCtx.lineWidth = 1;
@@ -1519,10 +1529,9 @@ function drawElasticityChart(data) {
       offCtx.fillStyle = "#94a3b8";
       offCtx.font = window.CHART_FONTS.md;
       offCtx.textAlign = "right";
-      offCtx.fillText(p.toFixed(2), padding.left - 8, y + 4);
+      offCtx.fillText(fmtN(p), padding.left - 8, y + 4);
     }
-    for (let i = 0; i <= 6; i++) {
-      const q = (qMax / 6) * i;
+    for (let q = 0; q <= qMax * 1.001; q += qTickStep) {
       const x = toX(q);
       offCtx.strokeStyle = "rgba(148,163,184,0.12)";
       offCtx.lineWidth = 1;
@@ -1533,7 +1542,7 @@ function drawElasticityChart(data) {
       offCtx.fillStyle = "#94a3b8";
       offCtx.font = window.CHART_FONTS.md;
       offCtx.textAlign = "center";
-      offCtx.fillText(q.toFixed(2), x, offscreen.height - padding.bottom + 18);
+      offCtx.fillText(fmtN(q), x, offscreen.height - padding.bottom + 18);
     }
 
     // Axis labels
