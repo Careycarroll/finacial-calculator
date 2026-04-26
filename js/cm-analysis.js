@@ -541,7 +541,7 @@ function drawWaterfallChart(revenue, totalVC, cm, totalFC, opIncome) {
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(val), padding.left - 8, y + 4);
   }
@@ -592,14 +592,14 @@ function drawWaterfallChart(revenue, totalVC, cm, totalFC, opIncome) {
 
     // Value label
     ctx.fillStyle = bar.color;
-    ctx.font = "bold 11px sans-serif";
+    ctx.font = window.CHART_FONTS.boldSm;
     ctx.textAlign = "center";
     const labelY = barY - 6;
     ctx.fillText(formatCurrency(Math.abs(bar.value)), x + w / 2, labelY);
 
     // X-axis label
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "10px sans-serif";
+    ctx.font = window.CHART_FONTS.xs;
     const lineLabels = bar.label.split("\n");
     lineLabels.forEach((line, li) => {
       ctx.fillText(line, x + w / 2, chart.height - padding.bottom + 16 + li * 14);
@@ -691,7 +691,7 @@ function drawBreakevenChart(
       ctx.lineTo(chart.width - padding.right, y);
       ctx.stroke();
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
+      ctx.font = window.CHART_FONTS.sm;
       ctx.textAlign = "right";
       ctx.fillText(formatCurrency(val), padding.left - 8, y + 4);
     }
@@ -699,11 +699,11 @@ function drawBreakevenChart(
     for (let i = 0; i <= 6; i++) {
       const u = (maxUnits / 6) * i;
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "10px sans-serif";
+      ctx.font = window.CHART_FONTS.xs;
       ctx.fillText(Math.round(u).toLocaleString(), toX(u), chart.height - padding.bottom + 16);
     }
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     ctx.fillText("Units", chart.width / 2, chart.height - 5);
 
     // Fixed cost line
@@ -716,7 +716,7 @@ function drawBreakevenChart(
     ctx.stroke();
     ctx.setLineDash([]);
     drawLabelWithBackground(ctx, `Fixed Costs: ${formatCurrency(totalFC)}`, padding.left + 5, toY(totalFC) - 6,
-      { color: "#f59e0b", font: "10px sans-serif", align: "left" });
+      { color: "#f59e0b", font: window.CHART_FONTS.xs, align: "left" });
 
     // Total cost line
     ctx.strokeStyle = "#f472b6";
@@ -726,7 +726,7 @@ function drawBreakevenChart(
     ctx.lineTo(toX(maxUnits), toY(totalFC + vcPerUnit * maxUnits));
     ctx.stroke();
     drawLabelWithBackground(ctx, "Total Cost", chart.width - padding.right - 5, toY(totalFC + vcPerUnit * maxUnits) - 6,
-      { color: "#f472b6", font: "10px sans-serif", align: "right" });
+      { color: "#f472b6", font: window.CHART_FONTS.xs, align: "right" });
 
     // Revenue line
     ctx.strokeStyle = "#2dd4bf";
@@ -736,7 +736,7 @@ function drawBreakevenChart(
     ctx.lineTo(toX(maxUnits), toY(price * maxUnits));
     ctx.stroke();
     drawLabelWithBackground(ctx, "Revenue", chart.width - padding.right - 5, toY(price * maxUnits) - 6,
-      { color: "#2dd4bf", font: "10px sans-serif", align: "right" });
+      { color: "#2dd4bf", font: window.CHART_FONTS.xs, align: "right" });
 
     // Breakeven point
     if (beUnits !== Infinity && beUnits <= maxUnits) {
@@ -758,7 +758,7 @@ function drawBreakevenChart(
       ctx.lineWidth = 2.5;
       ctx.stroke();
       drawLabelWithBackground(ctx, `BE: ${Math.ceil(beUnits).toLocaleString()} units`, bx, padding.top - 8,
-        { color: "#e2e8f0", font: "bold 11px sans-serif", align: "center" });
+        { color: "#e2e8f0", font: window.CHART_FONTS.boldSm, align: "center" });
     }
 
     // Capacity line
@@ -773,7 +773,7 @@ function drawBreakevenChart(
       ctx.stroke();
       ctx.setLineDash([]);
       drawLabelWithBackground(ctx, `Capacity: ${capacity.toLocaleString()}`, cx, padding.top + 12,
-        { color: "#a855f7", font: "10px sans-serif", align: "center" });
+        { color: "#a855f7", font: window.CHART_FONTS.xs, align: "center" });
     }
 
     // Actual units marker
@@ -787,7 +787,7 @@ function drawBreakevenChart(
     ctx.stroke();
     ctx.setLineDash([]);
     drawLabelWithBackground(ctx, `Actual: ${actualUnits.toLocaleString()}`, ax, padding.top + 24,
-      { color: "#60a5fa", font: "10px sans-serif", align: "center" });
+      { color: "#60a5fa", font: window.CHART_FONTS.xs, align: "center" });
 
     if (hoverUnits === null || hoverUnits < 0 || hoverUnits > maxUnits) return;
 
@@ -845,7 +845,7 @@ function drawBreakevenChart(
       });
     }
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth = Math.max(...tooltipLines.map(l => ctx.measureText(l.text).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
     let tx = hx + 15;
@@ -874,7 +874,7 @@ function drawBreakevenChart(
     ctx.textAlign = "left";
     tooltipLines.forEach((line, i) => {
       ctx.fillStyle = line.color || "#e2e8f0";
-      ctx.font = line.bold ? "bold 12px sans-serif" : "12px sans-serif";
+      ctx.font = line.bold ? window.CHART_FONTS.boldMd : window.CHART_FONTS.md;
       ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
     });
   }
@@ -1471,7 +1471,7 @@ function drawMultiProductChart(products, beBundleUnits) {
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(val), padding.left - 8, y + 4);
   }
@@ -1491,12 +1491,12 @@ function drawMultiProductChart(products, beBundleUnits) {
     ctx.fill();
 
     ctx.fillStyle = color;
-    ctx.font = "bold 11px sans-serif";
+    ctx.font = window.CHART_FONTS.boldSm;
     ctx.textAlign = "center";
     ctx.fillText(formatCurrency(totalProductCM), x + w / 2, barY - 6);
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.fillText(p.name, x + w / 2, chart.height - padding.bottom + 16);
     ctx.fillText(
       `${(p.mix * 100).toFixed(0)}% mix`,
@@ -1507,7 +1507,7 @@ function drawMultiProductChart(products, beBundleUnits) {
 
   // Title
   ctx.fillStyle = "#e2e8f0";
-  ctx.font = "bold 12px sans-serif";
+  ctx.font = window.CHART_FONTS.boldMd;
   ctx.textAlign = "left";
   ctx.fillText(
     "Total CM Contribution by Product (at breakeven bundle volume)",
@@ -1653,7 +1653,7 @@ function drawSensitivityChart(adjPrice, adjVC, adjFC, capacity) {
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(val), padding.left - 8, y + 4);
   }
@@ -1663,7 +1663,7 @@ function drawSensitivityChart(adjPrice, adjVC, adjFC, capacity) {
   for (let i = 0; i <= 6; i++) {
     const u = (maxUnits / 6) * i;
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "10px sans-serif";
+    ctx.font = window.CHART_FONTS.xs;
     ctx.fillText(
       Math.round(u).toLocaleString(),
       toX(u),
@@ -1671,7 +1671,7 @@ function drawSensitivityChart(adjPrice, adjVC, adjFC, capacity) {
     );
   }
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   ctx.fillText("Units", chart.width / 2, chart.height - 5);
 
   // Zero line
@@ -1711,7 +1711,7 @@ function drawSensitivityChart(adjPrice, adjVC, adjFC, capacity) {
     ctx.lineWidth = 2;
     ctx.stroke();
     drawLabelWithBackground(ctx, `BE: ${Math.ceil(beUnits).toLocaleString()}`, bx, by - 10,
-      { color: "#f59e0b", font: "bold 10px sans-serif", align: "center" });
+      { color: "#f59e0b", font: window.CHART_FONTS.boldSm, align: "center" });
   }
 }
 

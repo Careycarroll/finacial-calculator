@@ -325,7 +325,7 @@ function drawReferenceChart(strategy) {
 
   // Labels
   ctx.fillStyle = "#4ade80";
-  ctx.font = "bold 11px sans-serif";
+  ctx.font = window.CHART_FONTS.boldSm;
   ctx.textAlign = "left";
   ctx.fillText("PROFIT", padding.left + 5, padding.top + 16);
 
@@ -333,13 +333,13 @@ function drawReferenceChart(strategy) {
   ctx.fillText("LOSS", padding.left + 5, padding.top + h - 6);
 
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "11px sans-serif";
+  ctx.font = window.CHART_FONTS.sm;
   ctx.textAlign = "center";
   ctx.fillText("Stock Price →", padding.left + w / 2, chart.height - 8);
 
   // Title
   ctx.fillStyle = "#e2e8f0";
-  ctx.font = "bold 14px sans-serif";
+  ctx.font = window.CHART_FONTS.boldLg;
   ctx.textAlign = "center";
   ctx.fillText(strategy.name, chart.width / 2, 22);
 
@@ -357,7 +357,7 @@ function drawReferenceChart(strategy) {
       ctx.fillRect(x1, padding.top, x2 - x1, h);
 
       ctx.fillStyle = zone.textColor;
-      ctx.font = "bold 9px sans-serif";
+      ctx.font = window.CHART_FONTS.boldSm;
       ctx.textAlign = "center";
       ctx.globalAlpha = 0.8;
       ctx.fillText(zone.label, (x1 + x2) / 2, padding.top + h - 8);
@@ -379,7 +379,7 @@ function drawReferenceChart(strategy) {
       ctx.setLineDash([]);
 
       ctx.fillStyle = "#f59e0b";
-      ctx.font = "bold 10px sans-serif";
+      ctx.font = window.CHART_FONTS.boldSm;
       ctx.textAlign = "center";
       ctx.fillText(strike.label, sx, padding.top - 6);
     });
@@ -398,7 +398,7 @@ function drawReferenceChart(strategy) {
       ctx.stroke();
 
       drawLabelWithBackground(ctx, be.label, bx, cy + 16,
-        { color: "#f59e0b", font: "9px sans-serif", align: "center" });
+        { color: "#f59e0b", font: window.CHART_FONTS.xs, align: "center" });
     });
   }
 
@@ -453,7 +453,7 @@ function drawReferenceChart(strategy) {
       const ax = toX(ann.x);
       const ay = toY(ann.y);
       drawLabelWithBackground(ctx, ann.text, ax, ay,
-        { color: ann.color || "#e2e8f0", font: ann.bold ? "bold 10px sans-serif" : "10px sans-serif", align: ann.align || "center" });
+        { color: ann.color || "#e2e8f0", font: ann.bold ? window.CHART_FONTS.boldSm : window.CHART_FONTS.xs, align: ann.align || "center" });
     });
   }
 }
@@ -1094,7 +1094,7 @@ function drawMultiCurvePayoff(
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
   }
@@ -1111,7 +1111,7 @@ function drawMultiCurvePayoff(
     );
   }
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   ctx.fillText("Stock Price", chart.width / 2, chart.height - 5);
 
   // Zero line
@@ -1135,7 +1135,7 @@ function drawMultiCurvePayoff(
   ctx.stroke();
   ctx.setLineDash([]);
   drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
-    { color: "#60a5fa", font: "10px sans-serif", align: "center" });
+    { color: "#60a5fa", font: window.CHART_FONTS.xs, align: "center" });
 
   // Draw each curve
   curves.forEach((curve) => {
@@ -1207,7 +1207,7 @@ function drawMultiCurvePayoff(
     });
 
     // Tooltip box
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth =
       Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -1242,11 +1242,11 @@ function drawMultiCurvePayoff(
     ctx.stroke();
 
     ctx.textAlign = "left";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.fillStyle = "#e2e8f0";
     ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     for (let i = 1; i < tooltipLines.length; i++) {
       ctx.fillStyle = curves[i - 1].color;
       ctx.fillText(tooltipLines[i], tx + 12, ty + 18 + i * 20);
@@ -1715,7 +1715,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.stroke();
 
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
+      ctx.font = window.CHART_FONTS.sm;
       ctx.textAlign = "right";
       ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
@@ -1735,7 +1735,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
     }
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     ctx.fillText(
       "Stock Price at Expiration",
       chart.width / 2,
@@ -1765,7 +1765,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
     ctx.setLineDash([]);
 
     drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
-      { color: "#60a5fa", font: "10px sans-serif", align: "center" });
+      { color: "#60a5fa", font: window.CHART_FONTS.xs, align: "center" });
 
     // Profit zone (green fill above zero)
     ctx.beginPath();
@@ -1847,7 +1847,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.stroke();
 
       drawLabelWithBackground(ctx, "BE: $" + be.toFixed(2), bx, by - 12,
-        { color: "#f59e0b", font: "10px sans-serif", align: "center" });
+        { color: "#f59e0b", font: window.CHART_FONTS.xs, align: "center" });
     });
 
     // Hover
@@ -1889,7 +1889,7 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
             `Payoff: ${formatCurrency(intrinsic)}`,
           ];
 
-      ctx.font = "12px sans-serif";
+      ctx.font = window.CHART_FONTS.md;
       const tooltipWidth =
         Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
       const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -1935,11 +1935,11 @@ function drawPayoffChart(payoffData, stockPrice, breakevens, legs) {
       ctx.stroke();
 
       ctx.textAlign = "left";
-      ctx.font = "bold 12px sans-serif";
+      ctx.font = window.CHART_FONTS.boldMd;
       ctx.fillStyle = "#e2e8f0";
       ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
 
-      ctx.font = "12px sans-serif";
+      ctx.font = window.CHART_FONTS.md;
       if (payoffLineMode === "both") {
         ctx.fillStyle = "#f59e0b";
         ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
@@ -2069,7 +2069,7 @@ function drawPayoffDirect(
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(formatCurrency(value), padding.left - 10, y + 4);
   }
@@ -2086,7 +2086,7 @@ function drawPayoffDirect(
     );
   }
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   ctx.fillText("Stock Price at Expiration", chart.width / 2, chart.height - 5);
 
   // Zero line
@@ -2110,7 +2110,7 @@ function drawPayoffDirect(
   ctx.stroke();
   ctx.setLineDash([]);
   drawLabelWithBackground(ctx, "Current: $" + stockPrice.toFixed(0), stockX, padding.top - 8,
-    { color: "#60a5fa", font: "10px sans-serif", align: "center" });
+    { color: "#60a5fa", font: window.CHART_FONTS.xs, align: "center" });
 
   // Profit fill
   ctx.beginPath();
@@ -2181,7 +2181,7 @@ function drawPayoffDirect(
     ctx.lineWidth = 2;
     ctx.stroke();
     drawLabelWithBackground(ctx, "BE: $" + be.toFixed(2), bx, zeroY - 12,
-      { color: "#f59e0b", font: "10px sans-serif", align: "center" });
+      { color: "#f59e0b", font: window.CHART_FONTS.xs, align: "center" });
   });
 
   // Hover
@@ -2220,7 +2220,7 @@ function drawPayoffDirect(
           `Payoff: ${formatCurrency(intrinsic)}`,
         ];
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth =
       Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -2258,10 +2258,10 @@ function drawPayoffDirect(
     ctx.stroke();
 
     ctx.textAlign = "left";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.fillStyle = "#e2e8f0";
     ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     if (payoffLineMode === "both") {
       ctx.fillStyle = "#f59e0b";
       ctx.fillText(tooltipLines[1], tx + 12, ty + 38);
@@ -2462,7 +2462,7 @@ function drawGreeksSensitivity(greek) {
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(val.toFixed(4), padding.left - 10, y + 4);
   }
@@ -2526,7 +2526,7 @@ function drawGreeksSensitivity(greek) {
     vega: "Vega (ν)",
   };
   ctx.fillStyle = colors[greek];
-  ctx.font = "bold 13px sans-serif";
+  ctx.font = window.CHART_FONTS.boldMd;
   ctx.textAlign = "left";
   ctx.fillText(
     `${greekNames[greek]} vs Stock Price — ${optionType.toUpperCase()}`,

@@ -1,0 +1,297 @@
+/* ===================================================================
+   CONSUMER THEORY — Price Elasticity, Cross-Price, Expected Utility, Risk Premium
+   =================================================================== */
+
+/* ===== TABS ===== */.ct-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border);
+}.ct-tab {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -2px;
+  font-family: inherit;
+}.ct-tab:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}.ct-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ===== CLASSIFICATION BADGE ===== */.ct-badge {
+  display: inline-block;
+  padding: 0.35rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}.ct-badge.elastic {
+  background-color: rgba(244, 114, 182, 0.15);
+  border: 1px solid #f472b6;
+  color: #f472b6;
+}.ct-badge.inelastic {
+  background-color: rgba(45, 212, 191, 0.15);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}.ct-badge.unit-elastic {
+  background-color: rgba(245, 158, 11, 0.15);
+  border: 1px solid #f59e0b;
+  color: #f59e0b;
+}.ct-badge.substitute {
+  background-color: rgba(74, 222, 128, 0.15);
+  border: 1px solid #4ade80;
+  color: #4ade80;
+}.ct-badge.complement {
+  background-color: rgba(244, 114, 182, 0.15);
+  border: 1px solid #f472b6;
+  color: #f472b6;
+}.ct-badge.independent {
+  background-color: rgba(148, 163, 184, 0.15);
+  border: 1px solid #94a3b8;
+  color: #94a3b8;
+}
+
+/* ===== REVENUE IMPACT ===== */.ct-revenue-impact {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+}.ct-revenue-impact.up {
+  background-color: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  color: var(--accent);
+}.ct-revenue-impact.down {
+  background-color: rgba(244, 114, 182, 0.08);
+  border: 1px solid rgba(244, 114, 182, 0.3);
+  color: #f472b6;
+}.ct-revenue-impact.neutral {
+  background-color: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+/* ===== UTILITY FUNCTION SELECTOR ===== */.ct-utility-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}.ct-utility-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}.ct-utility-btn:hover {
+  border-color: #a855f7;
+  color: var(--text-primary);
+}.ct-utility-btn.active {
+  background-color: rgba(168, 85, 247, 0.15);
+  border-color: #a855f7;
+  color: #a855f7;
+}
+
+/* ===== OUTCOME ROWS (Expected Utility) ===== */.ct-option-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}.ct-option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}.ct-option-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+}.ct-outcome-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}.ct-outcome-row input {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  outline: none;
+  width: 100%;
+}.ct-outcome-row input:focus {
+  border-color: var(--accent);
+}.ct-outcome-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}.ct-outcome-header span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}.ct-outcome-remove {
+  background: none;
+  border: none;
+  color: #f472b6;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.2rem;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}.ct-outcome-remove:hover {
+  color: #fb7185;
+}.ct-prob-warning {
+  font-size: 0.78rem;
+  color: #f59e0b;
+  margin-top: 0.35rem;
+}.ct-prob-ok {
+  font-size: 0.78rem;
+  color: var(--accent);
+  margin-top: 0.35rem;
+}
+
+/* ===== EU RESULTS COMPARISON ===== */.ct-eu-comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}.ct-eu-col {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+}.ct-eu-col.winner {
+  border-color: var(--accent);
+  background-color: rgba(45, 212, 191, 0.03);
+}.ct-eu-col h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}.ct-eu-col.winner h3 {
+  color: var(--accent);
+}
+
+/* ===== STEP-BY-STEP (replicates micro-econ pattern) ===== */.ct-steps-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.8;
+}.ct-step-section {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}.ct-step-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}.ct-step-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}.ct-step {
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}.ct-step strong {
+  color: var(--accent);
+}.ct-step.result {
+  color: var(--text-primary);
+  font-weight: 700;
+}.ct-step.highlight {
+  color: #a855f7;
+  font-weight: 700;
+}.ct-step.positive {
+  color: var(--accent);
+}.ct-step.negative {
+  color: #f472b6;
+}
+
+/* ===== EXPLAINER (replicates micro-econ pattern) ===== */.ct-explainer {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}.ct-explainer-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-primary);
+  border: none;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}.ct-explainer-toggle:hover {
+  background-color: rgba(45, 212, 191, 0.05);
+}.ct-explainer-chevron {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}.ct-explainer-toggle[aria-expanded="true"].ct-explainer-chevron {
+  transform: rotate(180deg);
+}.ct-explainer-body {
+  padding: 1rem 1.25rem;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}.ct-explainer-body p {
+  margin-bottom: 0.75rem;
+}.ct-explainer-body p:last-child {
+  margin-bottom: 0;
+}.ct-explainer-body strong {
+  color: var(--text-primary);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {.ct-tab {
+    font-size: 0.85rem;
+    padding: 0.75rem 0.5rem;
+  }.ct-eu-comparison {
+    grid-template-columns: 1fr;
+  }.ct-outcome-row {
+    grid-template-columns: 1fr 1fr auto;
+  }
+}
+@media (max-width: 600px) {.ct-utility-selector {
+    gap: 0.35rem;
+  }.ct-utility-btn {
+    font-size: 0.78rem;
+    padding: 0.4rem 0.75rem;
+  }
+}

@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Consumer Theory | Financial Calculator</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/common-calculator.css" />
+    <link rel="stylesheet" href="../css/consumer-theory.css" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <div class="top-nav-inner">
+        <a href="../index.html" class="top-nav-logo">Financial Calculator</a>
+        <div class="top-nav-links">
+          <a href="../index.html" class="top-nav-link active">Calculators</a>
+          <a href="news.html" class="top-nav-link">News Feed</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-container">
+      <header>
+        <h1>📐 Consumer Theory</h1>
+        <p class="tagline">Price elasticity, cross-price effects, expected utility, and risk premium — interactive tools for economics.</p>
+      </header>
+
+      <main>
+        <div class="ct-tabs">
+          <button id="tab-elasticity" class="ct-tab active" aria-label="Price elasticity tab">📐 Price Elasticity</button>
+          <button id="tab-cross-price" class="ct-tab" aria-label="Cross-price elasticity tab">🔗 Cross-Price</button>
+          <button id="tab-eu" class="ct-tab" aria-label="Expected utility tab">🎲 Expected Utility</button>
+          <button id="tab-risk-premium" class="ct-tab" aria-label="Risk premium tab">💰 Risk Premium</button>
+        </div>
+
+        <!-- ==================== TAB 1: PRICE ELASTICITY ==================== -->
+        <div id="elasticity-tab">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="elas-explainer-toggle" aria-expanded="false">
+              💡 How Price Elasticity Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="elas-explainer-body">
+              <p><strong>Price elasticity of demand (ε)</strong> measures how responsive quantity demanded is to a change in price. It answers: if price rises by 1%, how much does quantity fall?</p>
+              <p>The formula is: <strong>ε = (∂q/∂p) × (p/q)</strong>. Because demand slopes downward, ε is always negative for demand.</p>
+              <p><strong>Elastic demand (|ε| &gt; 1):</strong> quantity is very sensitive to price. A price increase causes revenue to fall because the quantity drop outweighs the price gain.</p>
+              <p><strong>Inelastic demand (|ε| &lt; 1):</strong> quantity is not very sensitive to price. A price increase causes revenue to rise because the price gain outweighs the quantity drop.</p>
+              <p><strong>Unit elastic (|ε| = 1):</strong> revenue is unchanged for a small price change.</p>
+              <p><strong>From Equation mode</strong> solves for equilibrium P* and Q* first, then computes elasticity at that point — exactly like the lecture worked example.</p>
+              <p><strong>Solve for P or Q</strong> lets you work backwards: given a target elasticity, find the price or quantity where that elasticity holds.</p>
+              <p><strong>Arc elasticity</strong> uses the midpoint formula between two observed data points.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Input Method</h2>
+            <div class="mode-toggle" style="margin-bottom:1.25rem; flex-wrap:wrap; gap:0.5rem;">
+              <button id="elas-mode-equation" class="btn-toggle active">📋 From Equation</button>
+              <button id="elas-mode-point" class="btn-toggle">📐 Find ε</button>
+              <button id="elas-mode-solve" class="btn-toggle">🎯 Solve for P or Q</button>
+              <button id="elas-mode-arc" class="btn-toggle">📍 Arc Elasticity</button>
+            </div>
+
+            <!-- From Equation Inputs -->
+            <div id="elas-equation-inputs">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter your demand and supply equations. The tool solves for equilibrium P* and Q*, then computes elasticity at that point.</p>
+              <div class="micro-curve-inputs" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.25rem;">
+                <div class="micro-curve-block demand" style="background:var(--bg-primary); border:1px solid var(--border); border-left:3px solid #f472b6; border-radius:10px; padding:1.25rem;">
+                  <h3 style="font-size:0.95rem; font-weight:700; color:#f472b6; margin-bottom:0.75rem;">📉 Demand Curve</h3>
+                  <div class="form-group">
+                    <label for="elas-eq-d-const">Constant (a)</label>
+                    <input type="number" id="elas-eq-d-const" placeholder="e.g. 16" step="any" />
+                    <span class="form-hint">q = a + b·P  →  enter a</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="elas-eq-d-coef">Price Coefficient (b)</label>
+                    <input type="number" id="elas-eq-d-coef" placeholder="e.g. -2" step="any" />
+                    <span class="form-hint">Negative for downward-sloping demand</span>
+                  </div>
+                  <div id="elas-eq-demand-preview" style="margin-top:0.75rem; padding:0.6rem 1rem; background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; font-family:monospace; font-size:0.9rem; color:var(--accent);">q = a + b·P</div>
+                </div>
+                <div class="micro-curve-block supply" style="background:var(--bg-primary); border:1px solid var(--border); border-left:3px solid #2dd4bf; border-radius:10px; padding:1.25rem;">
+                  <h3 style="font-size:0.95rem; font-weight:700; color:#2dd4bf; margin-bottom:0.75rem;">📈 Supply Curve</h3>
+                  <div class="form-group">
+                    <label for="elas-eq-s-const">Constant (c)</label>
+                    <input type="number" id="elas-eq-s-const" placeholder="e.g. -2" step="any" />
+                    <span class="form-hint">q = c + d·P  →  enter c</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="elas-eq-s-coef">Price Coefficient (d)</label>
+                    <input type="number" id="elas-eq-s-coef" placeholder="e.g. 1" step="any" />
+                    <span class="form-hint">Positive for upward-sloping supply</span>
+                  </div>
+                  <div id="elas-eq-supply-preview" style="margin-top:0.75rem; padding:0.6rem 1rem; background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; font-family:monospace; font-size:0.9rem; color:var(--accent);">q = c + d·P</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Find ε Inputs -->
+            <div id="elas-point-inputs" class="hidden">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter the slope of your equation and the price/quantity at the point of interest.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-curve-type">Curve Type</label>
+                  <select id="elas-curve-type">
+                    <option value="demand">Demand</option>
+                    <option value="supply">Supply</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="elas-dqdp">∂q/∂p (slope of curve)</label>
+                  <input type="number" id="elas-dqdp" placeholder="e.g. -2 for demand, 1 for supply" step="any" />
+                  <span class="form-hint">The coefficient on P in your equation.</span>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-p">Price (P)</label>
+                  <input type="number" id="elas-p" placeholder="e.g. 6" step="any" min="0" />
+                </div>
+                <div class="form-group">
+                  <label for="elas-q">Quantity (Q)</label>
+                  <input type="number" id="elas-q" placeholder="e.g. 4" step="any" min="0" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Solve for P or Q Inputs -->
+            <div id="elas-solve-inputs" class="hidden">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter a target elasticity and two of the three variables — the tool solves for the third.</p>
+              <div class="mode-toggle" style="margin-bottom:1.25rem;">
+                <button id="elas-solve-q-btn" class="btn-toggle active">Solve for Q</button>
+                <button id="elas-solve-p-btn" class="btn-toggle">Solve for P</button>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-solve-curve-type">Curve Type</label>
+                  <select id="elas-solve-curve-type">
+                    <option value="demand">Demand</option>
+                    <option value="supply">Supply</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="elas-solve-eps">Target Elasticity (ε)</label>
+                  <input type="number" id="elas-solve-eps" placeholder="e.g. -2 or 1.5" step="any" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-solve-dqdp">∂q/∂p (slope)</label>
+                  <input type="number" id="elas-solve-dqdp" placeholder="e.g. -2" step="any" />
+                </div>
+                <div class="form-group" id="elas-solve-p-group">
+                  <label for="elas-solve-p">Price (P) <span style="color:var(--accent);">← known</span></label>
+                  <input type="number" id="elas-solve-p" placeholder="e.g. 6" step="any" min="0" />
+                  <span class="form-hint">Solving for Q at this price.</span>
+                </div>
+                <div class="form-group hidden" id="elas-solve-q-group">
+                  <label for="elas-solve-q">Quantity (Q) <span style="color:var(--accent);">← known</span></label>
+                  <input type="number" id="elas-solve-q" placeholder="e.g. 4" step="any" min="0" />
+                  <span class="form-hint">Solving for P at this quantity.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Arc Elasticity Inputs -->
+            <div id="elas-arc-inputs" class="hidden">
+              <p class="form-hint" style="margin-bottom:1rem;">Enter two observed price-quantity pairs. The arc elasticity uses the midpoint formula.</p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-arc-curve-type">Curve Type</label>
+                  <select id="elas-arc-curve-type">
+                    <option value="demand">Demand</option>
+                    <option value="supply">Supply</option>
+                  </select>
+                </div>
+                <div class="form-group"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-p1">Price 1 (P₁)</label>
+                  <input type="number" id="elas-p1" placeholder="e.g. 5" step="any" min="0" />
+                </div>
+                <div class="form-group">
+                  <label for="elas-q1">Quantity 1 (Q₁)</label>
+                  <input type="number" id="elas-q1" placeholder="e.g. 10" step="any" min="0" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="elas-p2">Price 2 (P₂)</label>
+                  <input type="number" id="elas-p2" placeholder="e.g. 7" step="any" min="0" />
+                </div>
+                <div class="form-group">
+                  <label for="elas-q2">Quantity 2 (Q₂)</label>
+                  <input type="number" id="elas-q2" placeholder="e.g. 6" step="any" min="0" />
+                </div>
+              </div>
+            </div>
+
+            <button id="elas-calculate" class="btn-primary">Calculate Elasticity</button>
+          </div>
+
+          <!-- Results -->
+          <div id="elas-results" class="results-panel hidden" aria-live="polite">
+            <h2>Elasticity Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Price Elasticity (ε)</span>
+                <span id="elas-value" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">|ε| (Absolute Value)</span>
+                <span id="elas-abs" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Classification</span>
+                <span id="elas-badge">—</span>
+              </div>
+            </div>
+            <div id="elas-revenue-impact" class="ct-revenue-impact neutral" style="margin-top:1rem;">
+              —
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="elas-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="elas-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="elas-steps-body">
+                <div id="elas-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="elas-chart-section" class="chart-panel hidden">
+            <h2>Elasticity Diagram</h2>
+            <div class="canvas-chart">
+              <canvas id="elas-chart-canvas" role="img" aria-label="Price elasticity diagram showing demand curve with elastic and inelastic regions"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 2: CROSS-PRICE ELASTICITY ==================== -->
+        <div id="cross-price-tab" class="hidden">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="cross-explainer-toggle" aria-expanded="false">
+              💡 How Cross-Price Elasticity Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="cross-explainer-body">
+              <p><strong>Cross-price elasticity</strong> measures how the quantity demanded of Good i responds to a change in the price of Good j.</p>
+              <p><strong>Substitutes (ε &gt; 0):</strong> when the price of Good j rises, consumers buy more of Good i instead. Example: Pepsi and Coke.</p>
+              <p><strong>Complements (ε &lt; 0):</strong> when the price of Good j rises, consumers buy less of Good i too. Example: cars and gasoline.</p>
+              <p><strong>Independent (ε ≈ 0):</strong> the price of Good j has no meaningful effect on demand for Good i.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Cross-Price Elasticity</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Enter two observations of Good i's quantity at different prices of Good j.</p>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cross-good-i">Good i Name (optional)</label>
+                <input type="text" id="cross-good-i" placeholder="e.g. Pepsi" />
+              </div>
+              <div class="form-group">
+                <label for="cross-good-j">Good j Name (optional)</label>
+                <input type="text" id="cross-good-j" placeholder="e.g. Coke" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cross-pj1">Price of Good j — Point 1 (Pⱼ₁)</label>
+                <input type="number" id="cross-pj1" placeholder="e.g. 2.00" step="any" min="0" />
+              </div>
+              <div class="form-group">
+                <label for="cross-qi1">Quantity of Good i — Point 1 (Qᵢ₁)</label>
+                <input type="number" id="cross-qi1" placeholder="e.g. 100" step="any" min="0" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cross-pj2">Price of Good j — Point 2 (Pⱼ₂)</label>
+                <input type="number" id="cross-pj2" placeholder="e.g. 2.50" step="any" min="0" />
+              </div>
+              <div class="form-group">
+                <label for="cross-qi2">Quantity of Good i — Point 2 (Qᵢ₂)</label>
+                <input type="number" id="cross-qi2" placeholder="e.g. 120" step="any" min="0" />
+              </div>
+            </div>
+            <button id="cross-calculate" class="btn-primary">Calculate Cross-Price Elasticity</button>
+          </div>
+
+          <!-- Results -->
+          <div id="cross-results" class="results-panel hidden" aria-live="polite">
+            <h2>Cross-Price Elasticity Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Cross-Price Elasticity (ε)</span>
+                <span id="cross-value" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Relationship</span>
+                <span id="cross-badge">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Interpretation</span>
+                <span id="cross-interpretation" class="result-value" style="font-size:1rem;">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="cross-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="cross-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="cross-steps-body">
+                <div id="cross-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="cross-chart-section" class="chart-panel hidden">
+            <h2>Cross-Price Relationship</h2>
+            <div class="canvas-chart">
+              <canvas id="cross-chart-canvas" role="img" aria-label="Cross-price elasticity chart showing relationship between Good j price and Good i quantity"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 3: EXPECTED UTILITY ==================== -->
+        <div id="eu-tab" class="hidden">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="eu-explainer-toggle" aria-expanded="false">
+              💡 How Expected Utility Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="eu-explainer-body">
+              <p><strong>Expected utility</strong> is not the same as expected payoff. When consumers are risk-averse, they have diminishing marginal utility of wealth — each additional dollar is worth less than the last.</p>
+              <p><strong>Expected Payoff</strong> = Σ (probability × payoff). This is just the probability-weighted average outcome.</p>
+              <p><strong>Expected Utility</strong> = Σ (probability × u(payoff)). This applies the utility function first, then takes the weighted average.</p>
+              <p>Because of diminishing marginal utility, a risk-averse person prefers a certain $1M over a 50/50 shot at $2M — even though both have the same expected payoff. The utility function captures this preference.</p>
+              <p>The utility function you choose determines how risk-averse the agent is: <strong>√x</strong> and <strong>ln(x)</strong> are concave (risk-averse), <strong>x</strong> is linear (risk-neutral), and <strong>x²</strong> is convex (risk-seeking).</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Utility Function</h2>
+            <div class="ct-utility-selector" id="eu-utility-selector">
+              <button class="ct-utility-btn active" data-fn="sqrt">u(x) = √x</button>
+              <button class="ct-utility-btn" data-fn="log">u(x) = ln(x)</button>
+              <button class="ct-utility-btn" data-fn="linear">u(x) = x</button>
+              <button class="ct-utility-btn" data-fn="square">u(x) = x²</button>
+            </div>
+            <p class="form-hint">Units are in thousands ($). Enter payoffs as numbers (e.g. 100 = $100,000).</p>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Options</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Add up to 3 options. Each option can have up to 4 outcomes. Probabilities must sum to 1.0 per option.</p>
+            <div id="eu-options-list"></div>
+            <button id="eu-add-option" class="btn-secondary" style="margin-top:0.75rem;">+ Add Option</button>
+          </div>
+
+          <button id="eu-calculate" class="btn-primary">Calculate Expected Utility</button>
+
+          <!-- Results -->
+          <div id="eu-results" class="results-panel hidden" aria-live="polite">
+            <h2>Expected Utility Results</h2>
+            <div id="eu-comparison" class="ct-eu-comparison"></div>
+            <div id="eu-winner-banner" class="savings-banner" style="margin-top:1rem;">
+              <div class="savings-item">
+                <span class="savings-label">Best Option</span>
+                <span id="eu-winner" class="savings-value">—</span>
+              </div>
+              <div class="savings-item">
+                <span class="savings-label">Utility Function</span>
+                <span id="eu-fn-display" class="savings-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="eu-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="eu-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="eu-steps-body">
+                <div id="eu-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="eu-chart-section" class="chart-panel hidden">
+            <h2>Utility Curve</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Each option's outcomes are plotted on the utility curve. The gap between expected payoff and expected utility illustrates risk aversion.</p>
+            <div class="canvas-chart">
+              <canvas id="eu-chart-canvas" role="img" aria-label="Utility curve showing expected utility vs expected payoff for each option"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ==================== TAB 4: RISK PREMIUM ==================== -->
+        <div id="risk-premium-tab" class="hidden">
+
+          <div class="ct-explainer">
+            <button class="ct-explainer-toggle" id="rp-explainer-toggle" aria-expanded="false">
+              💡 How Risk Premium Works <span class="ct-explainer-chevron">▼</span>
+            </button>
+            <div class="ct-explainer-body hidden" id="rp-explainer-body">
+              <p><strong>Risk premium</strong> is how much of the expected payoff you would give up to eliminate all uncertainty. It measures the cost of risk to a risk-averse agent.</p>
+              <p><strong>Certainty Equivalent (CE)</strong> is the guaranteed amount that gives you the same utility as the risky investment. If CE = $80K and the expected payoff is $100K, you'd accept $80K for certain rather than take the gamble.</p>
+              <p><strong>Risk Premium = Expected Payoff − Certainty Equivalent.</strong> In the example above, the risk premium is $20K — that's how much you'd pay to eliminate the risk.</p>
+              <p><strong>Willingness to Pay (WTP)</strong> is the maximum you'd pay today for the risky asset, equal to the present value of the certainty equivalent (ignoring discount rates here, WTP = CE).</p>
+              <p>The larger the risk premium, the more risk-averse the agent. A risk-neutral agent has a risk premium of zero.</p>
+            </div>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Utility Function</h2>
+            <div class="ct-utility-selector" id="rp-utility-selector">
+              <button class="ct-utility-btn active" data-fn="sqrt">u(x) = √x</button>
+              <button class="ct-utility-btn" data-fn="log">u(x) = ln(x)</button>
+              <button class="ct-utility-btn" data-fn="linear">u(x) = x</button>
+              <button class="ct-utility-btn" data-fn="square">u(x) = x²</button>
+            </div>
+            <p class="form-hint">Units are in thousands ($). Enter payoffs as numbers (e.g. 100 = $100,000).</p>
+          </div>
+
+          <div class="calc-form">
+            <h2 class="form-section-title">Risky Asset</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">Enter the possible outcomes and their probabilities. Probabilities must sum to 1.0.</p>
+            <div id="rp-outcomes-list"></div>
+            <button id="rp-add-outcome" class="btn-secondary" style="margin-top:0.75rem;">+ Add Outcome</button>
+          </div>
+
+          <button id="rp-calculate" class="btn-primary">Calculate Risk Premium</button>
+
+          <!-- Results -->
+          <div id="rp-results" class="results-panel hidden" aria-live="polite">
+            <h2>Risk Premium Results</h2>
+            <div class="results-grid results-grid-3">
+              <div class="result-item">
+                <span class="result-label">Expected Payoff</span>
+                <span id="rp-expected-payoff" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Expected Utility</span>
+                <span id="rp-expected-utility" class="result-value accent">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Certainty Equivalent</span>
+                <span id="rp-ce" class="result-value" style="color:#a855f7">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Risk Premium</span>
+                <span id="rp-premium" class="result-value negative">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Willingness to Pay</span>
+                <span id="rp-wtp" class="result-value">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Risk Attitude</span>
+                <span id="rp-attitude" class="result-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step -->
+          <div id="rp-steps-section" class="hidden" style="margin-bottom:2rem;">
+            <div class="ct-explainer" style="border-color: var(--accent);">
+              <button class="ct-explainer-toggle" id="rp-steps-toggle" aria-expanded="true">
+                🧮 Step-by-Step Calculation <span class="ct-explainer-chevron">▼</span>
+              </button>
+              <div class="ct-explainer-body" id="rp-steps-body">
+                <div id="rp-steps-content" class="ct-steps-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="rp-chart-section" class="chart-panel hidden">
+            <h2>Risk Premium Diagram</h2>
+            <p class="form-hint" style="margin-bottom:1rem;">The classic textbook diagram — utility curve with expected payoff, certainty equivalent, and risk premium labeled.</p>
+            <div class="canvas-chart">
+              <canvas id="rp-chart-canvas" role="img" aria-label="Risk premium diagram showing utility curve with certainty equivalent and risk premium marked"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+
+      <footer>
+        <p>&copy; 2026 Financial Calculator</p>
+      </footer>
+    </div>
+
+    <script type="module" src="../js/consumer-theory.js"></script>
+    <script src="../js/font-scale.js"></script>
+    <script src="../js/prefetch.js"></script>
+  </body>
+</html>

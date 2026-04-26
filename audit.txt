@@ -1,16 +1,5 @@
-177:    legendEl: "loan-bar-legend",
-218:    legendEl: "loan-line-legend",
-610:    legendEl: "adv-bar-legend",
-728:    legendEl: "adv-line-legend",
-77:            <div class="line-chart-legend" id="loan-line-legend"></div>
-90:            <div class="chart-legend" id="loan-bar-legend"></div>
-344:          <div class="chart-legend" id="adv-bar-legend"></div>
-349:          <div class="line-chart-legend" id="adv-line-legend"></div>
-291:  if (options.legendEl) {
-292:    const legendEl = document.getElementById(options.legendEl);
-293:    if (legendEl) {
-294:      legendEl.innerHTML = series.map((s) =>
-496:  if (options.legendEl) {
-497:    const legendEl = document.getElementById(options.legendEl);
-498:    if (legendEl) {
-499:      legendEl.innerHTML = series.map((s) =>
+/* ===== UTILITY ===== */
+.hidden {
+  display: none !important;
+}
+

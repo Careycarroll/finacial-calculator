@@ -732,7 +732,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
       ctx.lineTo(chart.width - padding.right, y);
       ctx.stroke();
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
+      ctx.font = window.CHART_FONTS.sm;
       ctx.textAlign = "right";
       ctx.fillText(formatCurrency(value), padding.left - 8, y + 4);
     }
@@ -744,7 +744,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
       const age = profile.currentAge + yr;
       const x = toX(age);
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "10px sans-serif";
+      ctx.font = window.CHART_FONTS.xs;
       ctx.fillText(`${age}`, x, chart.height - padding.bottom + 16);
       ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
       ctx.lineWidth = 1;
@@ -755,7 +755,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
     }
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     ctx.textAlign = "center";
     ctx.fillText("Age", chart.width / 2, chart.height - 5);
 
@@ -770,7 +770,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
     ctx.stroke();
     ctx.setLineDash([]);
     drawLabelWithBackground(ctx, "You retire here", retireX, padding.top - 10,
-      { color: "#94a3b8", font: "11px sans-serif", align: "center" });
+      { color: "#94a3b8", font: window.CHART_FONTS.sm, align: "center" });
 
     // Drawdown fills (back to front so 3% is on top)
     [...scenarios].reverse().forEach((s) => {
@@ -830,7 +830,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
     ctx.stroke();
     ctx.setLineDash([]);
     drawLabelWithBackground(ctx, `FIRE: ${formatCurrency(fireTarget)}`, padding.left + 4, toY(fireTarget) - 6,
-      { color: "#ef4444", font: "10px sans-serif", align: "left" });
+      { color: "#ef4444", font: window.CHART_FONTS.xs, align: "left" });
 
     // Crosshair
     if (highlightAge !== null) {
@@ -879,7 +879,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
         });
       }
 
-      ctx.font = "12px sans-serif";
+      ctx.font = window.CHART_FONTS.md;
       const tooltipWidth = Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
       const tooltipHeight = tooltipLines.length * 20 + 16;
       let tx = hx + 15;
@@ -908,7 +908,7 @@ function displayLifecycleChart(profile, retirementPortfolio, annualExpenses, oth
       ctx.textAlign = "left";
       tooltipLines.forEach((line, li) => {
         ctx.fillStyle = li === 0 ? "#e2e8f0" : "#94a3b8";
-        ctx.font = li === 0 ? "bold 12px sans-serif" : "12px sans-serif";
+        ctx.font = li === 0 ? window.CHART_FONTS.boldMd : window.CHART_FONTS.md;
         ctx.fillText(line, tx + 12, ty + 18 + li * 20);
       });
     }
@@ -1035,7 +1035,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       offCtx.stroke();
 
       offCtx.fillStyle = "#94a3b8";
-      offCtx.font = "11px sans-serif";
+      offCtx.font = window.CHART_FONTS.sm;
       offCtx.textAlign = "right";
       offCtx.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
@@ -1057,7 +1057,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     }
 
     offCtx.fillStyle = "#94a3b8";
-    offCtx.font = "12px sans-serif";
+    offCtx.font = window.CHART_FONTS.md;
     offCtx.fillText("Age", chart.width / 2, chart.height - 5);
 
     // FIRE target line
@@ -1071,7 +1071,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     offCtx.setLineDash([]);
 
     drawLabelWithBackground(offCtx, `FIRE: ${formatCurrency(fireTarget)}`, padding.left + 5, toY(fireTarget) - 8,
-      { color: "#ef4444", font: "11px sans-serif", align: "left" });
+      { color: "#ef4444", font: window.CHART_FONTS.sm, align: "left" });
 
     // Coast FIRE threshold curve
     if (coastFireNumber) {
@@ -1093,7 +1093,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       offCtx.setLineDash([]);
 
       drawLabelWithBackground(offCtx, `Coast: ${formatCurrency(coastFireNumber)}`, padding.left + 5, toY(coastFireNumber) - 8,
-        { color: "#f59e0b", font: "11px sans-serif", align: "left" });
+        { color: "#f59e0b", font: window.CHART_FONTS.sm, align: "left" });
 
       const coastCrossing = dataPoints.find((d) => {
         const remainingYears = profile.retireAge - d.age;
@@ -1119,7 +1119,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
         offCtx.stroke();
 
         drawLabelWithBackground(offCtx, `Coast Age ${coastCrossing.age}`, cx, cy - 12,
-          { color: "#f59e0b", font: "bold 11px sans-serif", align: "center" });
+          { color: "#f59e0b", font: window.CHART_FONTS.boldSm, align: "center" });
       }
     }
 
@@ -1135,7 +1135,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
     offCtx.setLineDash([]);
 
     drawLabelWithBackground(offCtx, `Retire: ${profile.retireAge}`, retireX, padding.top - 10,
-      { color: "#94a3b8", font: "11px sans-serif", align: "center" });
+      { color: "#94a3b8", font: window.CHART_FONTS.sm, align: "center" });
 
     // Accumulation line
     const accumPoints = dataPoints.filter((d) => !d.retired);
@@ -1193,7 +1193,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
       offCtx.stroke();
 
       drawLabelWithBackground(offCtx, `Age ${crossingPoint.age}`, cx, cy - 12,
-        { color: "#2dd4bf", font: "bold 11px sans-serif", align: "center" });
+        { color: "#2dd4bf", font: window.CHART_FONTS.boldSm, align: "center" });
     }
   }
 
@@ -1247,7 +1247,7 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
           gapText,
         ];
 
-        ctx.font = "12px sans-serif";
+        ctx.font = window.CHART_FONTS.md;
         const tooltipWidth =
           Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 20;
         const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -1304,11 +1304,11 @@ function displayFireChart(profile, fireTarget, yearsToRetire, coastFireNumber) {
 
         // Tooltip text
         ctx.fillStyle = "#e2e8f0";
-        ctx.font = "bold 12px sans-serif";
+        ctx.font = window.CHART_FONTS.boldMd;
         ctx.textAlign = "left";
         ctx.fillText(tooltipLines[0], tx + 10, ty + 18);
 
-        ctx.font = "12px sans-serif";
+        ctx.font = window.CHART_FONTS.md;
         ctx.fillText(tooltipLines[1], tx + 10, ty + 38);
 
         ctx.fillStyle = gap >= 0 ? "#2dd4bf" : "#f472b6";
@@ -1440,7 +1440,7 @@ function displayCoastChart(
       offCtxCoast.lineTo(offscreenCoast.width - padding.right, y);
       offCtxCoast.stroke();
       offCtxCoast.fillStyle = "#94a3b8";
-      offCtxCoast.font = "11px sans-serif";
+      offCtxCoast.font = window.CHART_FONTS.sm;
       offCtxCoast.textAlign = "right";
       offCtxCoast.fillText(formatCurrency(value), padding.left - 10, y + 4);
     }
@@ -1456,7 +1456,7 @@ function displayCoastChart(
     }
 
     offCtxCoast.fillStyle = "#94a3b8";
-    offCtxCoast.font = "12px sans-serif";
+    offCtxCoast.font = window.CHART_FONTS.md;
     offCtxCoast.fillText("Age", chart.width / 2, chart.height - 5);
 
     // FIRE target line
@@ -1469,7 +1469,7 @@ function displayCoastChart(
     offCtxCoast.stroke();
     offCtxCoast.setLineDash([]);
     drawLabelWithBackground(offCtxCoast, `FIRE: ${formatCurrency(fireTarget)}`, padding.left + 5, toY(fireTarget) - 8,
-      { color: "#ef4444", font: "11px sans-serif", align: "left" });
+      { color: "#ef4444", font: window.CHART_FONTS.sm, align: "left" });
 
     // Retirement age line
     const retireX = toX(yearsToRetire);
@@ -1482,7 +1482,7 @@ function displayCoastChart(
     offCtxCoast.stroke();
     offCtxCoast.setLineDash([]);
     drawLabelWithBackground(offCtxCoast, `Retire: ${profile.retireAge}`, retireX, padding.top - 10,
-      { color: "#94a3b8", font: "11px sans-serif", align: "center" });
+      { color: "#94a3b8", font: window.CHART_FONTS.sm, align: "center" });
 
     // Coast threshold curve
     offCtxCoast.strokeStyle = "#f59e0b";
@@ -1498,7 +1498,7 @@ function displayCoastChart(
     offCtxCoast.stroke();
     offCtxCoast.setLineDash([]);
     drawLabelWithBackground(offCtxCoast, "Coast Threshold", toX(0) + 5, toY(coastData[0].value) - 8,
-      { color: "#f59e0b", font: "11px sans-serif", align: "left" });
+      { color: "#f59e0b", font: window.CHART_FONTS.sm, align: "left" });
 
     // Portfolio line
     offCtxCoast.strokeStyle = "#2dd4bf";
@@ -1530,7 +1530,7 @@ function displayCoastChart(
         offCtxCoast.lineWidth = 2;
         offCtxCoast.stroke();
         drawLabelWithBackground(offCtxCoast, `Coast: Age ${portfolioData[i].age}`, cx, cy - 12,
-          { color: "#f59e0b", font: "bold 11px sans-serif", align: "center" });
+          { color: "#f59e0b", font: window.CHART_FONTS.boldSm, align: "center" });
         break;
       }
     }
@@ -1548,7 +1548,7 @@ function displayCoastChart(
         offCtxCoast.lineWidth = 2;
         offCtxCoast.stroke();
         drawLabelWithBackground(offCtxCoast, `FIRE: Age ${portfolioData[i].age}`, cx, cy - 12,
-          { color: "#2dd4bf", font: "bold 11px sans-serif", align: "center" });
+          { color: "#2dd4bf", font: window.CHART_FONTS.boldSm, align: "center" });
         break;
       }
     }
@@ -1629,7 +1629,7 @@ function displayCoastChart(
             : `❌ ${formatCurrency(Math.abs(fireGap))} below FIRE`,
         );
 
-        ctx.font = "12px sans-serif";
+        ctx.font = window.CHART_FONTS.md;
         const tooltipWidth =
           Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 20;
         const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -1686,10 +1686,10 @@ function displayCoastChart(
         // Tooltip text
         ctx.textAlign = "left";
         ctx.fillStyle = "#e2e8f0";
-        ctx.font = "bold 12px sans-serif";
+        ctx.font = window.CHART_FONTS.boldMd;
         ctx.fillText(tooltipLines[0], tx + 10, ty + 18);
 
-        ctx.font = "12px sans-serif";
+        ctx.font = window.CHART_FONTS.md;
         for (let i = 1; i < tooltipLines.length; i++) {
           const line = tooltipLines[i];
           if (line.startsWith("✅")) {

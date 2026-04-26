@@ -141,7 +141,7 @@ export function drawTooltip(ctx, lines, x, y, bounds) {
     typeof l === "string" ? { text: l, color: null, bold: false } : l
   );
 
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   const tooltipWidth = Math.max(...normalized.map((l) => ctx.measureText(l.text).width)) + 24;
   const tooltipHeight = normalized.length * 20 + 16;
 
@@ -177,7 +177,7 @@ export function drawTooltip(ctx, lines, x, y, bounds) {
   ctx.textAlign = "left";
   normalized.forEach((line, i) => {
     ctx.fillStyle = line.color || (i === 0 ? "#e2e8f0" : "#94a3b8");
-    ctx.font = (line.bold || i === 0) ? "bold 12px sans-serif" : "12px sans-serif";
+    ctx.font = (line.bold || i === 0) ? window.CHART_FONTS.boldMd : window.CHART_FONTS.md;
     ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
   });
 }
@@ -226,7 +226,7 @@ export function drawBarChart(canvas, data, options) {
     offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
 
     // Y-axis grid + labels
-    offCtx.font = "11px sans-serif";
+    offCtx.font = window.CHART_FONTS.sm;
     offCtx.textAlign = "right";
     const ySteps = 5;
     for (let i = 0; i <= ySteps; i++) {
@@ -266,7 +266,7 @@ export function drawBarChart(canvas, data, options) {
 
       // X-axis label
       offCtx.fillStyle = "#94a3b8";
-      offCtx.font = "10px sans-serif";
+      offCtx.font = window.CHART_FONTS.xs;
       offCtx.textAlign = "center";
       offCtx.fillText(
         options.xLabel ? options.xLabel(d) : String(i),
@@ -418,7 +418,7 @@ export function drawLineChart(canvas, data, options) {
     offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
 
     // Y-axis grid + labels
-    offCtx.font = "11px sans-serif";
+    offCtx.font = window.CHART_FONTS.sm;
     offCtx.textAlign = "right";
     const ySteps = 5;
     for (let i = 0; i <= ySteps; i++) {
@@ -445,7 +445,7 @@ export function drawLineChart(canvas, data, options) {
     for (let i = 0; i < data.length; i += step) {
       const x = toX(i);
       offCtx.fillStyle = "#94a3b8";
-      offCtx.font = "10px sans-serif";
+      offCtx.font = window.CHART_FONTS.xs;
       offCtx.fillText(
         options.xLabel ? options.xLabel(data[i], i) : String(i),
         x, padding.top + chartHeight + 16
@@ -729,7 +729,7 @@ export function bindFormEnter(callback, containerSelector) {
 export function drawLabelWithBackground(ctx, text, x, y, options = {}) {
   const {
     color = "#e2e8f0",
-    font = "10px sans-serif",
+    font = window.CHART_FONTS.xs,
     background = "rgba(15, 23, 42, 0.85)",
     border = "rgba(148, 163, 184, 0.25)",
     padding = { h: 6, v: 3 },

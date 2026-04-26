@@ -14,6 +14,7 @@
 
 /* ===== DESIGN TOKENS ===== */
 :root {
+  font-size: 17px;
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-card: #1e293b;
@@ -29,6 +30,25 @@
 /* ===== UTILITY ===== */
 .hidden {
   display: none !important;
+}
+
+
+/* ===== FONT SCALE TOGGLE ===== */.font-scale-btn {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}.font-scale-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ===== BODY ===== */

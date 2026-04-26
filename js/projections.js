@@ -370,7 +370,7 @@ function displayChart(projections, inputs, view) {
     offCtxProj.lineTo(offscreenProj.width - padding.right, y);
     offCtxProj.stroke();
     offCtxProj.fillStyle = "#94a3b8";
-    offCtxProj.font = "11px sans-serif";
+    offCtxProj.font = window.CHART_FONTS.sm;
     offCtxProj.textAlign = "right";
     offCtxProj.fillText(formatCurrency(value), padding.left - 10, y + 4);
   }
@@ -392,7 +392,7 @@ function displayChart(projections, inputs, view) {
   drawLabelWithBackground(offCtxProj,
     view === "real" ? "Years (Inflation-Adjusted)" : "Years",
     chart.width / 2, chart.height - 5,
-    { color: "#94a3b8", font: "12px sans-serif", align: "center" });
+    { color: "#94a3b8", font: window.CHART_FONTS.md, align: "center" });
 
   adjustedProjections.forEach((proj) => {
     offCtxProj.strokeStyle = proj.color;
@@ -452,7 +452,7 @@ function displayChart(projections, inputs, view) {
       }
     });
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth = Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
     let tx = hx + 15;
@@ -479,12 +479,12 @@ function displayChart(projections, inputs, view) {
 
     ctx.textAlign = "left";
     ctx.fillStyle = "#e2e8f0";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.fillText(tooltipLines[0], tx + 12, ty + 18);
     for (let i = 1; i < tooltipLines.length; i++) {
       const proj = adjustedProjections[i - 1];
       ctx.fillStyle = proj ? proj.color : "#e2e8f0";
-      ctx.font = "12px sans-serif";
+      ctx.font = window.CHART_FONTS.md;
       ctx.fillText(tooltipLines[i], tx + 12, ty + 18 + i * 20);
     }
   }

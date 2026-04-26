@@ -655,7 +655,7 @@ function drawGrid(
     ctx.lineTo(chart.width - padding.right, y);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "right";
     ctx.fillText(p.toFixed(2), padding.left - 8, y + 4);
   }
@@ -669,12 +669,12 @@ function drawGrid(
     ctx.lineTo(x, padding.top + chartHeight);
     ctx.stroke();
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
+    ctx.font = window.CHART_FONTS.sm;
     ctx.textAlign = "center";
     ctx.fillText(q.toFixed(2), x, chart.height - padding.bottom + 18);
   }
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   ctx.textAlign = "center";
   ctx.fillText("Quantity (Q)", chart.width / 2, chart.height - 8);
   ctx.save();
@@ -701,7 +701,7 @@ function drawTooltipBox(
   chartTotalWidth,
   chartRight,
 ) {
-  ctx.font = "12px sans-serif";
+  ctx.font = window.CHART_FONTS.md;
   const tooltipWidth =
     Math.max(...tooltipLines.map((l) => ctx.measureText(l.text).width)) + 24;
   const tooltipHeight = tooltipLines.length * 20 + 12;
@@ -737,7 +737,7 @@ function drawTooltipBox(
   ctx.textAlign = "left";
   tooltipLines.forEach((line, i) => {
     ctx.fillStyle = line.color || "#e2e8f0";
-    ctx.font = line.bold ? "bold 12px sans-serif" : "12px sans-serif";
+    ctx.font = line.bold ? window.CHART_FONTS.boldMd : window.CHART_FONTS.md;
     ctx.fillText(line.text, tx + 12, ty + 18 + i * 20);
   });
 }
@@ -797,7 +797,7 @@ function drawEquilibriumChart(demand, supply, pStar, qStar, highlightQ) {
   const dLabelP = (dLabelQ - demand.effectiveIntercept) / demand.pCoef;
   if (dLabelP > 0 && dLabelP <= pMax) {
     ctx.fillStyle = "#f472b6";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.textAlign = "left";
     ctx.fillText("Demand", toX(dLabelQ) + 5, toY(dLabelP) - 8);
   }
@@ -819,7 +819,7 @@ function drawEquilibriumChart(demand, supply, pStar, qStar, highlightQ) {
   const sLabelP = (sLabelQ - supply.effectiveIntercept) / supply.pCoef;
   if (sLabelP > 0 && sLabelP <= pMax) {
     ctx.fillStyle = "#2dd4bf";
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = window.CHART_FONTS.boldMd;
     ctx.textAlign = "left";
     ctx.fillText("Supply", toX(sLabelQ) + 5, toY(sLabelP) - 8);
   }
@@ -840,7 +840,7 @@ function drawEquilibriumChart(demand, supply, pStar, qStar, highlightQ) {
     ctx.setLineDash([]);
 
     ctx.fillStyle = "#f59e0b";
-    ctx.font = "bold 10px sans-serif";
+    ctx.font = window.CHART_FONTS.boldSm;
     ctx.textAlign = "right";
     ctx.fillText("P*=" + pStar.toFixed(3), padding.left - 4, toY(pStar) + 4);
     ctx.textAlign = "center";
@@ -859,7 +859,7 @@ function drawEquilibriumChart(demand, supply, pStar, qStar, highlightQ) {
     ctx.stroke();
 
     // Smart label positioning — avoid overlapping curves
-    ctx.font = "bold 11px sans-serif";
+    ctx.font = window.CHART_FONTS.boldSm;
     const eLabel = "E(" + qStar.toFixed(3) + ", " + pStar.toFixed(3) + ")";
     const eLabelW = ctx.measureText(eLabel).width;
     const eLabelH = 14;
@@ -1207,7 +1207,7 @@ function drawShiftersChart(dI, dP, sI, sP, newEq, highlightQ) {
     ctx.strokeStyle = "#0f172a";
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.font = "10px sans-serif";
+    ctx.font = window.CHART_FONTS.xs;
     const e0Label = "E₀(" + orig.qStar.toFixed(3) + ", " + orig.pStar.toFixed(3) + ")";
     const e0LabelW = ctx.measureText(e0Label).width;
     const e0LabelH = 12;
@@ -1254,7 +1254,7 @@ function drawShiftersChart(dI, dP, sI, sP, newEq, highlightQ) {
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.fillStyle = "#f59e0b";
-    ctx.font = "bold 11px sans-serif";
+    ctx.font = window.CHART_FONTS.boldSm;
     const e1Label = "E₁(" + newEq.qStar.toFixed(3) + ", " + newEq.pStar.toFixed(3) + ")";
     const e1LabelW = ctx.measureText(e1Label).width;
     const e1LabelH = 14;

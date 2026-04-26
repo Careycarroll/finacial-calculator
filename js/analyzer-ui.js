@@ -1329,7 +1329,7 @@ function drawChart(
   const allValues = datasets.flatMap((d) => d.data.filter((v) => v !== null));
   if (allValues.length === 0) {
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "14px sans-serif";
+    ctx.font = window.CHART_FONTS.lg;
     ctx.textAlign = "center";
     ctx.fillText(
       "No data available for this chart",
@@ -1375,12 +1375,12 @@ function drawChart(
 
   // Title
   ctx.fillStyle = "#e2e8f0";
-  ctx.font = "bold 13px sans-serif";
+  ctx.font = window.CHART_FONTS.boldMd;
   ctx.textAlign = "left";
   ctx.fillText(title, padding.left, padding.top - 15);
 
   // Grid lines and Y-axis labels
-  ctx.font = "11px sans-serif";
+  ctx.font = window.CHART_FONTS.sm;
   ctx.textAlign = "right";
 
   for (let i = 0; i <= tickCount; i++) {
@@ -1411,15 +1411,15 @@ function drawChart(
 
   // X-axis labels
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "11px sans-serif";
+  ctx.font = window.CHART_FONTS.sm;
   ctx.textAlign = "center";
   labels.forEach((label, i) => {
     if (hoverIndex === i) {
       ctx.fillStyle = "#e2e8f0";
-      ctx.font = "bold 11px sans-serif";
+      ctx.font = window.CHART_FONTS.boldSm;
     } else {
       ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px sans-serif";
+      ctx.font = window.CHART_FONTS.sm;
     }
     ctx.fillText(label, toX(i), chart.height - padding.bottom + 20);
   });
@@ -1513,7 +1513,7 @@ function drawChart(
       tooltipLines.push(`${d.label}: ${formatYAxisLabel(val, yAxisFormat)}`);
     });
 
-    ctx.font = "12px sans-serif";
+    ctx.font = window.CHART_FONTS.md;
     const tooltipWidth =
       Math.max(...tooltipLines.map((l) => ctx.measureText(l).width)) + 28;
     const tooltipHeight = tooltipLines.length * 22 + 16;
@@ -1560,12 +1560,12 @@ function drawChart(
       if (i === 0) {
         // Header (year)
         ctx.fillStyle = "#e2e8f0";
-        ctx.font = "bold 12px sans-serif";
+        ctx.font = window.CHART_FONTS.boldMd;
       } else {
         // Find matching dataset for color
         const matchingDataset = datasets.find((d) => line.startsWith(d.label));
         ctx.fillStyle = matchingDataset ? matchingDataset.color : "#94a3b8";
-        ctx.font = "12px sans-serif";
+        ctx.font = window.CHART_FONTS.md;
       }
       ctx.textAlign = "left";
       ctx.fillText(line, tx + 14, ty + 20 + i * 22);
@@ -1573,7 +1573,7 @@ function drawChart(
   }
 
   // Legend — draw at bottom center
-  ctx.font = "11px sans-serif";
+  ctx.font = window.CHART_FONTS.sm;
   ctx.globalAlpha = 1;
   const legendItems = datasets.map((d) => ({
     label: d.label,
