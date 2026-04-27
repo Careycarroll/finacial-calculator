@@ -22,27 +22,25 @@ A collection of interactive financial calculators built with vanilla JavaScript 
 | 📰 News Feed                  | RSS reader with OPML import, category filtering, bookmarks, and search                                       |
 | 📊 CM Analysis                | Contribution margin, gross profit, breakeven, multi-product mix, capacity constraints, operating leverage    |
 | 📉 Supply & Demand            | Linear supply/demand equilibrium, multi-variable equations, curve shifters, interactive graphs               |
-| 📐 Consumer Theory            | Price elasticity (4 modes), cross-price elasticity, expected utility, risk premium                           |
+| 📐 Consumer Theory            | Price elasticity (4 modes), arbitrary equation parser, shift analysis, cross-price elasticity, expected utility, risk premium |
 | 🏗️ Cost Structure & Allocation | Cost structure comparison, overhead allocation, fixed/variable cost classifier, unit cost trap               |
 
 ---
 
 ## Running Locally
 
-```bash
-# Clone
-git clone https://github.com/careycarroll/financial-calculator.git
-cd financial-calculator
+    # Clone
+    git clone https://github.com/careycarroll/financial-calculator.git
+    cd financial-calculator
 
-# Terminal 1 — static file server
-python3 -m http.server 8000
-# then open http://localhost:8000
+    # Terminal 1 -- static file server
+    python3 -m http.server 8000
+    # then open http://localhost:8000
 
-# Terminal 2 — SEC EDGAR proxy (required for 10-K Analyzer)
-node proxy.js
-# Proxy runs at http://localhost:3001
-# Keep this terminal open while using the 10-K Analyzer
-```
+    # Terminal 2 -- SEC EDGAR proxy (required for 10-K Analyzer)
+    node proxy.js
+    # Proxy runs at http://localhost:3001
+    # Keep this terminal open while using the 10-K Analyzer
 
 No npm, no build step, no dependencies.
 
@@ -56,67 +54,65 @@ SEC EDGAR requires HTTP/2 and a valid `User-Agent` header on all requests. Brows
 
 ## Project Structure
 
-```
-financial-calculator/
-├── index.html              # Calculator index / landing page
-├── pages/                  # One HTML file per tool
-│   ├── fire.html
-│   ├── projections.html
-│   ├── loan.html
-│   ├── loan-advanced.html
-│   ├── pv.html
-│   ├── npv-irr.html
-│   ├── options.html
-│   ├── analyzer.html
-│   ├── valuator.html
-│   ├── news.html
-│   ├── cm-analysis.html
-│   ├── micro-econ.html
-│   ├── consumer-theory.html
-│   └── cost-structure.html
-├── js/
-│   ├── chart-utils.js           # Shared canvas, validation, chart utilities (ES module)
-│   ├── formatting.js            # Shared formatting functions (ES module)
-│   ├── financial-terms.js       # Financial term definitions for tooltips
-│   ├── fire.js
-│   ├── projections.js
-│   ├── loan.js
-│   ├── loan-advanced.js
-│   ├── pv.js
-│   ├── npv-irr.js
-│   ├── options.js
-│   ├── options-reference-shapes.js
-│   ├── analyzer.js              # SEC ratio calculations and health scoring
-│   ├── analyzer-ui.js           # 10-K Analyzer UI entry point
-│   ├── valuator.js              # Multi-method stock valuation engine
-│   ├── valuator-ui.js           # Stock Evaluator UI entry point
-│   ├── api-manager.js           # Multi-provider API key management + IndexedDB cache
-│   ├── sec-api.js               # SEC EDGAR data fetcher
-│   ├── news.js                  # RSS news feed reader
-│   ├── cm-analysis.js           # Contribution margin analysis entry point
-│   ├── micro-econ.js            # Supply & demand microeconomics entry point
-│   ├── consumer-theory.js       # Consumer theory: elasticity, expected utility, risk premium
-│   ├── cost-structure.js        # Cost structure & allocation entry point
-│   ├── font-scale.js            # Persistent font scale toggle (plain script, not module)
-│   └── prefetch.js              # Quicklink prefetching (plain script, not module)
-├── proxy.js                     # Local HTTP/2 CORS proxy for SEC EDGAR
-├──.vscode/
-│   └── tasks.json               # VS Code task: Cmd+Shift+B starts all servers
-└── css/
-    ├── base.css                 # Global reset and variables
-    ├── common-calculator.css    # Shared form, result, chart, table styles
-    ├── fire.css
-    ├── analyzer.css
-    ├── news.css
-    ├── npv-irr.css
-    ├── options.css
-    ├── projections.css
-    ├── valuator.css
-    ├── cm-analysis.css
-    ├── micro-econ.css
-    ├── consumer-theory.css
-    └── cost-structure.css
-```
+    financial-calculator/
+    ├── index.html              # Calculator index / landing page
+    ├── pages/                  # One HTML file per tool
+    │   ├── fire.html
+    │   ├── projections.html
+    │   ├── loan.html
+    │   ├── loan-advanced.html
+    │   ├── pv.html
+    │   ├── npv-irr.html
+    │   ├── options.html
+    │   ├── analyzer.html
+    │   ├── valuator.html
+    │   ├── news.html
+    │   ├── cm-analysis.html
+    │   ├── micro-econ.html
+    │   ├── consumer-theory.html
+    │   └── cost-structure.html
+    ├── js/
+    │   ├── chart-utils.js           # Shared canvas, validation, chart utilities (ES module)
+    │   ├── formatting.js            # Shared formatting functions (ES module)
+    │   ├── financial-terms.js       # Financial term definitions for tooltips
+    │   ├── fire.js
+    │   ├── projections.js
+    │   ├── loan.js
+    │   ├── loan-advanced.js
+    │   ├── pv.js
+    │   ├── npv-irr.js
+    │   ├── options.js
+    │   ├── options-reference-shapes.js
+    │   ├── analyzer.js              # SEC ratio calculations and health scoring
+    │   ├── analyzer-ui.js           # 10-K Analyzer UI entry point
+    │   ├── valuator.js              # Multi-method stock valuation engine
+    │   ├── valuator-ui.js           # Stock Evaluator UI entry point
+    │   ├── api-manager.js           # Multi-provider API key management + IndexedDB cache
+    │   ├── sec-api.js               # SEC EDGAR data fetcher
+    │   ├── news.js                  # RSS news feed reader
+    │   ├── cm-analysis.js           # Contribution margin analysis entry point
+    │   ├── micro-econ.js            # Supply & demand microeconomics entry point
+    │   ├── consumer-theory.js       # Consumer theory: elasticity, expected utility, risk premium
+    │   ├── cost-structure.js        # Cost structure & allocation entry point
+    │   ├── font-scale.js            # Persistent font scale toggle (plain script, not module)
+    │   └── prefetch.js              # Quicklink prefetching (plain script, not module)
+    ├── proxy.js                     # Local HTTP/2 CORS proxy for SEC EDGAR
+    ├──.vscode/
+    │   └── tasks.json               # VS Code task: Cmd+Shift+B starts all servers
+    └── css/
+        ├── base.css                 # Global reset and variables
+        ├── common-calculator.css    # Shared form, result, chart, table styles
+        ├── fire.css
+        ├── analyzer.css
+        ├── news.css
+        ├── npv-irr.css
+        ├── options.css
+        ├── projections.css
+        ├── valuator.css
+        ├── cm-analysis.css
+        ├── micro-econ.css
+        ├── consumer-theory.css
+        └── cost-structure.css
 
 ---
 
@@ -137,9 +133,7 @@ financial-calculator/
 
 This project went through a structured 5-phase development process covering bug fixes, input safety, performance optimization, architecture refactoring, and UX polish. Full detail is in the git log:
 
-```bash
-git log --oneline
-```
+    git log --oneline
 
 Key phases:
 
@@ -150,85 +144,76 @@ Key phases:
 - **Phase 5** — UX polish: loading spinners, `normCDF` documentation, accessibility pass
 - **Phase 6** — Stock Evaluator: IndexedDB cache for API responses (24h TTL), `formatRatio` import fix
 - **Phase 7** — Economics expansion: Consumer Theory page (price elasticity 4 modes, cross-price elasticity, expected utility, risk premium); font scale toggle (A⁻/A/A⁺) with canvas font scaling across all chart files
-- **Phase 8 (in progress)** — Managerial Accounting expansion: Operating Leverage tab added to CM Analysis; new Cost Structure & Allocation page (cost structure comparison, overhead allocation + death spiral, fixed/variable cost classifier with high-low and regression, unit cost trap)
+- **Phase 8** — Consumer Theory expansion (April 2026): Arbitrary linear equation parser with scalar, shift variables, and parse confirmation display; Shift Analysis panel with live Scenario 2 comparison, D₂/S₂ dashed curve overlay, E₁/E₂ equilibrium dots, axis directional arrows; elasticity reference panel with highlighted classification row, formulas, and intuitions; stacked demand/supply elasticity result cards; market power explainer (curve shape → price vs. quantity power)
+
+---
+
+## Consumer Theory — From Equation Mode
+
+The price elasticity tab supports arbitrary linear demand/supply equations:
+
+    20*(750 - 2*p + p_hotel + 450*e)   <- scalar, shift variables, own-price
+    10*(2*p - p_listing)                <- supply with shift variable
+    16 - 2*p                            <- simple linear, no scalar
+
+**Parser handles:** leading scalars (`20*(...)`), implicit multiply (`20(...)`), named shift variables, bare variables (coef=1), negated variables, scientific notation coefficients.
+
+**Own-price detection:** exact match on `p` or `P` defaults to own-price. If ambiguous, a dropdown appears. Shift variables get inline value fields that update the collapsed form live.
+
+**Shift Analysis:** after calculating, enter Scenario 2 values (blank = inherit Scenario 1). Chart overlays D₂/S₂ as dashed curves only when they differ from baseline. Axis arrows show direction of P* and Q* movement. Interpretation panel explains ΔP*, ΔQ*, Δεd, Δεs in plain economic language.
 
 ---
 
 ## Utilities Quick Reference
 
-```javascript
-// chart-utils.js — canvas, validation, charts
-import {
-  formatCurrency,
-  safeParseFloat,
-  safeParseInt,
-  createChartContext,
-  drawBarChart,
-  drawLineChart,
-  drawTooltip,
-  rafThrottle,
-  validateInputs,
-  showFieldError,
-  clearAllErrors,
-  showChartLoading,
-  hideChartLoading,
-  bindFormEnter,
-  CONFIG,
-} from "./chart-utils.js";
+    // chart-utils.js -- canvas, validation, charts
+    import {
+      formatCurrency, safeParseFloat, safeParseInt,
+      createChartContext, drawBarChart, drawLineChart, drawTooltip,
+      rafThrottle, validateInputs, showFieldError, clearAllErrors,
+      showChartLoading, hideChartLoading, bindFormEnter, CONFIG,
+    } from './chart-utils.js';
 
-// formatting.js — shared formatting utilities
-import {
-  formatLargeNumber,
-  formatLargeNumberRaw,
-  formatRatio,
-  formatRatioPlain,
-  formatPct,
-  formatPercent,
-  formatValuationCurrency,
-  formatCurrencyShort,
-  formatNumber,
-  trendArrow,
-  calculateSimpleGrowthRates,
-} from "./formatting.js";
+    // formatting.js -- shared formatting utilities
+    import {
+      formatLargeNumber, formatLargeNumberRaw, formatRatio, formatRatioPlain,
+      formatPct, formatPercent, formatValuationCurrency, formatCurrencyShort,
+      formatNumber, trendArrow, calculateSimpleGrowthRates,
+    } from './formatting.js';
 
-// financial-terms.js
-import { getTermDefinition } from "./financial-terms.js";
+    // financial-terms.js
+    import { getTermDefinition } from './financial-terms.js';
 
-// sec-api.js
-import { fetchSECData } from "./sec-api.js";
+    // sec-api.js
+    import { fetchSECData } from './sec-api.js';
 
-// api-manager.js
-import {
-  fetchStockData,
-  getApiKeys,
-  saveApiKey,
-  removeApiKey,
-  getUsageSummary,
-  getRemainingCalls,
-} from "./api-manager.js";
-```
+    // api-manager.js
+    import {
+      fetchStockData, getApiKeys, saveApiKey, removeApiKey,
+      getUsageSummary, getRemainingCalls,
+    } from './api-manager.js';
 
 ---
 
 ## Useful Dev Commands
 
-```bash
-# Kill and restart local server
-pkill -f "python.*http" && python3 -m http.server 8000
+    # Kill and restart local server
+    pkill -f 'python.*http' && python3 -m http.server 8000
 
-# Start SEC EDGAR proxy (required for 10-K Analyzer)
-node proxy.js
+    # Start SEC EDGAR proxy (required for 10-K Analyzer)
+    node proxy.js
 
-# Check JS file sizes (to plan audit splits — max 500KB per upload)
-ls -R /Users/$(whoami)/Github\ Projects/financial-calculator/js/ | grep '\.js$' | sed "s|^|/Users/$(whoami)/Github Projects/financial-calculator/js/|" | xargs -I {} wc -c "{}"
+    # Check JS file sizes (to plan audit splits -- max 500KB per upload)
+    ls -R ~/Github\ Projects/financial-calculator/js/ | grep '\.js$' \
+      | sed 's|^|/Users/careycarroll/Github Projects/financial-calculator/js/|' \
+      | xargs -I {} wc -c '{}'
 
-# Dump all source files to a single audit file
-for f in **/*.(js|css|html); do
-  [[ "$f" == *.min.js || "$f" == *.min.css ]] && continue
-  echo "========== $f =========="
-  cat "$f"
-done > audit.txt
-```
+    # Dump all source files to a single audit file
+    for f in **/*.(js|css|html); do
+      [[ "$f" == *.min.js || "$f" == *.min.css ]] && continue
+      echo "========== $f =========="
+      cat "$f"
+    done > audit.txt
 
 ---
 
