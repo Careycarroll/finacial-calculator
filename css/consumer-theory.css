@@ -457,3 +457,380 @@
 }.ct-eq-collapsed-preview.visible {
   display: block;
 }
+
+/* ===== SHIFT ANALYSIS PANEL ===== */.ct-shift-section {
+  margin-top: 1.5rem;
+}.ct-shift-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}.ct-shift-header h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}.ct-shift-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+/* Two-column scenario comparison grid */.ct-shift-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+}.ct-shift-col {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+}.ct-shift-col.scenario-2 {
+  border-color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.03);
+}.ct-shift-col-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}.ct-shift-col-title.s1 {
+  color: var(--accent);
+}.ct-shift-col-title.s2 {
+  color: #f59e0b;
+}
+
+/* Scenario 1 read-only values */.ct-shift-readonly-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}.ct-shift-readonly-label {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}.ct-shift-readonly-value {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Scenario 2 input rows */.ct-shift-input-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}.ct-shift-input-row label {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  color: #f59e0b;
+  font-weight: 600;
+  white-space: nowrap;
+}.ct-shift-input-row input {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.85rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}.ct-shift-input-row input:focus {
+  border-color: #f59e0b;
+}.ct-shift-delta {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 0.1rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  grid-column: 2;
+}.ct-shift-delta.positive { color: var(--accent); }.ct-shift-delta.negative { color: #f472b6; }.ct-shift-delta.neutral  { color: var(--text-secondary); }
+
+/* Scenario divider label inside col */.ct-shift-curve-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0.75rem 0 0.4rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}.ct-shift-curve-label.demand { color: #f472b6; }.ct-shift-curve-label.supply { color: #2dd4bf; }
+
+/* Comparison results bar */.ct-shift-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}.ct-shift-result-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}.ct-shift-result-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}.ct-shift-result-value {
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: #f59e0b;
+}.ct-shift-result-value.positive { color: var(--accent); }.ct-shift-result-value.negative { color: #f472b6; }.ct-shift-result-value.neutral  { color: var(--text-secondary); }
+
+/* ===== CHART EXPAND BUTTON ===== */.ct-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}.ct-chart-header h2 {
+  margin: 0;
+}.ct-expand-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: inherit;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}.ct-expand-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ===== CHART MODAL ===== */.ct-chart-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.85);
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}.ct-chart-modal.open {
+  display: flex;
+}.ct-chart-modal-inner {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}.ct-chart-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}.ct-chart-modal-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}.ct-chart-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+  font-family: inherit;
+}.ct-chart-modal-close:hover {
+  color: var(--text-primary);
+}.ct-chart-modal-body {
+  flex: 1;
+  padding: 1.25rem;
+  overflow: hidden;
+}.ct-chart-modal-body.canvas-chart {
+  height: 100%;
+  min-height: 500px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {.ct-shift-grid {
+    grid-template-columns: 1fr;
+  }.ct-chart-modal {
+    padding: 0.5rem;
+  }
+}
+
+/* ===== SHIFT INTERPRETATION PANEL ===== */.ct-shift-interpretation {
+  margin-top: 1rem;
+  padding: 1.1rem 1.25rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-left: 3px solid #f472b6;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+}.ct-shift-interpretation h3 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #f472b6;
+  margin-bottom: 0.75rem;
+}.ct-shift-interp-item {
+  margin-bottom: 0.6rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--border);
+}.ct-shift-interp-item:last-child {
+  margin-bottom: 0;
+}.ct-shift-interp-item strong {
+  color: var(--text-primary);
+}.ct-shift-interp-item.positive { border-left-color: var(--accent); }.ct-shift-interp-item.negative { border-left-color: #f472b6; }.ct-shift-interp-item.neutral  { border-left-color: #f59e0b; }
+
+/* ===== ELASTICITY RESULTS — COMPACT STACKED DISPLAY ===== */.ct-elas-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}.ct-elas-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}.ct-elas-card-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}.ct-elas-card-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--accent);
+  margin-bottom: 0.2rem;
+}.ct-elas-card-abs {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  margin-bottom: 0.4rem;
+}
+
+/* ===== ELASTICITY REFERENCE PANEL ===== */.ct-elas-reference {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}.ct-elas-reference-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}.ct-elas-ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+}.ct-elas-ref-table th {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  text-align: left;
+  padding: 0.3rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}.ct-elas-ref-table td {
+  padding: 0.4rem 0.6rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(148,163,184,0.08);
+  vertical-align: middle;
+}.ct-elas-ref-table tr.active-row td {
+  background-color: rgba(45,212,191,0.06);
+  color: var(--text-primary);
+}.ct-elas-ref-table tr.active-row td:first-child {
+  border-left: 3px solid var(--accent);
+}.ct-elas-ref-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}.ct-elas-ref-badge.elastic {
+  background-color: rgba(244,114,182,0.12);
+  color: #f472b6;
+}.ct-elas-ref-badge.inelastic {
+  background-color: rgba(45,212,191,0.12);
+  color: var(--accent);
+}.ct-elas-ref-badge.unit-elastic {
+  background-color: rgba(245,158,11,0.12);
+  color: #f59e0b;
+}.ct-elas-ref-badge.perf-elastic {
+  background-color: rgba(96,165,250,0.12);
+  color: #60a5fa;
+}.ct-elas-ref-badge.perf-inelastic {
+  background-color: rgba(168,85,247,0.12);
+  color: #a855f7;
+}.ct-elas-ref-formulas {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}.ct-elas-ref-formula {
+  flex: 1;
+  min-width: 180px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem 0.85rem;
+}.ct-elas-ref-formula-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  margin-bottom: 0.3rem;
+}.ct-elas-ref-formula-text {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  color: var(--accent);
+}.ct-elas-ref-intuitions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 1rem;
+}.ct-elas-ref-intuition {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}.ct-elas-ref-intuition::before {
+  content: "→";
+  color: var(--accent);
+  flex-shrink: 0;
+  font-size: 0.72rem;
+}.ct-elas-ref-intuition strong {
+  color: var(--text-primary);
+}
+@media (max-width: 600px) {.ct-elas-pair { grid-template-columns: 1fr; }.ct-elas-ref-intuitions { grid-template-columns: 1fr; }
+}

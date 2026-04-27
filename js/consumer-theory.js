@@ -172,21 +172,36 @@ let supplyParsed = null;
  */
 function parseEquation(str) {
   const raw = str.trim();
-  if (!raw) return { scalar: 1, terms: [], ownPriceVar: null, variables: [], error: "Equation is empty." };
+  if (!raw)
+    return {
+      scalar: 1,
+      terms: [],
+      ownPriceVar: null,
+      variables: [],
+      error: "Equation is empty.",
+    };
 
   let scalar = 1;
   let inner = raw;
 
   // ── Detect leading scalar: number followed by * or ( ──
   // Matches: 20*(  |  20(  |  -20*(  |  -20(
-  const scalarMatch = raw.match(/^(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*\*?\s*\(/);
+  const scalarMatch = raw.match(
+    /^(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*\*?\s*\(/,
+  );
   if (scalarMatch) {
     scalar = parseFloat(scalarMatch[1]);
     // Find the matching closing paren for the opening paren after the scalar
     const openIdx = raw.indexOf("(", scalarMatch[0].length - 1);
     const closeIdx = findMatchingParen(raw, openIdx);
     if (closeIdx === -1) {
-      return { scalar, terms: [], ownPriceVar: null, variables: [], error: "Mismatched parentheses." };
+      return {
+        scalar,
+        terms: [],
+        ownPriceVar: null,
+        variables: [],
+        error: "Mismatched parentheses.",
+      };
     }
     inner = raw.slice(openIdx + 1, closeIdx).trim();
   } else {
@@ -199,26 +214,42 @@ function parseEquation(str) {
   // Split on + or - that are not inside parens and not part of scientific notation
   const termStrings = splitTerms(inner);
   if (termStrings === null) {
-    return { scalar, terms: [], ownPriceVar: null, variables: [], error: "Could not parse expression — check parentheses." };
+    return {
+      scalar,
+      terms: [],
+      ownPriceVar: null,
+      variables: [],
+      error: "Could not parse expression — check parentheses.",
+    };
   }
 
   const terms = [];
   for (const ts of termStrings) {
     const term = parseTerm(ts.trim());
     if (term === null) {
-      return { scalar, terms: [], ownPriceVar: null, variables: [],
-        error: "Unrecognised term: \"" + ts.trim() + "\". Expected a number, a variable, or coef*variable." };
+      return {
+        scalar,
+        terms: [],
+        ownPriceVar: null,
+        variables: [],
+        error:
+          'Unrecognised term: "' +
+          ts.trim() +
+          '". Expected a number, a variable, or coef*variable.',
+      };
     }
-    // Factor scalar through each coefficient
-    terms.push({ coef: scalar * term.coef, variable: term.variable });
+    // Store unscaled coefficients — scalar applied in collapseToLinear
+    terms.push({ coef: term.coef, variable: term.variable });
   }
 
   // ── Identify own-price variable ──
-  const allVars = [...new Set(terms.filter(t => t.variable !== null).map(t => t.variable))];
+  const allVars = [
+    ...new Set(terms.filter((t) => t.variable !== null).map((t) => t.variable)),
+  ];
   let ownPriceVar = null;
 
   // Exact case-insensitive match on "p"
-  ownPriceVar = allVars.find(v => v.toLowerCase() === "p") || null;
+  ownPriceVar = allVars.find((v) => v.toLowerCase() === "p") || null;
 
   // If no "p" found and exactly one variable exists, treat it as own-price
   if (!ownPriceVar && allVars.length === 1) {
@@ -262,10 +293,18 @@ function splitTerms(expr) {
 
   while (i < expr.length) {
     const ch = expr[i];
-    if (ch === "(") { depth++; current += ch; i++; continue; }
+    if (ch === "(") {
+      depth++;
+      current += ch;
+      i++;
+      continue;
+    }
     if (ch === ")") {
       if (depth === 0) return null; // mismatched
-      depth--; current += ch; i++; continue;
+      depth--;
+      current += ch;
+      i++;
+      continue;
     }
     if (depth === 0 && (ch === "+" || ch === "-")) {
       // Check it's not scientific notation: digit e +/- digit
@@ -274,7 +313,8 @@ function splitTerms(expr) {
       if (!isScientific) {
         if (current.trim()) terms.push(current.trim());
         current = ch; // carry sign into next term
-        i++; continue;
+        i++;
+        continue;
       }
     }
     current += ch;
@@ -310,13 +350,17 @@ function parseTerm(str) {
   }
 
   // coef * variable  or  coef*variable
-  const mulMatch = s.match(/^(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*\*\s*([a-zA-Z][a-zA-Z0-9_]*)$/);
+  const mulMatch = s.match(
+    /^(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*\*\s*([a-zA-Z][a-zA-Z0-9_]*)$/,
+  );
   if (mulMatch) {
     return { coef: parseFloat(mulMatch[1]), variable: mulMatch[2] };
   }
 
   // implicit multiply: 2p or 2p_hotel (number immediately followed by identifier)
-  const implicitMatch = s.match(/^(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)([a-zA-Z][a-zA-Z0-9_]*)$/);
+  const implicitMatch = s.match(
+    /^(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)([a-zA-Z][a-zA-Z0-9_]*)$/,
+  );
   if (implicitMatch) {
     return { coef: parseFloat(implicitMatch[1]), variable: implicitMatch[2] };
   }
@@ -351,19 +395,20 @@ function collapseToLinear(parsed, shiftValues) {
   let A = 0;
   let B = 0;
   const ownVar = parsed.ownPriceVar;
+  const scalar = parsed.scalar !== undefined ? parsed.scalar : 1;
 
   for (const term of parsed.terms) {
     if (term.variable === null) {
-      // constant
-      A += term.coef;
+      // constant term — scaled
+      A += scalar * term.coef;
     } else if (term.variable === ownVar) {
-      // own-price coefficient
-      B += term.coef;
+      // own-price coefficient — scaled
+      B += scalar * term.coef;
     } else {
-      // shift variable — substitute known value
+      // shift variable — substitute known value, then scale
       const val = shiftValues[term.variable];
       if (val === undefined || isNaN(val)) return null;
-      A += term.coef * val;
+      A += scalar * term.coef * val;
     }
   }
   return { A, B };
@@ -382,7 +427,9 @@ function collapseToLinear(parsed, shiftValues) {
  * side: "d" (demand) or "s" (supply)
  */
 function renderParseConfirmation(side, parsed) {
-  const confirmEl = document.getElementById("elas-eq-" + side + "-confirmation");
+  const confirmEl = document.getElementById(
+    "elas-eq-" + side + "-confirmation",
+  );
   if (!confirmEl) return;
 
   if (parsed.error || parsed.terms.length === 0) {
@@ -405,58 +452,86 @@ function renderParseConfirmation(side, parsed) {
     if (i > 0) {
       const sign = term.coef >= 0 ? "+" : "−";
       const absCoef = Math.abs(term.coef);
-      chipsHtml += '<span class="ct-eq-op">' + sign + '</span>';
-      const label = term.variable !== null
-        ? (absCoef === 1 ? term.variable : absCoef + "·" + term.variable)
-        : String(absCoef);
-      chipsHtml += '<span class="ct-eq-term-chip ' + chipClass + '">' + label + '</span>';
+      chipsHtml += '<span class="ct-eq-op">' + sign + "</span>";
+      const label =
+        term.variable !== null
+          ? absCoef === 1
+            ? term.variable
+            : absCoef + "·" + term.variable
+          : String(absCoef);
+      chipsHtml +=
+        '<span class="ct-eq-term-chip ' + chipClass + '">' + label + "</span>";
     } else {
       // First term — include sign only if negative
       const absCoef = Math.abs(term.coef);
       const prefix = term.coef < 0 ? "−" : "";
-      const label = term.variable !== null
-        ? (absCoef === 1 ? term.variable : absCoef + "·" + term.variable)
-        : String(absCoef);
-      chipsHtml += '<span class="ct-eq-term-chip ' + chipClass + '">' + prefix + label + '</span>';
+      const label =
+        term.variable !== null
+          ? absCoef === 1
+            ? term.variable
+            : absCoef + "·" + term.variable
+          : String(absCoef);
+      chipsHtml +=
+        '<span class="ct-eq-term-chip ' +
+        chipClass +
+        '">' +
+        prefix +
+        label +
+        "</span>";
     }
   });
 
   // Own-price dropdown — shown only when parser could not auto-detect
   let dropdownHtml = "";
   if (!ownVar && parsed.variables.length > 1) {
-    const options = parsed.variables.map(v =>
-      '<option value="' + v + '">' + v + '</option>'
-    ).join("");
-    dropdownHtml = '<div class="ct-eq-own-price-row">' +
-      '<span>Which variable is own-price (P)?</span>' +
-      '<select id="elas-eq-' + side + '-own-price-select">' + options + '</select>' +
-      '</div>';
+    const options = parsed.variables
+      .map((v) => '<option value="' + v + '">' + v + "</option>")
+      .join("");
+    dropdownHtml =
+      '<div class="ct-eq-own-price-row">' +
+      "<span>Which variable is own-price (P)?</span>" +
+      '<select id="elas-eq-' +
+      side +
+      '-own-price-select">' +
+      options +
+      "</select>" +
+      "</div>";
   }
 
   confirmEl.innerHTML =
     '<div class="ct-eq-confirmation-label">Parsed as</div>' +
     '<div class="ct-eq-terms">' +
-      (scalarStr ? '<span class="ct-eq-scalar">' + scalarStr + '</span><span class="ct-eq-paren"> × (</span>' : '') +
-      chipsHtml +
-      (scalarStr ? '<span class="ct-eq-paren">)</span>' : '') +
-    '</div>' +
+    (scalarStr
+      ? '<span class="ct-eq-scalar">' +
+        scalarStr +
+        '</span><span class="ct-eq-paren"> × (</span>'
+      : "") +
+    chipsHtml +
+    (scalarStr ? '<span class="ct-eq-paren">)</span>' : "") +
+    "</div>" +
     dropdownHtml;
 
   confirmEl.classList.add("visible");
 
   // Wire own-price dropdown change → re-render shift fields
   if (!ownVar && parsed.variables.length > 1) {
-    const sel = document.getElementById("elas-eq-" + side + "-own-price-select");
+    const sel = document.getElementById(
+      "elas-eq-" + side + "-own-price-select",
+    );
     if (sel) {
       sel.addEventListener("change", () => {
         const chosen = sel.value;
         // Mutate parsed state so collapseToLinear uses the user's choice
         if (side === "d") {
-          demandParsed = Object.assign({}, demandParsed, { ownPriceVar: chosen });
+          demandParsed = Object.assign({}, demandParsed, {
+            ownPriceVar: chosen,
+          });
           renderShiftFields("d", demandParsed);
           updateCollapsedPreview("d", demandParsed);
         } else {
-          supplyParsed = Object.assign({}, supplyParsed, { ownPriceVar: chosen });
+          supplyParsed = Object.assign({}, supplyParsed, {
+            ownPriceVar: chosen,
+          });
           renderShiftFields("s", supplyParsed);
           updateCollapsedPreview("s", supplyParsed);
         }
@@ -472,10 +547,12 @@ function renderParseConfirmation(side, parsed) {
  * into the shift fields container for the given side.
  */
 function renderShiftFields(side, parsed) {
-  const container = document.getElementById("elas-eq-" + side + "-shift-fields");
+  const container = document.getElementById(
+    "elas-eq-" + side + "-shift-fields",
+  );
   if (!container) return;
 
-  const shiftVars = parsed.variables.filter(v => v !== parsed.ownPriceVar);
+  const shiftVars = parsed.variables.filter((v) => v !== parsed.ownPriceVar);
 
   if (shiftVars.length === 0) {
     container.classList.remove("visible");
@@ -485,24 +562,41 @@ function renderShiftFields(side, parsed) {
 
   // Preserve any existing values before re-rendering
   const existing = {};
-  container.querySelectorAll(".ct-eq-shift-input").forEach(inp => {
+  container.querySelectorAll(".ct-eq-shift-input").forEach((inp) => {
     existing[inp.dataset.variable] = inp.value;
   });
 
-  let html = '<div class="ct-eq-shift-label">Known Values (shift variables)</div>';
-  shiftVars.forEach(v => {
+  let html =
+    '<div class="ct-eq-shift-label">Known Values (shift variables)</div>';
+  shiftVars.forEach((v) => {
     const preserved = existing[v] || "";
     html +=
       '<div class="ct-eq-shift-row">' +
-        '<label for="elas-eq-' + side + '-shift-' + v + '">' + v + ' =</label>' +
-        '<input type="number" step="any"' +
-          ' id="elas-eq-' + side + '-shift-' + v + '"' +
-          ' class="ct-eq-shift-input"' +
-          ' data-variable="' + v + '"' +
-          ' placeholder="enter value"' +
-          ' value="' + preserved + '"' +
-          ' aria-label="Value for shift variable ' + v + '" />' +
-      '</div>';
+      '<label for="elas-eq-' +
+      side +
+      "-shift-" +
+      v +
+      '">' +
+      v +
+      " =</label>" +
+      '<input type="number" step="any"' +
+      ' id="elas-eq-' +
+      side +
+      "-shift-" +
+      v +
+      '"' +
+      ' class="ct-eq-shift-input"' +
+      ' data-variable="' +
+      v +
+      '"' +
+      ' placeholder="enter value"' +
+      ' value="' +
+      preserved +
+      '"' +
+      ' aria-label="Value for shift variable ' +
+      v +
+      '" />' +
+      "</div>";
   });
 
   container.innerHTML = html;
@@ -539,9 +633,10 @@ function updateCollapsedPreview(side, parsed) {
   }
 
   const label = side === "d" ? "Q_d" : "Q_s";
-  const Bstr = collapsed.B >= 0
-    ? "+ " + fmtN(collapsed.B) + "·p"
-    : "− " + fmtN(Math.abs(collapsed.B)) + "·p";
+  const Bstr =
+    collapsed.B >= 0
+      ? "+ " + fmtN(collapsed.B) + "·p"
+      : "− " + fmtN(Math.abs(collapsed.B)) + "·p";
   previewEl.textContent = label + " = " + fmtN(collapsed.A) + " " + Bstr;
   previewEl.classList.add("visible");
 }
@@ -553,10 +648,12 @@ function updateCollapsedPreview(side, parsed) {
  * Returns { varName: number,... } or null if any required field is empty/NaN.
  */
 function collectShiftValues(side, parsed) {
-  const container = document.getElementById("elas-eq-" + side + "-shift-fields");
+  const container = document.getElementById(
+    "elas-eq-" + side + "-shift-fields",
+  );
   if (!container) return {};
 
-  const shiftVars = parsed.variables.filter(v => v !== parsed.ownPriceVar);
+  const shiftVars = parsed.variables.filter((v) => v !== parsed.ownPriceVar);
   if (shiftVars.length === 0) return {};
 
   const values = {};
@@ -591,12 +688,27 @@ function buildEquationPanel(side, accentColor) {
     if (!raw) {
       if (side === "d") demandParsed = null;
       else supplyParsed = null;
-      const confirmEl = document.getElementById("elas-eq-" + side + "-confirmation");
-      const shiftEl = document.getElementById("elas-eq-" + side + "-shift-fields");
-      const collapsedEl = document.getElementById("elas-eq-" + side + "-collapsed");
-      if (confirmEl) { confirmEl.classList.remove("visible"); confirmEl.innerHTML = ""; }
-      if (shiftEl) { shiftEl.classList.remove("visible"); shiftEl.innerHTML = ""; }
-      if (collapsedEl) { collapsedEl.classList.remove("visible"); collapsedEl.textContent = ""; }
+      const confirmEl = document.getElementById(
+        "elas-eq-" + side + "-confirmation",
+      );
+      const shiftEl = document.getElementById(
+        "elas-eq-" + side + "-shift-fields",
+      );
+      const collapsedEl = document.getElementById(
+        "elas-eq-" + side + "-collapsed",
+      );
+      if (confirmEl) {
+        confirmEl.classList.remove("visible");
+        confirmEl.innerHTML = "";
+      }
+      if (shiftEl) {
+        shiftEl.classList.remove("visible");
+        shiftEl.innerHTML = "";
+      }
+      if (collapsedEl) {
+        collapsedEl.classList.remove("visible");
+        collapsedEl.textContent = "";
+      }
       return;
     }
 
@@ -608,12 +720,27 @@ function buildEquationPanel(side, accentColor) {
       errorEl.classList.add("visible");
       if (side === "d") demandParsed = null;
       else supplyParsed = null;
-      const confirmEl = document.getElementById("elas-eq-" + side + "-confirmation");
-      const shiftEl = document.getElementById("elas-eq-" + side + "-shift-fields");
-      const collapsedEl = document.getElementById("elas-eq-" + side + "-collapsed");
-      if (confirmEl) { confirmEl.classList.remove("visible"); confirmEl.innerHTML = ""; }
-      if (shiftEl) { shiftEl.classList.remove("visible"); shiftEl.innerHTML = ""; }
-      if (collapsedEl) { collapsedEl.classList.remove("visible"); collapsedEl.textContent = ""; }
+      const confirmEl = document.getElementById(
+        "elas-eq-" + side + "-confirmation",
+      );
+      const shiftEl = document.getElementById(
+        "elas-eq-" + side + "-shift-fields",
+      );
+      const collapsedEl = document.getElementById(
+        "elas-eq-" + side + "-collapsed",
+      );
+      if (confirmEl) {
+        confirmEl.classList.remove("visible");
+        confirmEl.innerHTML = "";
+      }
+      if (shiftEl) {
+        shiftEl.classList.remove("visible");
+        shiftEl.innerHTML = "";
+      }
+      if (collapsedEl) {
+        collapsedEl.classList.remove("visible");
+        collapsedEl.textContent = "";
+      }
       return;
     }
 
@@ -626,9 +753,11 @@ function buildEquationPanel(side, accentColor) {
     updateCollapsedPreview(side, parsed);
 
     // Wire shift field inputs → live collapsed preview update
-    const shiftContainer = document.getElementById("elas-eq-" + side + "-shift-fields");
+    const shiftContainer = document.getElementById(
+      "elas-eq-" + side + "-shift-fields",
+    );
     if (shiftContainer) {
-      shiftContainer.querySelectorAll(".ct-eq-shift-input").forEach(inp => {
+      shiftContainer.querySelectorAll(".ct-eq-shift-input").forEach((inp) => {
         inp.addEventListener("input", () => {
           const current = side === "d" ? demandParsed : supplyParsed;
           if (current) updateCollapsedPreview(side, current);
@@ -755,24 +884,38 @@ function handleElasticityCalculate() {
       const dTextarea = document.getElementById("elas-eq-d-raw");
       if (dTextarea) dTextarea.classList.add("parse-error");
       const dErr = document.getElementById("elas-eq-d-parse-error");
-      if (dErr) { dErr.textContent = "⚠ Enter and complete a valid demand equation."; dErr.classList.add("visible"); }
+      if (dErr) {
+        dErr.textContent = "⚠ Enter and complete a valid demand equation.";
+        dErr.classList.add("visible");
+      }
       return;
     }
     if (!supplyParsed || supplyParsed.error) {
       const sTextarea = document.getElementById("elas-eq-s-raw");
       if (sTextarea) sTextarea.classList.add("parse-error");
       const sErr = document.getElementById("elas-eq-s-parse-error");
-      if (sErr) { sErr.textContent = "⚠ Enter and complete a valid supply equation."; sErr.classList.add("visible"); }
+      if (sErr) {
+        sErr.textContent = "⚠ Enter and complete a valid supply equation.";
+        sErr.classList.add("visible");
+      }
       return;
     }
     if (!demandParsed.ownPriceVar) {
       const dErr = document.getElementById("elas-eq-d-parse-error");
-      if (dErr) { dErr.textContent = "⚠ Could not identify own-price variable — select it from the dropdown."; dErr.classList.add("visible"); }
+      if (dErr) {
+        dErr.textContent =
+          "⚠ Could not identify own-price variable — select it from the dropdown.";
+        dErr.classList.add("visible");
+      }
       return;
     }
     if (!supplyParsed.ownPriceVar) {
       const sErr = document.getElementById("elas-eq-s-parse-error");
-      if (sErr) { sErr.textContent = "⚠ Could not identify own-price variable — select it from the dropdown."; sErr.classList.add("visible"); }
+      if (sErr) {
+        sErr.textContent =
+          "⚠ Could not identify own-price variable — select it from the dropdown.";
+        sErr.classList.add("visible");
+      }
       return;
     }
 
@@ -780,13 +923,19 @@ function handleElasticityCalculate() {
     const dShiftValues = collectShiftValues("d", demandParsed);
     if (dShiftValues === null) {
       const dErr = document.getElementById("elas-eq-d-parse-error");
-      if (dErr) { dErr.textContent = "⚠ Fill in all shift variable values for demand."; dErr.classList.add("visible"); }
+      if (dErr) {
+        dErr.textContent = "⚠ Fill in all shift variable values for demand.";
+        dErr.classList.add("visible");
+      }
       return;
     }
     const sShiftValues = collectShiftValues("s", supplyParsed);
     if (sShiftValues === null) {
       const sErr = document.getElementById("elas-eq-s-parse-error");
-      if (sErr) { sErr.textContent = "⚠ Fill in all shift variable values for supply."; sErr.classList.add("visible"); }
+      if (sErr) {
+        sErr.textContent = "⚠ Fill in all shift variable values for supply.";
+        sErr.classList.add("visible");
+      }
       return;
     }
 
@@ -795,12 +944,20 @@ function handleElasticityCalculate() {
     const sCollapsed = collapseToLinear(supplyParsed, sShiftValues);
     if (!dCollapsed) {
       const dErr = document.getElementById("elas-eq-d-parse-error");
-      if (dErr) { dErr.textContent = "⚠ Could not collapse demand equation — check shift variable values."; dErr.classList.add("visible"); }
+      if (dErr) {
+        dErr.textContent =
+          "⚠ Could not collapse demand equation — check shift variable values.";
+        dErr.classList.add("visible");
+      }
       return;
     }
     if (!sCollapsed) {
       const sErr = document.getElementById("elas-eq-s-parse-error");
-      if (sErr) { sErr.textContent = "⚠ Could not collapse supply equation — check shift variable values."; sErr.classList.add("visible"); }
+      if (sErr) {
+        sErr.textContent =
+          "⚠ Could not collapse supply equation — check shift variable values.";
+        sErr.classList.add("visible");
+      }
       return;
     }
 
@@ -812,7 +969,10 @@ function handleElasticityCalculate() {
     const denom = dB - sD;
     if (Math.abs(denom) < 1e-10) {
       const dErr = document.getElementById("elas-eq-d-parse-error");
-      if (dErr) { dErr.textContent = "⚠ Curves are parallel — no equilibrium exists."; dErr.classList.add("visible"); }
+      if (dErr) {
+        dErr.textContent = "⚠ Curves are parallel — no equilibrium exists.";
+        dErr.classList.add("visible");
+      }
       return;
     }
 
@@ -821,7 +981,11 @@ function handleElasticityCalculate() {
 
     if (pStar <= 0 || qStar <= 0) {
       const dErr = document.getElementById("elas-eq-d-parse-error");
-      if (dErr) { dErr.textContent = "⚠ Equilibrium has non-positive P* or Q* — check your equations."; dErr.classList.add("visible"); }
+      if (dErr) {
+        dErr.textContent =
+          "⚠ Equilibrium has non-positive P* or Q* — check your equations.";
+        dErr.classList.add("visible");
+      }
       return;
     }
 
@@ -861,21 +1025,22 @@ function handleElasticityCalculate() {
       "unit-elastic": "Unit Elastic",
     };
 
+    // Demand card
     document.getElementById("elas-value").textContent =
-      "εd = " + epsilonD.toFixed(4) + "  |  εs = " + epsilonS.toFixed(4);
+      "εd = " + epsilonD.toFixed(4);
     document.getElementById("elas-abs").textContent =
-      "|εd| = " + absD.toFixed(4) + "  |  |εs| = " + absS.toFixed(4);
+      "|εd| = " + absD.toFixed(4);
     document.getElementById("elas-badge").innerHTML =
-      '<span class="ct-badge ' +
-      clsD +
-      '" style="margin-right:0.5rem;">Demand: ' +
-      labels[clsD] +
-      "</span>" +
-      '<span class="ct-badge ' +
-      clsS +
-      '">Supply: ' +
-      labels[clsS] +
-      "</span>";
+      '<span class="ct-badge ' + clsD + '">' + labels[clsD] + "</span>";
+
+    // Supply card
+    document.getElementById("elas-supply-value").textContent =
+      "εs = " + epsilonS.toFixed(4);
+    document.getElementById("elas-supply-abs").textContent =
+      "|εs| = " + absS.toFixed(4);
+    document.getElementById("elas-supply-badge").innerHTML =
+      '<span class="ct-badge ' + clsS + '">' + labels[clsS] + "</span>";
+    document.getElementById("elas-supply-card").style.display = "";
 
     applyRevenueImpact(
       document.getElementById("elas-revenue-impact"),
@@ -884,10 +1049,13 @@ function handleElasticityCalculate() {
       absD,
     );
     renderElasticitySteps(lastElasData);
+    renderElasticityReference(absD);
     document.getElementById("elas-results").classList.remove("hidden");
     document.getElementById("elas-steps-section").classList.remove("hidden");
     document.getElementById("elas-chart-section").classList.remove("hidden");
-    requestAnimationFrame(() => drawElasticityChart(lastElasData));
+    lastElasData2 = null;
+    requestAnimationFrame(() => drawElasticityChart(lastElasData, null));
+    buildShiftAnalysisPanel();
     document
       .getElementById("elas-results")
       .scrollIntoView({ behavior: "smooth" });
@@ -1038,14 +1206,19 @@ function handleElasticityCalculate() {
     "unit-elastic": "Unit Elastic",
   };
 
-  document.getElementById("elas-value").textContent = epsilon.toFixed(4);
-  document.getElementById("elas-abs").textContent = absEps.toFixed(4);
+  // Single curve — show only demand card, hide supply card
+  document.getElementById("elas-value").textContent =
+    "ε = " + epsilon.toFixed(4);
+  document.getElementById("elas-abs").textContent =
+    "|ε| = " + absEps.toFixed(4);
   document.getElementById("elas-badge").innerHTML =
     '<span class="ct-badge ' +
     classification +
     '">' +
     labels[classification] +
     "</span>";
+  document.getElementById("elas-supply-card").style.display = "none";
+
   applyRevenueImpact(
     document.getElementById("elas-revenue-impact"),
     classification,
@@ -1054,10 +1227,11 @@ function handleElasticityCalculate() {
   );
 
   renderElasticitySteps(lastElasData);
+  renderElasticityReference(absEps);
   document.getElementById("elas-results").classList.remove("hidden");
   document.getElementById("elas-steps-section").classList.remove("hidden");
   document.getElementById("elas-chart-section").classList.remove("hidden");
-  requestAnimationFrame(() => drawElasticityChart(lastElasData));
+  requestAnimationFrame(() => drawElasticityChart(lastElasData, null));
   document
     .getElementById("elas-results")
     .scrollIntoView({ behavior: "smooth" });
@@ -1095,22 +1269,40 @@ function renderElasticitySteps(data) {
 
   if (mode === "equation") {
     const {
-      dA, dB, sC, sD, pStar, qStar, epsilonD, epsilonS,
-      demandRaw, supplyRaw, demandParsed: dp, supplyParsed: sp,
-      dShiftValues, sShiftValues,
+      dA,
+      dB,
+      sC,
+      sD,
+      pStar,
+      qStar,
+      epsilonD,
+      epsilonS,
+      demandRaw,
+      supplyRaw,
+      demandParsed: dp,
+      supplyParsed: sp,
+      dShiftValues,
+      sShiftValues,
     } = data;
     const absD = Math.abs(epsilonD);
     const absS = Math.abs(epsilonS);
     const clsD = classifyElasticity(absD);
     const clsS = classifyElasticity(absS);
-    const hasShifts = (dp && (Object.keys(dShiftValues || {}).length > 0 || Object.keys(sShiftValues || {}).length > 0));
+    const hasShifts =
+      dp &&
+      (Object.keys(dShiftValues || {}).length > 0 ||
+        Object.keys(sShiftValues || {}).length > 0);
 
     // ── Step 1 — Original Equations ──
     sections.push(
       sec(
         "Step 1 — Original Equations",
-        step(`<span style="color:#f472b6;">Demand: Q_d = ${demandRaw || (dA + " + (" + dB + ")·P")}</span>`),
-        step(`<span style="color:#2dd4bf;">Supply: Q_s = ${supplyRaw || (sC + " + (" + sD + ")·P")}</span>`),
+        step(
+          `<span style="color:#f472b6;">Demand: Q_d = ${demandRaw || dA + " + (" + dB + ")·P"}</span>`,
+        ),
+        step(
+          `<span style="color:#2dd4bf;">Supply: Q_s = ${supplyRaw || sC + " + (" + sD + ")·P"}</span>`,
+        ),
       ),
     );
 
@@ -1121,14 +1313,16 @@ function renderElasticitySteps(data) {
 
       // Demand substitution
       if (dp && Object.keys(dShiftValues || {}).length > 0) {
-        const subList = Object.entries(dShiftValues).map(([k, v]) => k + " = " + v).join(",  ");
+        const subList = Object.entries(dShiftValues)
+          .map(([k, v]) => k + " = " + v)
+          .join(",  ");
         dSubSteps.push(step("Known: " + subList, "highlight"));
 
         // Show each shift term being substituted
         let runningConst = 0;
         let ownCoef = 0;
         const ownVar = dp.ownPriceVar;
-        dp.terms.forEach(term => {
+        dp.terms.forEach((term) => {
           if (term.variable === null) {
             runningConst += term.coef;
             dSubSteps.push(step("constant term: " + term.coef));
@@ -1138,33 +1332,71 @@ function renderElasticitySteps(data) {
             const val = dShiftValues[term.variable];
             const contrib = term.coef * val;
             runningConst += contrib;
-            dSubSteps.push(step(
-              "(" + term.coef + ") × " + term.variable + " = (" + term.coef + ") × " + val + " = " + fmtN(contrib)
-            ));
+            dSubSteps.push(
+              step(
+                "(" +
+                  term.coef +
+                  ") × " +
+                  term.variable +
+                  " = (" +
+                  term.coef +
+                  ") × " +
+                  val +
+                  " = " +
+                  fmtN(contrib),
+              ),
+            );
           }
         });
         if (dp.scalar !== 1) {
-          dSubSteps.push(step(
-            "Apply scalar " + dp.scalar + ": A = " + dp.scalar + " × " + fmtN(runningConst / dp.scalar) + " = " + fmtN(dA)
-          ));
-          dSubSteps.push(step(
-            "Apply scalar " + dp.scalar + ": B = " + dp.scalar + " × " + fmtN(ownCoef) + " = " + fmtN(dB)
-          ));
+          dSubSteps.push(
+            step(
+              "Apply scalar " +
+                dp.scalar +
+                ": A = " +
+                dp.scalar +
+                " × " +
+                fmtN(runningConst) +
+                " = " +
+                fmtN(dA),
+            ),
+          );
+          dSubSteps.push(
+            step(
+              "Apply scalar " +
+                dp.scalar +
+                ": B = " +
+                dp.scalar +
+                " × " +
+                fmtN(ownCoef) +
+                " = " +
+                fmtN(dB),
+            ),
+          );
         }
-        dSubSteps.push(step(
-          "<strong>Demand collapsed: Q_d = " + fmtN(dA) + " + (" + fmtN(dB) + ")·P</strong>", "result"
-        ));
+        dSubSteps.push(
+          step(
+            "<strong>Demand collapsed: Q_d = " +
+              fmtN(dA) +
+              " + (" +
+              fmtN(dB) +
+              ")·P</strong>",
+            "result",
+          ),
+        );
       }
 
       // Supply substitution
       if (sp && Object.keys(sShiftValues || {}).length > 0) {
-        const subList = Object.entries(sShiftValues).map(([k, v]) => k + " = " + v).join(",  ");
+        const subList = Object.entries(sShiftValues)
+          .map(([k, v]) => k + " = " + v)
+          .join(",  ");
         sSubSteps.push(step("Known: " + subList, "highlight"));
 
         let runningConst = 0;
         let ownCoef = 0;
         const ownVar = sp.ownPriceVar;
-        sp.terms.forEach(term => {
+        sp.terms.forEach((term) => {
           if (term.variable === null) {
             runningConst += term.coef;
             sSubSteps.push(step("constant term: " + term.coef));
@@ -1174,26 +1406,64 @@ function renderElasticitySteps(data) {
             const val = sShiftValues[term.variable];
             const contrib = term.coef * val;
             runningConst += contrib;
-            sSubSteps.push(step(
-              "(" + term.coef + ") × " + term.variable + " = (" + term.coef + ") × " + val + " = " + fmtN(contrib)
-            ));
+            sSubSteps.push(
+              step(
+                "(" +
+                  term.coef +
+                  ") × " +
+                  term.variable +
+                  " = (" +
+                  term.coef +
+                  ") × " +
+                  val +
+                  " = " +
+                  fmtN(contrib),
+              ),
+            );
           }
         });
         if (sp.scalar !== 1) {
-          sSubSteps.push(step(
-            "Apply scalar " + sp.scalar + ": A = " + sp.scalar + " × " + fmtN(runningConst / sp.scalar) + " = " + fmtN(sC)
-          ));
-          sSubSteps.push(step(
-            "Apply scalar " + sp.scalar + ": B = " + sp.scalar + " × " + fmtN(ownCoef) + " = " + fmtN(sD)
-          ));
+          sSubSteps.push(
+            step(
+              "Apply scalar " +
+                sp.scalar +
+                ": A = " +
+                sp.scalar +
+                " × " +
+                fmtN(runningConst) +
+                " = " +
+                fmtN(sC),
+            ),
+          );
+          sSubSteps.push(
+            step(
+              "Apply scalar " +
+                sp.scalar +
+                ": B = " +
+                sp.scalar +
+                " × " +
+                fmtN(ownCoef) +
+                " = " +
+                fmtN(sD),
+            ),
+          );
         }
-        sSubSteps.push(step(
-          "<strong>Supply collapsed: Q_s = " + fmtN(sC) + " + (" + fmtN(sD) + ")·P</strong>", "result"
-        ));
+        sSubSteps.push(
+          step(
+            "<strong>Supply collapsed: Q_s = " +
+              fmtN(sC) +
+              " + (" +
+              fmtN(sD) +
+              ")·P</strong>",
+            "result",
+          ),
+        );
       }
 
       if (dSubSteps.length > 0 || sSubSteps.length > 0) {
-        sections.push(sec("Step 2 — Substitute Known Values",...dSubSteps,...sSubSteps));
+        sections.push(
+          sec("Step 2 — Substitute Known Values", ...dSubSteps, ...sSubSteps),
+        );
       }
     }
 
@@ -1201,8 +1471,12 @@ function renderElasticitySteps(data) {
     sections.push(
       sec(
         hasShifts ? "Step 3 — Collapsed Linear Form" : "Step 2 — Linear Form",
-        step(`<span style="color:#f472b6;">Q_d = ${fmtN(dA)} + (${fmtN(dB)})·P</span>`),
-        step(`<span style="color:#2dd4bf;">Q_s = ${fmtN(sC)} + (${fmtN(sD)})·P</span>`),
+        step(
+          `<span style="color:#f472b6;">Q_d = ${fmtN(dA)} + (${fmtN(dB)})·P</span>`,
+        ),
+        step(
+          `<span style="color:#2dd4bf;">Q_s = ${fmtN(sC)} + (${fmtN(sD)})·P</span>`,
+        ),
       ),
     );
 
@@ -1237,7 +1511,11 @@ function renderElasticitySteps(data) {
         step(`<strong>ε_d = ${epsilonD.toFixed(4)}</strong>`, "result"),
         step(
           `<strong>${clsLabels[clsD]}</strong>`,
-          clsD === "elastic" ? "negative" : clsD === "inelastic" ? "positive" : "highlight",
+          clsD === "elastic"
+            ? "negative"
+            : clsD === "inelastic"
+              ? "positive"
+              : "highlight",
         ),
       ),
     );
@@ -1262,10 +1540,19 @@ function renderElasticitySteps(data) {
         "Step " + (stepOffset + 4) + " — Revenue Impact (Demand)",
         step("Revenue = Price × Quantity"),
         clsD === "elastic"
-          ? step("Elastic demand: a price ↑ causes a larger quantity ↓ → Revenue FALLS", "negative")
+          ? step(
+              "Elastic demand: a price ↑ causes a larger quantity ↓ → Revenue FALLS",
+              "negative",
+            )
           : clsD === "inelastic"
-            ? step("Inelastic demand: a price ↑ causes a smaller quantity ↓ → Revenue RISES", "positive")
-            : step("Unit elastic: price ↑ and quantity ↓ exactly offset → Revenue UNCHANGED", "highlight"),
+            ? step(
+                "Inelastic demand: a price ↑ causes a smaller quantity ↓ → Revenue RISES",
+                "positive",
+              )
+            : step(
+                "Unit elastic: price ↑ and quantity ↓ exactly offset → Revenue UNCHANGED",
+                "highlight",
+              ),
       ),
     );
   } else if (mode === "point") {
@@ -1411,12 +1698,12 @@ function renderElasticitySteps(data) {
   document.getElementById("elas-steps-body").classList.remove("hidden");
 }
 
-function drawElasticityChart(data) {
-  const canvas = document.getElementById("elas-chart-canvas");
+function drawElasticityChart(data, data2 = null, targetCanvas = null) {
+  const canvas = targetCanvas || document.getElementById("elas-chart-canvas");
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) {
-    requestAnimationFrame(() => drawElasticityChart(data));
+    requestAnimationFrame(() => drawElasticityChart(data, data2, targetCanvas));
     return;
   }
 
@@ -1454,14 +1741,17 @@ function drawElasticityChart(data) {
 
   // For non-equation modes, reconstruct a single curve from elasticity
   if (!hasEquation) {
-    const s = curveType === "demand"
-      ? -Math.abs(epsilon) * (refQ / refP)
-      : Math.abs(epsilon) * (refQ / refP);
+    const s =
+      curveType === "demand"
+        ? -Math.abs(epsilon) * (refQ / refP)
+        : Math.abs(epsilon) * (refQ / refP);
     const ic = refQ - s * refP;
     if (curveType === "demand") {
-      demandSlope = s; demandIntercept = ic;
+      demandSlope = s;
+      demandIntercept = ic;
     } else {
-      supplySlope = s; supplyIntercept = ic;
+      supplySlope = s;
+      supplyIntercept = ic;
     }
   }
 
@@ -1473,13 +1763,15 @@ function drawElasticityChart(data) {
   if (hasEquation) {
     // Use intercepts and equilibrium to set natural bounds
     const dIntAbs = Math.abs(demandIntercept);
-    const pZeroDemand = demandSlope !== 0 ? Math.abs(-demandIntercept / demandSlope) : 0;
+    const pZeroDemand =
+      demandSlope !== 0 ? Math.abs(-demandIntercept / demandSlope) : 0;
     qMax = Math.max(dIntAbs, Math.abs(refQ) * 1.6, 1);
     pMax = Math.max(pZeroDemand, Math.abs(refP) * 1.8, 1);
   } else {
     // Single curve — use ref point to set bounds
     const slope = demandSlope !== undefined ? demandSlope : supplySlope;
-    const intercept = demandSlope !== undefined ? demandIntercept : supplyIntercept;
+    const intercept =
+      demandSlope !== undefined ? demandIntercept : supplyIntercept;
     const pZero = slope !== 0 ? Math.abs(-intercept / slope) : refP * 2;
     qMax = Math.max(Math.abs(intercept), Math.abs(refQ) * 1.6, 1);
     pMax = Math.max(pZero, Math.abs(refP) * 1.8, 1);
@@ -1490,19 +1782,29 @@ function drawElasticityChart(data) {
     const rawStep = rawMax / steps;
     if (rawStep <= 0) return 1;
     const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
-    const nice = [1, 2, 2.5, 5, 10].find(f => f * mag >= rawStep) || 10;
+    const nice = [1, 2, 2.5, 5, 10].find((f) => f * mag >= rawStep) || 10;
     return nice * mag;
   }
   const qTickStep = niceStep(qMax, 6);
   const pTickStep = niceStep(pMax, 6);
 
-  function toX(q) { return padding.left + (q / qMax) * chartWidth; }
-  function toY(p) { return padding.top + chartHeight - (p / pMax) * chartHeight; }
-  function fromX(x) { return ((x - padding.left) / chartWidth) * qMax; }
+  function toX(q) {
+    return padding.left + (q / qMax) * chartWidth;
+  }
+  function toY(p) {
+    return padding.top + chartHeight - (p / pMax) * chartHeight;
+  }
+  function fromX(x) {
+    return ((x - padding.left) / chartWidth) * qMax;
+  }
 
   const absEps = Math.abs(epsilon);
   const cls = classifyElasticity(absEps);
-  const clsColors = { elastic: "#f472b6", inelastic: "#2dd4bf", "unit-elastic": "#f59e0b" };
+  const clsColors = {
+    elastic: "#f472b6",
+    inelastic: "#2dd4bf",
+    "unit-elastic": "#f59e0b",
+  };
 
   // ── Offscreen static layer — must match DPR scaling of main canvas ──
   const dpr = window.devicePixelRatio || 1;
@@ -1574,8 +1876,10 @@ function drawElasticityChart(data) {
       for (let p = pMin; p <= pMax; p += pMax / 300) {
         const q = demandIntercept + demandSlope * p;
         if (q < 0 || q > qMax * 1.02) continue;
-        if (!started) { offCtx.moveTo(toX(q), toY(p)); started = true; }
-        else offCtx.lineTo(toX(q), toY(p));
+        if (!started) {
+          offCtx.moveTo(toX(q), toY(p));
+          started = true;
+        } else offCtx.lineTo(toX(q), toY(p));
       }
       offCtx.stroke();
       // Label with background box
@@ -1605,8 +1909,10 @@ function drawElasticityChart(data) {
       for (let p = pMin; p <= pMax; p += pMax / 300) {
         const q = supplyIntercept + supplySlope * p;
         if (q < 0 || q > qMax * 1.02) continue;
-        if (!started) { offCtx.moveTo(toX(q), toY(p)); started = true; }
-        else offCtx.lineTo(toX(q), toY(p));
+        if (!started) {
+          offCtx.moveTo(toX(q), toY(p));
+          started = true;
+        } else offCtx.lineTo(toX(q), toY(p));
       }
       offCtx.stroke();
       // Label — find a visible point in the upper-left region of the supply curve
@@ -1615,7 +1921,12 @@ function drawElasticityChart(data) {
       for (const sLabelQ of sCandidates) {
         if (Math.abs(supplySlope) < 1e-10) break;
         const sLabelP = (sLabelQ - supplyIntercept) / supplySlope;
-        if (sLabelP > pMax * 0.1 && sLabelP <= pMax * 0.85 && sLabelQ >= 0 && sLabelQ <= qMax) {
+        if (
+          sLabelP > pMax * 0.1 &&
+          sLabelP <= pMax * 0.85 &&
+          sLabelQ >= 0 &&
+          sLabelQ <= qMax
+        ) {
           const sLX = toX(sLabelQ) + 5;
           const sLY = toY(sLabelP) - 4;
           offCtx.font = window.CHART_FONTS.boldMd;
@@ -1654,34 +1965,52 @@ function drawElasticityChart(data) {
       offCtx.lineWidth = 2;
       offCtx.stroke();
       // P* Q* labels with background boxes like micro-econ
-      offCtx.fillStyle = "#f59e0b";
-      offCtx.font = window.CHART_FONTS.boldSm;
-      offCtx.textAlign = "right";
-      offCtx.fillText("P*=" + fmtN(refP), padding.left - 4, eqY + 4);
-      offCtx.textAlign = "center";
-      offCtx.fillText("Q*=" + fmtN(refQ), eqX, padding.top + chartHeight + 32);
-      // E label with smart positioning
-      offCtx.font = window.CHART_FONTS.boldSm;
-      const eqLabel = "E(" + fmtN(refQ) + ", " + fmtN(refP) + ")";
-      const eqLabelW = offCtx.measureText(eqLabel).width;
-      const eqLabelH = 14;
-      const eqPad = 4;
-      const eqInRight = eqX > padding.left + chartWidth * 0.6;
-      const eqLabelX = eqInRight ? eqX - eqLabelW - 14 : eqX + 12;
-      const eqNearTop = eqY < padding.top + chartHeight * 0.25;
-      const eqLabelY = eqNearTop ? eqY + 20 : eqY - 10;
-      offCtx.fillStyle = "rgba(15,23,42,0.85)";
-      offCtx.beginPath();
-      offCtx.roundRect(eqLabelX - eqPad, eqLabelY - eqLabelH, eqLabelW + eqPad * 2, eqLabelH + eqPad, 4);
-      offCtx.fill();
-      offCtx.fillStyle = "#f59e0b";
-      offCtx.textAlign = "left";
-      offCtx.fillText(eqLabel, eqLabelX, eqLabelY - 2);
+      // P*/Q* axis labels — suppressed when data2 present (P1*/Q1* drawn in data2 block)
+      if (!data2) {
+        offCtx.fillStyle = "#f59e0b";
+        offCtx.font = window.CHART_FONTS.boldSm;
+        offCtx.textAlign = "right";
+        offCtx.fillText("P*=" + fmtN(refP), padding.left - 4, eqY + 4);
+        offCtx.textAlign = "center";
+        offCtx.fillText(
+          "Q*=" + fmtN(refQ),
+          eqX,
+          padding.top + chartHeight + 32,
+        );
+      }
+      // E label with smart positioning — hidden when data2 present (E1/E2 drawn in data2 block)
+      if (!data2) {
+        offCtx.font = window.CHART_FONTS.boldSm;
+        const eqLabel = "E(" + fmtN(refQ) + ", " + fmtN(refP) + ")";
+        const eqLabelW = offCtx.measureText(eqLabel).width;
+        const eqLabelH = 14;
+        const eqPad = 4;
+        const eqInRight = eqX > padding.left + chartWidth * 0.6;
+        const eqLabelX = eqInRight ? eqX - eqLabelW - 14 : eqX + 12;
+        const eqNearTop = eqY < padding.top + chartHeight * 0.25;
+        const eqLabelY = eqNearTop ? eqY + 20 : eqY - 10;
+        offCtx.fillStyle = "rgba(15,23,42,0.85)";
+        offCtx.beginPath();
+        offCtx.roundRect(
+          eqLabelX - eqPad,
+          eqLabelY - eqLabelH,
+          eqLabelW + eqPad * 2,
+          eqLabelH + eqPad,
+          4,
+        );
+        offCtx.fill();
+        offCtx.fillStyle = "#f59e0b";
+        offCtx.textAlign = "left";
+        offCtx.fillText(eqLabel, eqLabelX, eqLabelY - 2);
+      }
     }
 
     // Arc mode: two observed points
     if (data.mode === "arc") {
-      [[data.q1, data.p1], [data.q2, data.p2]].forEach(([q, p]) => {
+      [
+        [data.q1, data.p1],
+        [data.q2, data.p2],
+      ].forEach(([q, p]) => {
         offCtx.beginPath();
         offCtx.arc(toX(q), toY(p), 5, 0, Math.PI * 2);
         offCtx.fillStyle = "#60a5fa";
@@ -1710,12 +2039,288 @@ function drawElasticityChart(data) {
       offCtx.strokeStyle = "#0f172a";
       offCtx.lineWidth = 2;
       offCtx.stroke();
-      drawLabelWithBackground(offCtx, "ε = " + epsilon.toFixed(3), refX + 12, refY2 - 10,
-        { color: clsColors[cls], font: window.CHART_FONTS.boldSm, align: "left" });
+      drawLabelWithBackground(
+        offCtx,
+        "ε = " + epsilon.toFixed(3),
+        refX + 12,
+        refY2 - 10,
+        {
+          color: clsColors[cls],
+          font: window.CHART_FONTS.boldSm,
+          align: "left",
+        },
+      );
     }
   }
 
   drawStatic();
+
+  // ── Scenario 2 overlay (dashed curves + E2) ──
+  if (data2) {
+    const dA2 = data2.dA,
+      dB2 = data2.dB;
+    const sC2 = data2.sC,
+      sD2 = data2.sD;
+    const pStar2 = data2.pStar,
+      qStar2 = data2.qStar;
+    const epsilonD2 = data2.epsilonD;
+
+    // D2 dashed curve — only draw if demand actually changed
+    const demandChanged = dA2 !== demandIntercept || dB2 !== demandSlope;
+    const supplyChanged = sC2 !== supplyIntercept || sD2 !== supplySlope;
+
+    if (demandChanged) {
+      offCtx.strokeStyle = "#f472b6";
+      offCtx.globalAlpha = 0.55;
+      offCtx.lineWidth = 2;
+      offCtx.setLineDash([7, 5]);
+      offCtx.beginPath();
+      let started = false;
+      for (let p = pMin; p <= pMax; p += pMax / 300) {
+        const q = dA2 + dB2 * p;
+        if (q < 0 || q > qMax * 1.02) continue;
+        if (!started) {
+          offCtx.moveTo(toX(q), toY(p));
+          started = true;
+        } else offCtx.lineTo(toX(q), toY(p));
+      }
+      offCtx.stroke();
+      offCtx.setLineDash([]);
+      offCtx.globalAlpha = 1;
+      // D2 label
+      const d2LabelQ = qMax * 0.05;
+      const d2LabelP = dB2 !== 0 ? (d2LabelQ - dA2) / dB2 : null;
+      if (d2LabelP !== null && d2LabelP > 0 && d2LabelP <= pMax) {
+        offCtx.globalAlpha = 0.85;
+        offCtx.font = window.CHART_FONTS.boldSm;
+        const d2LW = offCtx.measureText("D₂").width + 12;
+        offCtx.fillStyle = "rgba(15,23,42,0.92)";
+        offCtx.beginPath();
+        offCtx.roundRect(toX(d2LabelQ) + 1, toY(d2LabelP) - 18, d2LW, 18, 3);
+        offCtx.fill();
+        offCtx.fillStyle = "#f472b6";
+        offCtx.textAlign = "left";
+        offCtx.fillText("D₂", toX(d2LabelQ) + 5, toY(d2LabelP) - 4);
+        offCtx.globalAlpha = 1;
+      }
+    }
+
+    // S2 dashed curve — only draw if supply actually changed
+    if (supplyChanged) {
+      offCtx.strokeStyle = "#2dd4bf";
+      offCtx.globalAlpha = 0.55;
+      offCtx.lineWidth = 2;
+      offCtx.setLineDash([7, 5]);
+      offCtx.beginPath();
+      let started = false;
+      for (let p = pMin; p <= pMax; p += pMax / 300) {
+        const q = sC2 + sD2 * p;
+        if (q < 0 || q > qMax * 1.02) continue;
+        if (!started) {
+          offCtx.moveTo(toX(q), toY(p));
+          started = true;
+        } else offCtx.lineTo(toX(q), toY(p));
+      }
+      offCtx.stroke();
+      offCtx.setLineDash([]);
+      offCtx.globalAlpha = 1;
+      // S2 label — find visible point
+      const s2Candidates = [qMax * 0.55, qMax * 0.45, qMax * 0.35, qMax * 0.65];
+      for (const sLQ of s2Candidates) {
+        if (Math.abs(sD2) < 1e-10) break;
+        const sLP = (sLQ - sC2) / sD2;
+        if (sLP > pMax * 0.1 && sLP <= pMax * 0.85 && sLQ >= 0 && sLQ <= qMax) {
+          offCtx.globalAlpha = 0.85;
+          offCtx.font = window.CHART_FONTS.boldSm;
+          const s2LW = offCtx.measureText("S₂").width + 12;
+          offCtx.fillStyle = "rgba(15,23,42,0.92)";
+          offCtx.beginPath();
+          offCtx.roundRect(toX(sLQ) + 5, toY(sLP) - 18, s2LW, 18, 3);
+          offCtx.fill();
+          offCtx.fillStyle = "#2dd4bf";
+          offCtx.textAlign = "left";
+          offCtx.fillText("S₂", toX(sLQ) + 9, toY(sLP) - 4);
+          offCtx.globalAlpha = 1;
+          break;
+        }
+      }
+    }
+
+    // E2 equilibrium point
+    const eqX2 = toX(qStar2);
+    const eqY2 = toY(pStar2);
+    offCtx.strokeStyle = "rgba(251,146,60,0.5)";
+    offCtx.lineWidth = 1;
+    offCtx.setLineDash([4, 4]);
+    offCtx.beginPath();
+    offCtx.moveTo(eqX2, padding.top + chartHeight);
+    offCtx.lineTo(eqX2, eqY2);
+    offCtx.moveTo(padding.left, eqY2);
+    offCtx.lineTo(eqX2, eqY2);
+    offCtx.stroke();
+    offCtx.setLineDash([]);
+    offCtx.beginPath();
+    offCtx.arc(eqX2, eqY2, 7, 0, Math.PI * 2);
+    offCtx.fillStyle = "#fb923c";
+    offCtx.fill();
+    offCtx.strokeStyle = "#0f172a";
+    offCtx.lineWidth = 2;
+    offCtx.stroke();
+
+    // E2 label
+    offCtx.font = window.CHART_FONTS.boldSm;
+    const e2Label = "E₂(" + fmtN(qStar2) + ", " + fmtN(pStar2) + ")";
+    const e2LW = offCtx.measureText(e2Label).width;
+    const e2LH = 14;
+    const e2Pad = 4;
+    const e2InRight = eqX2 > padding.left + chartWidth * 0.6;
+    const e2LX = e2InRight ? eqX2 - e2LW - 14 : eqX2 + 12;
+    const e2NearTop = eqY2 < padding.top + chartHeight * 0.25;
+    const e2LY = e2NearTop ? eqY2 + 20 : eqY2 - 10;
+    offCtx.fillStyle = "rgba(15,23,42,0.85)";
+    offCtx.beginPath();
+    offCtx.roundRect(
+      e2LX - e2Pad,
+      e2LY - e2LH,
+      e2LW + e2Pad * 2,
+      e2LH + e2Pad,
+      4,
+    );
+    offCtx.fill();
+    offCtx.fillStyle = "#fb923c";
+    offCtx.textAlign = "left";
+    offCtx.fillText(e2Label, e2LX, e2LY - 2);
+
+    // ── Relabel E1 dot (already drawn by drawStatic) ──
+    // Draw E1 label explicitly so it reads "E1" not just "E"
+    const eqX1 = toX(refQ);
+    const eqY1 = toY(refP);
+    offCtx.font = window.CHART_FONTS.boldSm;
+    const e1Label = "E₁(" + fmtN(refQ) + ", " + fmtN(refP) + ")";
+    const e1LW = offCtx.measureText(e1Label).width;
+    const e1LH = 14;
+    const e1Pad = 4;
+    const e1InRight = eqX1 > padding.left + chartWidth * 0.6;
+    const e1LX = e1InRight ? eqX1 - e1LW - 14 : eqX1 + 12;
+    const e1NearTop = eqY1 < padding.top + chartHeight * 0.25;
+    const e1LY = e1NearTop ? eqY1 + 36 : eqY1 + 16;
+    offCtx.fillStyle = "rgba(15,23,42,0.85)";
+    offCtx.beginPath();
+    offCtx.roundRect(
+      e1LX - e1Pad,
+      e1LY - e1LH,
+      e1LW + e1Pad * 2,
+      e1LH + e1Pad,
+      4,
+    );
+    offCtx.fill();
+    offCtx.fillStyle = "#f59e0b";
+    offCtx.textAlign = "left";
+    offCtx.fillText(e1Label, e1LX, e1LY - 2);
+
+    // ── Axis annotations: P1*/P2* on Y axis, Q1*/Q2* on X axis ──
+    const p1 = refP,
+      p2 = pStar2;
+    const q1 = refQ,
+      q2 = qStar2;
+    const pUp = p2 > p1;
+    const qUp = q2 > q1;
+
+    // ── Axis annotations ──
+    const py1 = toY(p1),
+      py2 = toY(p2);
+    const qx1 = toX(q1),
+      qx2 = toX(q2);
+
+    // Helper: draw label with dark background box
+    function axisLabel(text, x, y, color, align) {
+      offCtx.font = window.CHART_FONTS.boldSm;
+      offCtx.textAlign = align || "left";
+      const w = offCtx.measureText(text).width;
+      const pad = 3;
+      const bx =
+        align === "right"
+          ? x - w - pad
+          : align === "center"
+            ? x - w / 2 - pad
+            : x - pad;
+      offCtx.fillStyle = "rgba(15,23,42,0.88)";
+      offCtx.beginPath();
+      offCtx.roundRect(bx, y - 11, w + pad * 2, 14, 3);
+      offCtx.fill();
+      offCtx.fillStyle = color;
+      offCtx.fillText(text, x, y);
+    }
+
+    // P1* — outside Y axis, right-aligned to axis left edge
+    axisLabel("P₁*=" + fmtN(p1), padding.left - 4, py1 + 4, "#f59e0b", "right");
+
+    // P2* — inside chart, offset right to clear Y axis arrow
+    axisLabel("P₂*=" + fmtN(p2), padding.left + 16, py2 + 4, "#fb923c", "left");
+
+    // ── Directional arrows drawn ON the axis lines ──
+    // Y axis spine: pink segment from py1 to py2 with arrowhead at py2
+    // X axis baseline: pink segment from qx1 to qx2 with arrowhead at qx2
+
+    // Q1* — below X axis baseline
+    axisLabel(
+      "Q₁*=" + fmtN(q1),
+      qx1,
+      padding.top + chartHeight + 34,
+      "#f59e0b",
+      "center",
+    );
+
+    // Q2* — above X axis baseline
+    axisLabel(
+      "Q₂*=" + fmtN(q2),
+      qx2,
+      padding.top + chartHeight - 18,
+      "#fb923c",
+      "center",
+    );
+
+    // Y axis arrow — draw ON the Y axis spine between py1 and py2
+    const pyGap = Math.abs(py2 - py1);
+    if (pyGap > 16) {
+      const pyTail = py1;
+      const pyTip = py2;
+      const headDir = py2 > py1 ? 1 : -1; // +1 = pointing down (P fell), -1 = pointing up (P rose)
+      offCtx.strokeStyle = "#f472b6";
+      offCtx.lineWidth = 2.5;
+      offCtx.beginPath();
+      offCtx.moveTo(padding.left, pyTail);
+      offCtx.lineTo(padding.left, pyTip);
+      offCtx.stroke();
+      // Arrowhead at pyTip
+      offCtx.beginPath();
+      offCtx.moveTo(padding.left - 5, pyTip - headDir * 8);
+      offCtx.lineTo(padding.left, pyTip);
+      offCtx.lineTo(padding.left + 5, pyTip - headDir * 8);
+      offCtx.stroke();
+    }
+
+    // X axis arrow — draw ON the X axis baseline between qx1 and qx2
+    const qxGap = Math.abs(qx2 - qx1);
+    if (qxGap > 16) {
+      const qxTail = qx1;
+      const qxTip = qx2;
+      const headDirX = qx2 > qx1 ? 1 : -1;
+      const qAxisY = padding.top + chartHeight;
+      offCtx.strokeStyle = "#f472b6";
+      offCtx.lineWidth = 2.5;
+      offCtx.beginPath();
+      offCtx.moveTo(qxTail, qAxisY);
+      offCtx.lineTo(qxTip, qAxisY);
+      offCtx.stroke();
+      // Arrowhead at qxTip
+      offCtx.beginPath();
+      offCtx.moveTo(qxTip - headDirX * 8, qAxisY - 5);
+      offCtx.lineTo(qxTip, qAxisY);
+      offCtx.lineTo(qxTip - headDirX * 8, qAxisY + 5);
+      offCtx.stroke();
+    }
+  }
 
   // ── Interactive overlay ──
   function drawOverlay(hoverQ) {
@@ -1755,9 +2360,24 @@ function drawElasticityChart(data) {
         ctx.stroke();
         tooltipLines.push({ text: "Demand", color: "#f472b6", bold: true });
         tooltipLines.push({ text: "P = " + hP.toFixed(3), color: "#e2e8f0" });
-        tooltipLines.push({ text: "Q = " + hoverQ.toFixed(3), color: "#e2e8f0" });
-        tooltipLines.push({ text: "εd = " + hEps.toFixed(3), color: clsColors[hCls], bold: true });
-        tooltipLines.push({ text: hCls === "elastic" ? "Elastic" : hCls === "inelastic" ? "Inelastic" : "Unit Elastic", color: clsColors[hCls] });
+        tooltipLines.push({
+          text: "Q = " + hoverQ.toFixed(3),
+          color: "#e2e8f0",
+        });
+        tooltipLines.push({
+          text: "εd = " + hEps.toFixed(3),
+          color: clsColors[hCls],
+          bold: true,
+        });
+        tooltipLines.push({
+          text:
+            hCls === "elastic"
+              ? "Elastic"
+              : hCls === "inelastic"
+                ? "Inelastic"
+                : "Unit Elastic",
+          color: clsColors[hCls],
+        });
       }
     }
 
@@ -1776,12 +2396,28 @@ function drawElasticityChart(data) {
         ctx.strokeStyle = "#0f172a";
         ctx.lineWidth = 1.5;
         ctx.stroke();
-        if (tooltipLines.length > 0) tooltipLines.push({ text: "─────────", color: "#334155" });
+        if (tooltipLines.length > 0)
+          tooltipLines.push({ text: "─────────", color: "#334155" });
         tooltipLines.push({ text: "Supply", color: "#2dd4bf", bold: true });
         tooltipLines.push({ text: "P = " + hP.toFixed(3), color: "#e2e8f0" });
-        tooltipLines.push({ text: "Q = " + hoverQ.toFixed(3), color: "#e2e8f0" });
-        tooltipLines.push({ text: "εs = " + hEps.toFixed(3), color: "#2dd4bf", bold: true });
-        tooltipLines.push({ text: hCls === "elastic" ? "Elastic" : hCls === "inelastic" ? "Inelastic" : "Unit Elastic", color: clsColors[hCls] });
+        tooltipLines.push({
+          text: "Q = " + hoverQ.toFixed(3),
+          color: "#e2e8f0",
+        });
+        tooltipLines.push({
+          text: "εs = " + hEps.toFixed(3),
+          color: "#2dd4bf",
+          bold: true,
+        });
+        tooltipLines.push({
+          text:
+            hCls === "elastic"
+              ? "Elastic"
+              : hCls === "inelastic"
+                ? "Inelastic"
+                : "Unit Elastic",
+          color: clsColors[hCls],
+        });
       }
     }
 
@@ -1789,12 +2425,15 @@ function drawElasticityChart(data) {
 
     // Tooltip box
     ctx.font = window.CHART_FONTS.md;
-    const tooltipWidth = Math.max(...tooltipLines.map(l => ctx.measureText(l.text).width)) + 24;
+    const tooltipWidth =
+      Math.max(...tooltipLines.map((l) => ctx.measureText(l.text).width)) + 24;
     const tooltipHeight = tooltipLines.length * 20 + 12;
     let tx = hx + 15;
     let ty = padding.top + 10;
-    if (tx + tooltipWidth > chart.width - padding.right) tx = hx - tooltipWidth - 15;
-    if (ty + tooltipHeight > padding.top + chartHeight) ty = padding.top + chartHeight - tooltipHeight;
+    if (tx + tooltipWidth > chart.width - padding.right)
+      tx = hx - tooltipWidth - 15;
+    if (ty + tooltipHeight > padding.top + chartHeight)
+      ty = padding.top + chartHeight - tooltipHeight;
 
     const rad = 6;
     ctx.fillStyle = "rgba(15,23,42,0.95)";
@@ -1805,7 +2444,13 @@ function drawElasticityChart(data) {
     ctx.lineTo(tx + tooltipWidth - rad, ty);
     ctx.arcTo(tx + tooltipWidth, ty, tx + tooltipWidth, ty + rad, rad);
     ctx.lineTo(tx + tooltipWidth, ty + tooltipHeight - rad);
-    ctx.arcTo(tx + tooltipWidth, ty + tooltipHeight, tx + tooltipWidth - rad, ty + tooltipHeight, rad);
+    ctx.arcTo(
+      tx + tooltipWidth,
+      ty + tooltipHeight,
+      tx + tooltipWidth - rad,
+      ty + tooltipHeight,
+      rad,
+    );
     ctx.lineTo(tx + rad, ty + tooltipHeight);
     ctx.arcTo(tx, ty + tooltipHeight, tx, ty + tooltipHeight - rad, rad);
     ctx.lineTo(tx, ty + rad);
@@ -1829,23 +2474,31 @@ function drawElasticityChart(data) {
   canvas._elasController = new AbortController();
   const { signal } = canvas._elasController;
 
-  canvas.addEventListener("mousemove", rafThrottle((e) => {
-    const r = canvas.getBoundingClientRect();
-    const scaleX = chart.width / r.width;
-    const hoverQ = fromX((e.clientX - r.left) * scaleX);
-    if (hoverQ >= qMin && hoverQ <= qMax) {
-      canvas.style.cursor = "crosshair";
-      drawOverlay(hoverQ);
-    } else {
+  canvas.addEventListener(
+    "mousemove",
+    rafThrottle((e) => {
+      const r = canvas.getBoundingClientRect();
+      const scaleX = chart.width / r.width;
+      const hoverQ = fromX((e.clientX - r.left) * scaleX);
+      if (hoverQ >= qMin && hoverQ <= qMax) {
+        canvas.style.cursor = "crosshair";
+        drawOverlay(hoverQ);
+      } else {
+        canvas.style.cursor = "default";
+        drawOverlay(null);
+      }
+    }),
+    { signal },
+  );
+
+  canvas.addEventListener(
+    "mouseleave",
+    () => {
       canvas.style.cursor = "default";
       drawOverlay(null);
-    }
-  }), { signal });
-
-  canvas.addEventListener("mouseleave", () => {
-    canvas.style.cursor = "default";
-    drawOverlay(null);
-  }, { signal });
+    },
+    { signal },
+  );
 }
 
 // ===================================================================
@@ -2963,6 +3616,973 @@ function drawRiskPremiumChart(data) {
       { color: "#f472b6", font: window.CHART_FONTS.boldSm, align: "center" },
     );
   }
+}
+
+// ===================================================================
+// SHIFT ANALYSIS — Scenario 2 panel + runShiftAnalysis + modal
+// ===================================================================
+
+// Module-level shift state
+let lastElasData2 = null;
+
+/**
+ * buildShiftAnalysisPanel()
+ *
+ * Called after a successful equation-mode Calculate.
+ * Renders the two-column Scenario 1 (read-only) / Scenario 2 (editable)
+ * comparison grid. Wires live input events to runShiftAnalysis().
+ *
+ * Handles both cases:
+ *   - Equations with shift variables: one input per shift var per curve
+ *   - Simple equations (no shift vars): replacement constant + slope inputs
+ */
+function buildShiftAnalysisPanel() {
+  const section = document.getElementById("elas-shift-section");
+  const grid = document.getElementById("elas-shift-grid");
+  if (!section || !grid) return;
+
+  if (!lastElasData || lastElasData.mode !== "equation") {
+    section.classList.add("hidden");
+    return;
+  }
+
+  const {
+    dA,
+    dB,
+    sC,
+    sD,
+    pStar,
+    qStar,
+    epsilonD,
+    epsilonS,
+    demandParsed: dp,
+    supplyParsed: sp,
+    dShiftValues,
+    sShiftValues,
+  } = lastElasData;
+
+  const hasShiftVars =
+    (dp && Object.keys(dShiftValues || {}).length > 0) ||
+    (sp && Object.keys(sShiftValues || {}).length > 0);
+
+  // ── Build Scenario 1 read-only column ──
+  let s1Html = '<div class="ct-shift-col">';
+  s1Html += '<div class="ct-shift-col-title s1">Scenario 1 — Baseline</div>';
+
+  if (hasShiftVars) {
+    // Scalar display — read-only in S1
+    if (dp && dp.scalar !== 1) {
+      s1Html += '<div class="ct-shift-curve-label demand">Demand scalar</div>';
+      s1Html +=
+        '<div class="ct-shift-readonly-row">' +
+        '<span class="ct-shift-readonly-label">scalar =</span>' +
+        '<span class="ct-shift-readonly-value">' +
+        fmtN(dp.scalar) +
+        "</span></div>";
+    }
+    if (sp && sp.scalar !== 1) {
+      s1Html += '<div class="ct-shift-curve-label supply">Supply scalar</div>';
+      s1Html +=
+        '<div class="ct-shift-readonly-row">' +
+        '<span class="ct-shift-readonly-label">scalar =</span>' +
+        '<span class="ct-shift-readonly-value">' +
+        fmtN(sp.scalar) +
+        "</span></div>";
+    }
+    // Demand shift vars
+    const dVars = dp ? Object.keys(dShiftValues || {}) : [];
+    if (dVars.length > 0) {
+      s1Html +=
+        '<div class="ct-shift-curve-label demand">Demand shifters</div>';
+      dVars.forEach((v) => {
+        s1Html +=
+          '<div class="ct-shift-readonly-row">' +
+          '<span class="ct-shift-readonly-label">' +
+          v +
+          " =</span>" +
+          '<span class="ct-shift-readonly-value">' +
+          fmtN(dShiftValues[v]) +
+          "</span>" +
+          "</div>";
+      });
+    }
+    // Supply shift vars
+    const sVars = sp ? Object.keys(sShiftValues || {}) : [];
+    if (sVars.length > 0) {
+      s1Html +=
+        '<div class="ct-shift-curve-label supply">Supply shifters</div>';
+      sVars.forEach((v) => {
+        s1Html +=
+          '<div class="ct-shift-readonly-row">' +
+          '<span class="ct-shift-readonly-label">' +
+          v +
+          " =</span>" +
+          '<span class="ct-shift-readonly-value">' +
+          fmtN(sShiftValues[v]) +
+          "</span>" +
+          "</div>";
+      });
+    }
+  } else {
+    // Simple equation — show A and B for each curve
+    s1Html += '<div class="ct-shift-curve-label demand">Demand</div>';
+    s1Html +=
+      '<div class="ct-shift-readonly-row">' +
+      '<span class="ct-shift-readonly-label">Constant (A) =</span>' +
+      '<span class="ct-shift-readonly-value">' +
+      fmtN(dA) +
+      "</span></div>";
+    s1Html +=
+      '<div class="ct-shift-readonly-row">' +
+      '<span class="ct-shift-readonly-label">Slope (B) =</span>' +
+      '<span class="ct-shift-readonly-value">' +
+      fmtN(dB) +
+      "</span></div>";
+    s1Html += '<div class="ct-shift-curve-label supply">Supply</div>';
+    s1Html +=
+      '<div class="ct-shift-readonly-row">' +
+      '<span class="ct-shift-readonly-label">Constant (C) =</span>' +
+      '<span class="ct-shift-readonly-value">' +
+      fmtN(sC) +
+      "</span></div>";
+    s1Html +=
+      '<div class="ct-shift-readonly-row">' +
+      '<span class="ct-shift-readonly-label">Slope (D) =</span>' +
+      '<span class="ct-shift-readonly-value">' +
+      fmtN(sD) +
+      "</span></div>";
+  }
+
+  // Scenario 1 equilibrium summary
+  s1Html +=
+    '<div class="ct-shift-curve-label" style="color:var(--accent);">Equilibrium</div>';
+  s1Html +=
+    '<div class="ct-shift-readonly-row">' +
+    '<span class="ct-shift-readonly-label">P* =</span>' +
+    '<span class="ct-shift-readonly-value">' +
+    fmtN(pStar) +
+    "</span></div>";
+  s1Html +=
+    '<div class="ct-shift-readonly-row">' +
+    '<span class="ct-shift-readonly-label">Q* =</span>' +
+    '<span class="ct-shift-readonly-value">' +
+    fmtN(qStar) +
+    "</span></div>";
+  s1Html +=
+    '<div class="ct-shift-readonly-row">' +
+    '<span class="ct-shift-readonly-label">εd =</span>' +
+    '<span class="ct-shift-readonly-value">' +
+    epsilonD.toFixed(4) +
+    "</span></div>";
+  s1Html +=
+    '<div class="ct-shift-readonly-row">' +
+    '<span class="ct-shift-readonly-label">εs =</span>' +
+    '<span class="ct-shift-readonly-value">' +
+    epsilonS.toFixed(4) +
+    "</span></div>";
+  s1Html += "</div>";
+
+  // ── Build Scenario 2 editable column ──
+  let s2Html = '<div class="ct-shift-col scenario-2">';
+  s2Html += '<div class="ct-shift-col-title s2">Scenario 2 — Shift</div>';
+
+  if (hasShiftVars) {
+    // Scalar inputs — editable in S2
+    if (dp && dp.scalar !== 1) {
+      s2Html += '<div class="ct-shift-curve-label demand">Demand scalar</div>';
+      s2Html +=
+        '<div class="ct-shift-input-row">' +
+        '<label for="elas-s2-d-scalar">scalar =</label>' +
+        '<input type="number" step="any" id="elas-s2-d-scalar"' +
+        ' class="ct-shift-s2-input" data-side="scalar-d" data-variable="scalar"' +
+        ' placeholder="inherit: ' +
+        fmtN(dp.scalar) +
+        '"' +
+        ' aria-label="Scenario 2 demand scalar" />' +
+        "</div>" +
+        '<div class="ct-shift-delta neutral" id="elas-s2-d-scalar-delta"></div>';
+    }
+    if (sp && sp.scalar !== 1) {
+      s2Html += '<div class="ct-shift-curve-label supply">Supply scalar</div>';
+      s2Html +=
+        '<div class="ct-shift-input-row">' +
+        '<label for="elas-s2-s-scalar">scalar =</label>' +
+        '<input type="number" step="any" id="elas-s2-s-scalar"' +
+        ' class="ct-shift-s2-input" data-side="scalar-s" data-variable="scalar"' +
+        ' placeholder="inherit: ' +
+        fmtN(sp.scalar) +
+        '"' +
+        ' aria-label="Scenario 2 supply scalar" />' +
+        "</div>" +
+        '<div class="ct-shift-delta neutral" id="elas-s2-s-scalar-delta"></div>';
+    }
+    const dVars = dp ? Object.keys(dShiftValues || {}) : [];
+    if (dVars.length > 0) {
+      s2Html +=
+        '<div class="ct-shift-curve-label demand">Demand shifters</div>';
+      dVars.forEach((v) => {
+        s2Html +=
+          '<div class="ct-shift-input-row">' +
+          '<label for="elas-s2-d-' +
+          v +
+          '">' +
+          v +
+          " =</label>" +
+          '<input type="number" step="any"' +
+          ' id="elas-s2-d-' +
+          v +
+          '"' +
+          ' class="ct-shift-s2-input"' +
+          ' data-side="d"' +
+          ' data-variable="' +
+          v +
+          '"' +
+          ' placeholder="inherit: ' +
+          fmtN(dShiftValues[v]) +
+          '"' +
+          ' aria-label="Scenario 2 value for ' +
+          v +
+          '" />' +
+          "</div>" +
+          '<div class="ct-shift-delta neutral" id="elas-s2-d-delta-' +
+          v +
+          '"></div>';
+      });
+    }
+    const sVars = sp ? Object.keys(sShiftValues || {}) : [];
+    if (sVars.length > 0) {
+      s2Html +=
+        '<div class="ct-shift-curve-label supply">Supply shifters</div>';
+      sVars.forEach((v) => {
+        s2Html +=
+          '<div class="ct-shift-input-row">' +
+          '<label for="elas-s2-s-' +
+          v +
+          '">' +
+          v +
+          " =</label>" +
+          '<input type="number" step="any"' +
+          ' id="elas-s2-s-' +
+          v +
+          '"' +
+          ' class="ct-shift-s2-input"' +
+          ' data-side="s"' +
+          ' data-variable="' +
+          v +
+          '"' +
+          ' placeholder="inherit: ' +
+          fmtN(sShiftValues[v]) +
+          '"' +
+          ' aria-label="Scenario 2 value for ' +
+          v +
+          '" />' +
+          "</div>" +
+          '<div class="ct-shift-delta neutral" id="elas-s2-s-delta-' +
+          v +
+          '"></div>';
+      });
+    }
+  } else {
+    // Simple equation replacement inputs
+    s2Html += '<div class="ct-shift-curve-label demand">Demand</div>';
+    s2Html +=
+      '<div class="ct-shift-input-row">' +
+      '<label for="elas-s2-dA">Constant (A) =</label>' +
+      '<input type="number" step="any" id="elas-s2-dA" class="ct-shift-s2-input"' +
+      ' data-side="simple" data-variable="dA"' +
+      ' placeholder="' +
+      fmtN(dA) +
+      '"' +
+      ' aria-label="Scenario 2 demand constant" />' +
+      "</div>" +
+      '<div class="ct-shift-delta neutral" id="elas-s2-dA-delta"></div>' +
+      '<div class="ct-shift-input-row">' +
+      '<label for="elas-s2-dB">Slope (B) =</label>' +
+      '<input type="number" step="any" id="elas-s2-dB" class="ct-shift-s2-input"' +
+      ' data-side="simple" data-variable="dB"' +
+      ' placeholder="' +
+      fmtN(dB) +
+      '"' +
+      ' aria-label="Scenario 2 demand slope" />' +
+      "</div>" +
+      '<div class="ct-shift-delta neutral" id="elas-s2-dB-delta"></div>';
+
+    s2Html += '<div class="ct-shift-curve-label supply">Supply</div>';
+    s2Html +=
+      '<div class="ct-shift-input-row">' +
+      '<label for="elas-s2-sC">Constant (C) =</label>' +
+      '<input type="number" step="any" id="elas-s2-sC" class="ct-shift-s2-input"' +
+      ' data-side="simple" data-variable="sC"' +
+      ' placeholder="' +
+      fmtN(sC) +
+      '"' +
+      ' aria-label="Scenario 2 supply constant" />' +
+      "</div>" +
+      '<div class="ct-shift-delta neutral" id="elas-s2-sC-delta"></div>' +
+      '<div class="ct-shift-input-row">' +
+      '<label for="elas-s2-sD">Slope (D) =</label>' +
+      '<input type="number" step="any" id="elas-s2-sD" class="ct-shift-s2-input"' +
+      ' data-side="simple" data-variable="sD"' +
+      ' placeholder="' +
+      fmtN(sD) +
+      '"' +
+      ' aria-label="Scenario 2 supply slope" />' +
+      "</div>" +
+      '<div class="ct-shift-delta neutral" id="elas-s2-sD-delta"></div>';
+  }
+
+  // Scenario 2 equilibrium results (populated by runShiftAnalysis)
+  s2Html +=
+    '<div class="ct-shift-curve-label" style="color:#f59e0b;">Equilibrium</div>';
+  s2Html +=
+    '<div class="ct-shift-readonly-row">' +
+    '<span class="ct-shift-readonly-label">P* =</span>' +
+    '<span class="ct-shift-readonly-value" id="elas-s2-pstar">—</span></div>';
+  s2Html +=
+    '<div class="ct-shift-readonly-row">' +
+    '<span class="ct-shift-readonly-label">Q* =</span>' +
+    '<span class="ct-shift-readonly-value" id="elas-s2-qstar">—</span></div>';
+  s2Html +=
+    '<div class="ct-shift-readonly-row">' +
+    '<span class="ct-shift-readonly-label">εd =</span>' +
+    '<span class="ct-shift-readonly-value" id="elas-s2-epsd">—</span></div>';
+  s2Html +=
+    '<div class="ct-shift-readonly-row">' +
+    '<span class="ct-shift-readonly-label">εs =</span>' +
+    '<span class="ct-shift-readonly-value" id="elas-s2-epss">—</span></div>';
+  s2Html += "</div>";
+
+  grid.innerHTML = s1Html + s2Html;
+  section.classList.remove("hidden");
+
+  // Wire live input events
+  grid.querySelectorAll(".ct-shift-s2-input").forEach((inp) => {
+    inp.addEventListener("input", runShiftAnalysis);
+  });
+}
+
+/**
+ * runShiftAnalysis()
+ *
+ * Reads Scenario 2 inputs, inherits blanks from Scenario 1,
+ * collapses to dA2/dB2/sC2/sD2, solves for E2, updates display,
+ * redraws chart with both scenarios.
+ */
+function runShiftAnalysis() {
+  if (!lastElasData || lastElasData.mode !== "equation") return;
+
+  const {
+    dA,
+    dB,
+    sC,
+    sD,
+    epsilonD,
+    epsilonS,
+    demandParsed: dp,
+    supplyParsed: sp,
+    dShiftValues,
+    sShiftValues,
+  } = lastElasData;
+
+  const hasShiftVars =
+    (dp && Object.keys(dShiftValues || {}).length > 0) ||
+    (sp && Object.keys(sShiftValues || {}).length > 0);
+
+  let dA2, dB2, sC2, sD2;
+
+  if (hasShiftVars) {
+    // Build Scenario 2 shift value maps — blank inherits Scenario 1
+    const dVars = dp ? Object.keys(dShiftValues || {}) : [];
+    const sVars = sp ? Object.keys(sShiftValues || {}) : [];
+
+    const dShift2 = {};
+    dVars.forEach((v) => {
+      const inp = document.getElementById("elas-s2-d-" + v);
+      const val =
+        inp && inp.value.trim() !== ""
+          ? safeParseFloat(inp.value)
+          : dShiftValues[v];
+      dShift2[v] = val;
+
+      // Update delta display
+      const deltaEl = document.getElementById("elas-s2-d-delta-" + v);
+      if (deltaEl && inp && inp.value.trim() !== "") {
+        const delta = val - dShiftValues[v];
+        const sign = delta > 0 ? "+" : "";
+        deltaEl.textContent = "Δ = " + sign + fmtN(delta);
+        deltaEl.className =
+          "ct-shift-delta " +
+          (delta > 0 ? "positive" : delta < 0 ? "negative" : "neutral");
+      } else if (deltaEl) {
+        deltaEl.textContent = "";
+        deltaEl.className = "ct-shift-delta neutral";
+      }
+    });
+
+    const sShift2 = {};
+    sVars.forEach((v) => {
+      const inp = document.getElementById("elas-s2-s-" + v);
+      const val =
+        inp && inp.value.trim() !== ""
+          ? safeParseFloat(inp.value)
+          : sShiftValues[v];
+      sShift2[v] = val;
+
+      const deltaEl = document.getElementById("elas-s2-s-delta-" + v);
+      if (deltaEl && inp && inp.value.trim() !== "") {
+        const delta = val - sShiftValues[v];
+        const sign = delta > 0 ? "+" : "";
+        deltaEl.textContent = "Δ = " + sign + fmtN(delta);
+        deltaEl.className =
+          "ct-shift-delta " +
+          (delta > 0 ? "positive" : delta < 0 ? "negative" : "neutral");
+      } else if (deltaEl) {
+        deltaEl.textContent = "";
+        deltaEl.className = "ct-shift-delta neutral";
+      }
+    });
+
+    // Apply scalar override if provided
+    const dScalarInp = document.getElementById("elas-s2-d-scalar");
+    const sScalarInp = document.getElementById("elas-s2-s-scalar");
+    const dScalar2 =
+      dScalarInp && dScalarInp.value.trim() !== ""
+        ? safeParseFloat(dScalarInp.value)
+        : dp
+          ? dp.scalar
+          : 1;
+    const sScalar2 =
+      sScalarInp && sScalarInp.value.trim() !== ""
+        ? safeParseFloat(sScalarInp.value)
+        : sp
+          ? sp.scalar
+          : 1;
+
+    // Update scalar delta displays
+    if (dp && dp.scalar !== 1) {
+      const dSDelta = document.getElementById("elas-s2-d-scalar-delta");
+      if (dSDelta && dScalarInp && dScalarInp.value.trim() !== "") {
+        const delta = dScalar2 - dp.scalar;
+        const sign = delta > 0 ? "+" : "";
+        dSDelta.textContent = "Δ = " + sign + fmtN(delta);
+        dSDelta.className =
+          "ct-shift-delta " +
+          (delta > 0 ? "positive" : delta < 0 ? "negative" : "neutral");
+      } else if (dSDelta) {
+        dSDelta.textContent = "";
+        dSDelta.className = "ct-shift-delta neutral";
+      }
+    }
+    if (sp && sp.scalar !== 1) {
+      const sSDelta = document.getElementById("elas-s2-s-scalar-delta");
+      if (sSDelta && sScalarInp && sScalarInp.value.trim() !== "") {
+        const delta = sScalar2 - sp.scalar;
+        const sign = delta > 0 ? "+" : "";
+        sSDelta.textContent = "Δ = " + sign + fmtN(delta);
+        sSDelta.className =
+          "ct-shift-delta " +
+          (delta > 0 ? "positive" : delta < 0 ? "negative" : "neutral");
+      } else if (sSDelta) {
+        sSDelta.textContent = "";
+        sSDelta.className = "ct-shift-delta neutral";
+      }
+    }
+
+    // Build modified parsed objects with new scalar
+    const dp2 = dp ? Object.assign({}, dp, { scalar: dScalar2 }) : dp;
+    const sp2 = sp ? Object.assign({}, sp, { scalar: sScalar2 }) : sp;
+
+    const dCollapsed2 = collapseToLinear(dp2, dShift2);
+    const sCollapsed2 = collapseToLinear(sp2, sShift2);
+    if (!dCollapsed2 || !sCollapsed2) return;
+    dA2 = dCollapsed2.A;
+    dB2 = dCollapsed2.B;
+    sC2 = sCollapsed2.A;
+    sD2 = sCollapsed2.B;
+  } else {
+    // Simple equation — read replacement values, inherit blanks
+    const dAInp = document.getElementById("elas-s2-dA");
+    const dBInp = document.getElementById("elas-s2-dB");
+    const sCInp = document.getElementById("elas-s2-sC");
+    const sDInp = document.getElementById("elas-s2-sD");
+
+    dA2 = dAInp && dAInp.value.trim() !== "" ? safeParseFloat(dAInp.value) : dA;
+    dB2 = dBInp && dBInp.value.trim() !== "" ? safeParseFloat(dBInp.value) : dB;
+    sC2 = sCInp && sCInp.value.trim() !== "" ? safeParseFloat(sCInp.value) : sC;
+    sD2 = sDInp && sDInp.value.trim() !== "" ? safeParseFloat(sDInp.value) : sD;
+
+    // Delta displays
+    [
+      ["dA", dA],
+      ["dB", dB],
+      ["sC", sC],
+      ["sD", sD],
+    ].forEach(([key, base]) => {
+      const inp = document.getElementById("elas-s2-" + key);
+      const deltaEl = document.getElementById("elas-s2-" + key + "-delta");
+      if (!deltaEl) return;
+      if (inp && inp.value.trim() !== "") {
+        const val = safeParseFloat(inp.value);
+        const delta = val - base;
+        const sign = delta > 0 ? "+" : "";
+        deltaEl.textContent = "Δ = " + sign + fmtN(delta);
+        deltaEl.className =
+          "ct-shift-delta " +
+          (delta > 0 ? "positive" : delta < 0 ? "negative" : "neutral");
+      } else {
+        deltaEl.textContent = "";
+        deltaEl.className = "ct-shift-delta neutral";
+      }
+    });
+  }
+
+  // Check if Scenario 2 is identical to Scenario 1 — clear and return
+  if (dA2 === dA && dB2 === dB && sC2 === sC && sD2 === sD) {
+    lastElasData2 = null;
+    document.getElementById("elas-s2-pstar").textContent = "—";
+    document.getElementById("elas-s2-qstar").textContent = "—";
+    document.getElementById("elas-s2-epsd").textContent = "—";
+    document.getElementById("elas-s2-epss").textContent = "—";
+    document.getElementById("elas-shift-results").classList.add("hidden");
+    requestAnimationFrame(() => drawElasticityChart(lastElasData, null));
+    syncModalChart();
+    return;
+  }
+
+  // Solve Scenario 2 equilibrium
+  const denom2 = dB2 - sD2;
+  if (Math.abs(denom2) < 1e-10) {
+    document.getElementById("elas-s2-pstar").textContent = "No equilibrium";
+    lastElasData2 = null;
+    return;
+  }
+
+  const pStar2 = (sC2 - dA2) / denom2;
+  const qStar2 = dA2 + dB2 * pStar2;
+
+  if (pStar2 <= 0 || qStar2 <= 0) {
+    document.getElementById("elas-s2-pstar").textContent = "Non-positive";
+    lastElasData2 = null;
+    return;
+  }
+
+  const epsilonD2 = dB2 * (pStar2 / qStar2);
+  const epsilonS2 = sD2 * (pStar2 / qStar2);
+
+  lastElasData2 = {
+    dA: dA2,
+    dB: dB2,
+    sC: sC2,
+    sD: sD2,
+    pStar: pStar2,
+    qStar: qStar2,
+    epsilonD: epsilonD2,
+    epsilonS: epsilonS2,
+  };
+
+  // Update Scenario 2 equilibrium display
+  document.getElementById("elas-s2-pstar").textContent = fmtN(pStar2);
+  document.getElementById("elas-s2-qstar").textContent = fmtN(qStar2);
+  document.getElementById("elas-s2-epsd").textContent = epsilonD2.toFixed(4);
+  document.getElementById("elas-s2-epss").textContent = epsilonS2.toFixed(4);
+
+  // Update comparison results bar
+  const resultsEl = document.getElementById("elas-shift-results");
+  const { pStar, qStar } = lastElasData;
+
+  function deltaItem(label, val1, val2, isElasticity) {
+    const delta = val2 - val1;
+    const sign = delta > 0 ? "+" : "";
+    const cls = delta > 0 ? "positive" : delta < 0 ? "negative" : "neutral";
+    const fmt = isElasticity ? (v) => v.toFixed(4) : fmtN;
+    return (
+      '<div class="ct-shift-result-item">' +
+      '<span class="ct-shift-result-label">' +
+      label +
+      "</span>" +
+      '<span class="ct-shift-result-value ' +
+      cls +
+      '">' +
+      sign +
+      fmt(delta) +
+      "</span>" +
+      '<span style="font-size:0.72rem;color:var(--text-secondary);">' +
+      fmt(val1) +
+      " → " +
+      fmt(val2) +
+      "</span>" +
+      "</div>"
+    );
+  }
+
+  resultsEl.innerHTML =
+    deltaItem("ΔP*", pStar, pStar2, false) +
+    deltaItem("ΔQ*", qStar, qStar2, false) +
+    deltaItem("Δεd", epsilonD, epsilonD2, true) +
+    deltaItem("Δεs", epsilonS, epsilonS2, true);
+  resultsEl.classList.remove("hidden");
+
+  // ── Interpretation panel ──
+  renderShiftInterpretation({
+    pStar,
+    pStar2,
+    qStar,
+    qStar2,
+    epsilonD,
+    epsilonD2,
+    epsilonS,
+    epsilonS2,
+    dA,
+    dB,
+    sC,
+    sD,
+    dA2,
+    dB2,
+    sC2,
+    sD2,
+  });
+
+  // Redraw chart with both scenarios
+  requestAnimationFrame(() => drawElasticityChart(lastElasData, lastElasData2));
+  syncModalChart();
+}
+
+/**
+ * renderShiftInterpretation(params)
+ * Renders plain-language economic interpretation of the shift deltas.
+ */
+function renderShiftInterpretation({
+  pStar,
+  pStar2,
+  qStar,
+  qStar2,
+  epsilonD,
+  epsilonD2,
+  epsilonS,
+  epsilonS2,
+  dA,
+  dB,
+  sC,
+  sD,
+  dA2,
+  dB2,
+  sC2,
+  sD2,
+}) {
+  const el = document.getElementById("elas-shift-interpretation");
+  if (!el) return;
+
+  const deltaP = pStar2 - pStar;
+  const deltaQ = qStar2 - qStar;
+  const deltaEd = epsilonD2 - epsilonD;
+  const deltaEs = epsilonS2 - epsilonS;
+
+  const demandShifted = dA2 !== dA || dB2 !== dB;
+  const supplyShifted = sC2 !== sC || sD2 !== sD;
+
+  const sign = (v) => (v > 0 ? "+" : "");
+  const pct = (v) => (v * 100).toFixed(1) + "%";
+
+  // Determine shift direction narrative
+  let shiftNarrative = "";
+  if (demandShifted && supplyShifted) {
+    shiftNarrative = "Both demand and supply shifted.";
+  } else if (demandShifted) {
+    shiftNarrative =
+      dA2 > dA
+        ? "Demand shifted <strong>outward (right)</strong> — consumers want more at every price."
+        : "Demand shifted <strong>inward (left)</strong> — consumers want less at every price.";
+  } else if (supplyShifted) {
+    shiftNarrative =
+      sC2 > sC || sD2 > sD
+        ? "Supply shifted <strong>outward (right)</strong> — producers supply more at every price."
+        : "Supply shifted <strong>inward (left)</strong> — producers supply less at every price.";
+  }
+
+  // Price interpretation
+  const pDir = deltaP > 0 ? "rose" : "fell";
+  const pCls = deltaP > 0 ? "negative" : "positive";
+  const pPct = Math.abs((deltaP / pStar) * 100).toFixed(1);
+  const pInterp =
+    `Equilibrium price <strong>${pDir} by ${Math.abs(deltaP).toFixed(2)} 
+    (${pPct}%)</strong>, from ${fmtN(pStar)} to ${fmtN(pStar2)}. ` +
+    (deltaP > 0
+      ? "A higher price means consumers pay more per unit."
+      : "A lower price benefits consumers and may expand the market.");
+
+  // Quantity interpretation
+  const qDir = deltaQ > 0 ? "rose" : "fell";
+  const qCls = deltaQ > 0 ? "positive" : "negative";
+  const qPct = Math.abs((deltaQ / qStar) * 100).toFixed(1);
+  const qInterp =
+    `Equilibrium quantity <strong>${qDir} by ${fmtN(Math.abs(deltaQ))} 
+    (${qPct}%)</strong>, from ${fmtN(qStar)} to ${fmtN(qStar2)}. ` +
+    (deltaQ > 0
+      ? "More units are traded — the market expanded."
+      : "Fewer units are traded — the market contracted.");
+
+  // Revenue interpretation (P × Q)
+  const rev1 = pStar * qStar;
+  const rev2 = pStar2 * qStar2;
+  const deltaRev = rev2 - rev1;
+  const revDir = deltaRev > 0 ? "increased" : "decreased";
+  const revCls = deltaRev > 0 ? "positive" : "negative";
+  const revPct = Math.abs((deltaRev / rev1) * 100).toFixed(1);
+  const revInterp = `Total market revenue (P × Q) <strong>${revDir} by ${revPct}%</strong>, 
+    from ${fmtN(rev1)} to ${fmtN(rev2)}.`;
+
+  // Elasticity interpretation
+  const absEd1 = Math.abs(epsilonD),
+    absEd2 = Math.abs(epsilonD2);
+  const cls1 =
+    absEd1 > 1.001 ? "elastic" : absEd1 < 0.999 ? "inelastic" : "unit elastic";
+  const cls2 =
+    absEd2 > 1.001 ? "elastic" : absEd2 < 0.999 ? "inelastic" : "unit elastic";
+  let edInterp = `Demand elasticity moved from <strong>${epsilonD.toFixed(4)} (${cls1})</strong> 
+    to <strong>${epsilonD2.toFixed(4)} (${cls2})</strong>. `;
+  if (cls1 === cls2) {
+    edInterp += `Demand remains <strong>${cls2}</strong> — the pricing power relationship is unchanged.`;
+  } else {
+    edInterp +=
+      cls2 === "elastic"
+        ? "Demand became <strong>more elastic</strong> — consumers are now more price-sensitive at the new equilibrium."
+        : "Demand became <strong>more inelastic</strong> — consumers are now less price-sensitive at the new equilibrium.";
+  }
+
+  // Supply elasticity interpretation
+  const absEs1 = Math.abs(epsilonS),
+    absEs2 = Math.abs(epsilonS2);
+  const scls1 =
+    absEs1 > 1.001 ? "elastic" : absEs1 < 0.999 ? "inelastic" : "unit elastic";
+  const scls2 =
+    absEs2 > 1.001 ? "elastic" : absEs2 < 0.999 ? "inelastic" : "unit elastic";
+  let esInterp = `Supply elasticity moved from <strong>${epsilonS.toFixed(4)} (${scls1})</strong> 
+    to <strong>${epsilonS2.toFixed(4)} (${scls2})</strong>. `;
+  if (scls1 === scls2) {
+    esInterp += `Supply remains <strong>${scls2}</strong>.`;
+  } else {
+    esInterp +=
+      scls2 === "elastic"
+        ? "Supply became <strong>more elastic</strong> — producers respond more strongly to price at the new equilibrium."
+        : "Supply became <strong>more inelastic</strong> — producers respond less strongly to price at the new equilibrium.";
+  }
+
+  function item(text, cls) {
+    return '<div class="ct-shift-interp-item ' + cls + '">' + text + "</div>";
+  }
+
+  el.innerHTML =
+    "<h3>What the shift means</h3>" +
+    (shiftNarrative ? item(shiftNarrative, "neutral") : "") +
+    item(pInterp, pCls) +
+    item(qInterp, qCls) +
+    item(revInterp, revCls) +
+    item(
+      edInterp,
+      Math.abs(deltaEd) < 0.001
+        ? "neutral"
+        : deltaEd > 0
+          ? "positive"
+          : "negative",
+    ) +
+    item(
+      esInterp,
+      Math.abs(deltaEs) < 0.001
+        ? "neutral"
+        : deltaEs > 0
+          ? "positive"
+          : "negative",
+    );
+
+  el.classList.remove("hidden");
+}
+
+// ===================================================================
+// MODAL — expand / close
+// ===================================================================
+
+/**
+ * syncModalChart()
+ * If the modal is open, redraws the modal canvas to match current state.
+ */
+function syncModalChart() {
+  const modal = document.getElementById("elas-chart-modal");
+  if (!modal || !modal.classList.contains("open")) return;
+  const modalCanvas = document.getElementById("elas-chart-modal-canvas");
+  if (!modalCanvas) return;
+  requestAnimationFrame(() =>
+    drawElasticityChart(lastElasData, lastElasData2, modalCanvas),
+  );
+}
+
+function openElasModal() {
+  const modal = document.getElementById("elas-chart-modal");
+  if (!modal || !lastElasData) return;
+  modal.classList.add("open");
+  document.body.style.overflow = "hidden";
+  // Draw into modal canvas after layout settles
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      drawElasticityChart(
+        lastElasData,
+        lastElasData2,
+        document.getElementById("elas-chart-modal-canvas"),
+      );
+    });
+  });
+}
+
+function closeElasModal() {
+  const modal = document.getElementById("elas-chart-modal");
+  if (!modal) return;
+  modal.classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const expandBtn = document.getElementById("elas-chart-expand");
+  const closeBtn = document.getElementById("elas-modal-close");
+  const modal = document.getElementById("elas-chart-modal");
+
+  if (expandBtn) expandBtn.addEventListener("click", openElasModal);
+  if (closeBtn) closeBtn.addEventListener("click", closeElasModal);
+  if (modal) {
+    // Click outside inner panel closes modal
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeElasModal();
+    });
+  }
+  // Escape key closes modal
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeElasModal();
+  });
+});
+
+// ===================================================================
+// ELASTICITY REFERENCE PANEL
+// ===================================================================
+
+/**
+ * renderElasticityReference(absEps)
+ * Renders the classification table, formulas, and intuitions
+ * into #elas-reference. Highlights the row matching absEps.
+ */
+function renderElasticityReference(absEps) {
+  const el = document.getElementById("elas-reference");
+  if (!el) return;
+
+  // Classification rows
+  const rows = [
+    {
+      condition: "|ε| = ∞",
+      label: "Perfectly Elastic",
+      badge: "perf-elastic",
+      curve: "Horizontal",
+      revenue: "Falls to zero",
+      match: absEps === Infinity,
+    },
+    {
+      condition: "|ε| > 1",
+      label: "Elastic",
+      badge: "elastic",
+      curve: "Relatively flat",
+      revenue: "Falls",
+      match: absEps > 1.001 && absEps !== Infinity,
+    },
+    {
+      condition: "|ε| = 1",
+      label: "Unit Elastic",
+      badge: "unit-elastic",
+      curve: "—",
+      revenue: "Unchanged",
+      match: absEps >= 0.999 && absEps <= 1.001,
+    },
+    {
+      condition: "|ε| < 1",
+      label: "Inelastic",
+      badge: "inelastic",
+      curve: "Relatively steep",
+      revenue: "Rises",
+      match: absEps < 0.999 && absEps > 0,
+    },
+    {
+      condition: "|ε| = 0",
+      label: "Perfectly Inelastic",
+      badge: "perf-inelastic",
+      curve: "Vertical",
+      revenue: "Rises proportionally",
+      match: absEps === 0,
+    },
+  ];
+
+  const tableRows = rows
+    .map(
+      (r) =>
+        '<tr class="' +
+        (r.match ? "active-row" : "") +
+        '">' +
+        "<td><code>" +
+        r.condition +
+        "</code></td>" +
+        '<td><span class="ct-elas-ref-badge ' +
+        r.badge +
+        '">' +
+        r.label +
+        "</span></td>" +
+        "<td>" +
+        r.curve +
+        "</td>" +
+        "<td>" +
+        r.revenue +
+        "</td>" +
+        "</tr>",
+    )
+    .join("");
+
+  const table =
+    '<table class="ct-elas-ref-table">' +
+    "<thead><tr>" +
+    "<th>Condition</th>" +
+    "<th>Classification</th>" +
+    "<th>Curve Shape</th>" +
+    "<th>Price ↑ → Revenue</th>" +
+    "</tr></thead>" +
+    "<tbody>" +
+    tableRows +
+    "</tbody>" +
+    "</table>";
+
+  const formulas =
+    '<div class="ct-elas-ref-formulas">' +
+    '<div class="ct-elas-ref-formula">' +
+    '<div class="ct-elas-ref-formula-label">Point Elasticity</div>' +
+    '<div class="ct-elas-ref-formula-text">ε = (∂q/∂p) × (p/q)</div>' +
+    "</div>" +
+    '<div class="ct-elas-ref-formula">' +
+    '<div class="ct-elas-ref-formula-label">Arc Elasticity (Midpoint)</div>' +
+    '<div class="ct-elas-ref-formula-text">ε = (ΔQ/Q̄) ÷ (ΔP/P̄)</div>' +
+    "</div>" +
+    '<div class="ct-elas-ref-formula">' +
+    '<div class="ct-elas-ref-formula-label">Revenue Rule</div>' +
+    '<div class="ct-elas-ref-formula-text">ΔR = P·ΔQ + Q·ΔP</div>' +
+    "</div>" +
+    "</div>";
+
+  const intuitions =
+    '<div class="ct-elas-ref-intuitions">' +
+    '<div class="ct-elas-ref-intuition"><strong>More substitutes</strong> → more elastic</div>' +
+    '<div class="ct-elas-ref-intuition"><strong>Necessities</strong> → more inelastic</div>' +
+    '<div class="ct-elas-ref-intuition"><strong>Short run</strong> → more inelastic</div>' +
+    '<div class="ct-elas-ref-intuition"><strong>Long run</strong> → more elastic</div>' +
+    '<div class="ct-elas-ref-intuition"><strong>Narrow market definition</strong> → more elastic</div>' +
+    '<div class="ct-elas-ref-intuition"><strong>Broad market definition</strong> → more inelastic</div>' +
+    "</div>";
+
+  el.innerHTML =
+    '<div class="ct-elas-reference-title">Elasticity Reference</div>' +
+    table +
+    formulas +
+    intuitions;
 }
 
 // ===================================================================

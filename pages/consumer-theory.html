@@ -49,6 +49,13 @@
               <p><strong>From Equation mode</strong> solves for equilibrium P* and Q* first, then computes elasticity at that point — exactly like the lecture worked example.</p>
               <p><strong>Solve for P or Q</strong> lets you work backwards: given a target elasticity, find the price or quantity where that elasticity holds.</p>
               <p><strong>Arc elasticity</strong> uses the midpoint formula between two observed data points.</p>
+              <hr style="border:none; border-top:1px solid var(--border); margin:0.75rem 0;" />
+              <p style="font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--accent); margin-bottom:0.5rem;">Curve Shape and Market Power</p>
+              <p><strong>When demand is steep (inelastic):</strong> a supply shift moves price a lot and quantity a little. Sellers have pricing power — they can pass cost increases on to buyers because buyers lack good alternatives.</p>
+              <p><strong>When demand is flat (elastic):</strong> a supply shift moves quantity a lot and price a little. Sellers cannot raise prices without losing most customers — supply changes show up as volume changes, not price changes.</p>
+              <p><strong>When supply is steep (inelastic):</strong> a demand shift moves price a lot and quantity a little. Producers cannot easily expand output, so demand spikes translate directly into higher prices.</p>
+              <p><strong>When supply is flat (elastic):</strong> a demand shift moves quantity a lot and price a little. Producers absorb demand increases by expanding output rather than raising prices.</p>
+              <p>The unifying principle: <strong>the steeper curve determines how much of any shock shows up in price; the flatter curve determines how much shows up in quantity.</strong> This is also the foundation of tax incidence — whoever is more inelastic bears more of the tax burden.</p>
             </div>
           </div>
 
@@ -210,23 +217,24 @@
           <!-- Results -->
           <div id="elas-results" class="results-panel hidden" aria-live="polite">
             <h2>Elasticity Results</h2>
-            <div class="results-grid results-grid-3">
-              <div class="result-item">
-                <span class="result-label">Price Elasticity (ε)</span>
-                <span id="elas-value" class="result-value accent">—</span>
+            <div id="elas-pair" class="ct-elas-pair">
+              <div class="ct-elas-card" id="elas-demand-card">
+                <div class="ct-elas-card-title">Demand Elasticity (εd)</div>
+                <div id="elas-value" class="ct-elas-card-value">—</div>
+                <div id="elas-abs" class="ct-elas-card-abs">|εd| = —</div>
+                <div id="elas-badge">—</div>
               </div>
-              <div class="result-item">
-                <span class="result-label">|ε| (Absolute Value)</span>
-                <span id="elas-abs" class="result-value">—</span>
-              </div>
-              <div class="result-item">
-                <span class="result-label">Classification</span>
-                <span id="elas-badge">—</span>
+              <div class="ct-elas-card" id="elas-supply-card" style="display:none;">
+                <div class="ct-elas-card-title">Supply Elasticity (εs)</div>
+                <div id="elas-supply-value" class="ct-elas-card-value">—</div>
+                <div id="elas-supply-abs" class="ct-elas-card-abs">|εs| = —</div>
+                <div id="elas-supply-badge">—</div>
               </div>
             </div>
-            <div id="elas-revenue-impact" class="ct-revenue-impact neutral" style="margin-top:1rem;">
+            <div id="elas-revenue-impact" class="ct-revenue-impact neutral">
               —
             </div>
+            <div id="elas-reference" class="ct-elas-reference"></div>
           </div>
 
           <!-- Step-by-Step -->
@@ -243,10 +251,26 @@
 
           <!-- Chart -->
           <div id="elas-chart-section" class="chart-panel hidden">
-            <h2>Elasticity Diagram</h2>
+            <div class="ct-chart-header">
+              <h2>Elasticity Diagram</h2>
+              <button id="elas-chart-expand" class="ct-expand-btn" aria-label="Expand chart to full screen">
+                ⛶ Expand
+              </button>
+            </div>
             <div class="canvas-chart">
               <canvas id="elas-chart-canvas" role="img" aria-label="Price elasticity diagram showing demand curve with elastic and inelastic regions"></canvas>
             </div>
+          </div>
+
+          <!-- Shift Analysis Section -->
+          <div id="elas-shift-section" class="ct-shift-section hidden">
+            <div class="ct-shift-header">
+              <h2>Shift Analysis</h2>
+            </div>
+            <p class="ct-shift-hint">Enter only the values that change in Scenario 2. Blank fields inherit Scenario 1 values.</p>
+            <div id="elas-shift-grid" class="ct-shift-grid"></div>
+            <div id="elas-shift-results" class="ct-shift-results hidden" aria-live="polite"></div>
+            <div id="elas-shift-interpretation" class="ct-shift-interpretation hidden" aria-live="polite"></div>
           </div>
 
         </div>
@@ -509,6 +533,21 @@
         </div>
 
       </main>
+
+      <!-- Elasticity Chart Modal -->
+      <div id="elas-chart-modal" class="ct-chart-modal" role="dialog" aria-modal="true" aria-label="Expanded elasticity diagram">
+        <div class="ct-chart-modal-inner">
+          <div class="ct-chart-modal-header">
+            <h3>Elasticity Diagram</h3>
+            <button id="elas-modal-close" class="ct-chart-modal-close" aria-label="Close expanded chart">✕ Close</button>
+          </div>
+          <div class="ct-chart-modal-body">
+            <div class="canvas-chart">
+              <canvas id="elas-chart-modal-canvas" role="img" aria-label="Expanded price elasticity diagram"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <footer>
         <p>&copy; 2026 Financial Calculator</p>
