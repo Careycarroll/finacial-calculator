@@ -220,6 +220,5 @@ The price elasticity tab supports arbitrary linear demand/supply equations:
 ## Future / Planned
 
 - **Cloudflare Worker proxy** — replace `proxy.js` with a hosted edge function so the 10-K Analyzer works on the live GitHub Pages site without any local setup required
-- **Cost Structure & Allocation** — complete remaining tabs: cost structure comparison, overhead allocation with death spiral demo, fixed/variable cost classifier, unit cost trap
 
 ---
