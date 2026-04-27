@@ -8,39 +8,39 @@ A collection of interactive financial calculators built with vanilla JavaScript 
 
 ## Calculators
 
-| Tool                     | Description                                                                                    |
-| ------------------------ | ---------------------------------------------------------------------------------------------- |
-| 🔥 FIRE Dashboard        | FIRE number, Coast FIRE, retirement lifecycle projection                                       |
-| 📈 Portfolio Projections | Multi-scenario growth with inflation adjustment                                                |
-| 🏦 Loan Calculator       | Amortization, payoff schedule, interest breakdown                                              |
-| 🏦 Advanced Loan         | Extra payments, recurring ranges, one-time payments                                            |
-| 💰 Present Value         | Lump sum, annuity, lump sum vs annuity comparison                                              |
-| 📊 NPV / IRR             | Net present value, internal rate of return, investment comparison                              |
-| ⚙️ Options Lab           | Payoff diagrams, Black-Scholes pricing, Greeks sensitivity, P&L                                |
-| 🔍 Stock Evaluator       | Multi-method fundamental analysis: DCF, Graham Number, enterprise value, multiples             |
-| 📑 10-K Analyzer         | SEC EDGAR filing parser with ratio analysis, health scoring, and red flag detection            |
-| 📰 News Feed             | RSS reader with OPML import, category filtering, bookmarks, and search                         |
-| 📊 CM Analysis           | Contribution margin, gross profit, breakeven, multi-product mix, capacity constraints          |
-| 📉 Supply & Demand       | Linear supply/demand equilibrium, multi-variable equations, curve shifters, interactive graphs |
+| Tool                          | Description                                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 🔥 FIRE Dashboard             | FIRE number, Coast FIRE, retirement lifecycle projection                                                     |
+| 📈 Portfolio Projections      | Multi-scenario growth with inflation adjustment                                                              |
+| 🏦 Loan Calculator            | Amortization, payoff schedule, interest breakdown                                                            |
+| 🏦 Advanced Loan              | Extra payments, recurring ranges, one-time payments                                                          |
+| 💰 Present Value              | Lump sum, annuity, lump sum vs annuity comparison                                                            |
+| 📊 NPV / IRR                  | Net present value, internal rate of return, investment comparison                                            |
+| ⚙️ Options Lab                | Payoff diagrams, Black-Scholes pricing, Greeks sensitivity, P&L                                              |
+| 🔍 Stock Evaluator            | Multi-method fundamental analysis: DCF, Graham Number, enterprise value, multiples                           |
+| 📑 10-K Analyzer              | SEC EDGAR filing parser with ratio analysis, health scoring, and red flag detection                          |
+| 📰 News Feed                  | RSS reader with OPML import, category filtering, bookmarks, and search                                       |
+| 📊 CM Analysis                | Contribution margin, gross profit, breakeven, multi-product mix, capacity constraints, operating leverage    |
+| 📉 Supply & Demand            | Linear supply/demand equilibrium, multi-variable equations, curve shifters, interactive graphs               |
+| 📐 Consumer Theory            | Price elasticity (4 modes), arbitrary equation parser, shift analysis, cross-price elasticity, expected utility, risk premium |
+| 🏗️ Cost Structure & Allocation | Cost structure comparison, overhead allocation, fixed/variable cost classifier, unit cost trap               |
 
 ---
 
 ## Running Locally
 
-```bash
-# Clone
-git clone https://github.com/careycarroll/financial-calculator.git
-cd financial-calculator
+    # Clone
+    git clone https://github.com/careycarroll/financial-calculator.git
+    cd financial-calculator
 
-# Terminal 1 — static file server
-python3 -m http.server 8000
-# then open http://localhost:8000
+    # Terminal 1 -- static file server
+    python3 -m http.server 8000
+    # then open http://localhost:8000
 
-# Terminal 2 — SEC EDGAR proxy (required for 10-K Analyzer)
-node proxy.js
-# Proxy runs at http://localhost:3001
-# Keep this terminal open while using the 10-K Analyzer
-```
+    # Terminal 2 -- SEC EDGAR proxy (required for 10-K Analyzer)
+    node proxy.js
+    # Proxy runs at http://localhost:3001
+    # Keep this terminal open while using the 10-K Analyzer
 
 No npm, no build step, no dependencies.
 
@@ -54,60 +54,65 @@ SEC EDGAR requires HTTP/2 and a valid `User-Agent` header on all requests. Brows
 
 ## Project Structure
 
-```
-financial-calculator/
-├── index.html              # Calculator index / landing page
-├── pages/                  # One HTML file per tool
-│   ├── fire.html
-│   ├── projections.html
-│   ├── loan.html
-│   ├── loan-advanced.html
-│   ├── pv.html
-│   ├── npv-irr.html
-│   ├── options.html
-│   ├── analyzer.html
-│   ├── valuator.html
-│   ├── news.html
-│   ├── cm-analysis.html
-│   └── micro-econ.html
-├── js/
-│   ├── chart-utils.js           # Shared canvas, validation, chart utilities (ES module)
-│   ├── formatting.js            # Shared formatting functions (ES module)
-│   ├── financial-terms.js       # Financial term definitions for tooltips
-│   ├── fire.js
-│   ├── projections.js
-│   ├── loan.js
-│   ├── loan-advanced.js
-│   ├── pv.js
-│   ├── npv-irr.js
-│   ├── options.js
-│   ├── options-reference-shapes.js
-│   ├── analyzer.js              # SEC ratio calculations and health scoring
-│   ├── analyzer-ui.js           # 10-K Analyzer UI entry point
-│   ├── valuator.js              # Multi-method stock valuation engine
-│   ├── valuator-ui.js           # Stock Evaluator UI entry point
-│   ├── api-manager.js           # Multi-provider API key management + IndexedDB cache
-│   ├── sec-api.js               # SEC EDGAR data fetcher
-│   ├── news.js                  # RSS news feed reader
-│   ├── cm-analysis.js           # Contribution margin analysis entry point
-│   ├── micro-econ.js            # Supply & demand microeconomics entry point
-│   └── prefetch.js              # Quicklink prefetching (plain script, not module)
-├── proxy.js                     # Local HTTP/2 CORS proxy for SEC EDGAR
-├──.vscode/
-│   └── tasks.json               # VS Code task: Cmd+Shift+B starts all servers
-└── css/
-    ├── base.css                 # Global reset and variables
-    ├── common-calculator.css    # Shared form, result, chart, table styles
-    ├── fire.css
-    ├── analyzer.css
-    ├── news.css
-    ├── npv-irr.css
-    ├── options.css
-    ├── projections.css
-    ├── valuator.css
-    ├── cm-analysis.css
-    └── micro-econ.css
-```
+    financial-calculator/
+    ├── index.html              # Calculator index / landing page
+    ├── pages/                  # One HTML file per tool
+    │   ├── fire.html
+    │   ├── projections.html
+    │   ├── loan.html
+    │   ├── loan-advanced.html
+    │   ├── pv.html
+    │   ├── npv-irr.html
+    │   ├── options.html
+    │   ├── analyzer.html
+    │   ├── valuator.html
+    │   ├── news.html
+    │   ├── cm-analysis.html
+    │   ├── micro-econ.html
+    │   ├── consumer-theory.html
+    │   └── cost-structure.html
+    ├── js/
+    │   ├── chart-utils.js           # Shared canvas, validation, chart utilities (ES module)
+    │   ├── formatting.js            # Shared formatting functions (ES module)
+    │   ├── financial-terms.js       # Financial term definitions for tooltips
+    │   ├── fire.js
+    │   ├── projections.js
+    │   ├── loan.js
+    │   ├── loan-advanced.js
+    │   ├── pv.js
+    │   ├── npv-irr.js
+    │   ├── options.js
+    │   ├── options-reference-shapes.js
+    │   ├── analyzer.js              # SEC ratio calculations and health scoring
+    │   ├── analyzer-ui.js           # 10-K Analyzer UI entry point
+    │   ├── valuator.js              # Multi-method stock valuation engine
+    │   ├── valuator-ui.js           # Stock Evaluator UI entry point
+    │   ├── api-manager.js           # Multi-provider API key management + IndexedDB cache
+    │   ├── sec-api.js               # SEC EDGAR data fetcher
+    │   ├── news.js                  # RSS news feed reader
+    │   ├── cm-analysis.js           # Contribution margin analysis entry point
+    │   ├── micro-econ.js            # Supply & demand microeconomics entry point
+    │   ├── consumer-theory.js       # Consumer theory: elasticity, expected utility, risk premium
+    │   ├── cost-structure.js        # Cost structure & allocation entry point
+    │   ├── font-scale.js            # Persistent font scale toggle (plain script, not module)
+    │   └── prefetch.js              # Quicklink prefetching (plain script, not module)
+    ├── proxy.js                     # Local HTTP/2 CORS proxy for SEC EDGAR
+    ├──.vscode/
+    │   └── tasks.json               # VS Code task: Cmd+Shift+B starts all servers
+    └── css/
+        ├── base.css                 # Global reset and variables
+        ├── common-calculator.css    # Shared form, result, chart, table styles
+        ├── fire.css
+        ├── analyzer.css
+        ├── news.css
+        ├── npv-irr.css
+        ├── options.css
+        ├── projections.css
+        ├── valuator.css
+        ├── cm-analysis.css
+        ├── micro-econ.css
+        ├── consumer-theory.css
+        └── cost-structure.css
 
 ---
 
@@ -128,9 +133,7 @@ financial-calculator/
 
 This project went through a structured 5-phase development process covering bug fixes, input safety, performance optimization, architecture refactoring, and UX polish. Full detail is in the git log:
 
-```bash
-git log --oneline
-```
+    git log --oneline
 
 Key phases:
 
@@ -140,273 +143,83 @@ Key phases:
 - **Phase 4** — Architecture: `drawTooltip` utility, `CONFIG` constants, dead code removal, documentation
 - **Phase 5** — UX polish: loading spinners, `normCDF` documentation, accessibility pass
 - **Phase 6** — Stock Evaluator: IndexedDB cache for API responses (24h TTL), `formatRatio` import fix
+- **Phase 7** — Economics expansion: Consumer Theory page (price elasticity 4 modes, cross-price elasticity, expected utility, risk premium); font scale toggle (A⁻/A/A⁺) with canvas font scaling across all chart files
+- **Phase 8** — Consumer Theory expansion (April 2026): Arbitrary linear equation parser with scalar, shift variables, and parse confirmation display; Shift Analysis panel with live Scenario 2 comparison, D₂/S₂ dashed curve overlay, E₁/E₂ equilibrium dots, axis directional arrows; elasticity reference panel with highlighted classification row, formulas, and intuitions; stacked demand/supply elasticity result cards; market power explainer (curve shape → price vs. quantity power)
+
+---
+
+## Consumer Theory — From Equation Mode
+
+The price elasticity tab supports arbitrary linear demand/supply equations:
+
+    20*(750 - 2*p + p_hotel + 450*e)   <- scalar, shift variables, own-price
+    10*(2*p - p_listing)                <- supply with shift variable
+    16 - 2*p                            <- simple linear, no scalar
+
+**Parser handles:** leading scalars (`20*(...)`), implicit multiply (`20(...)`), named shift variables, bare variables (coef=1), negated variables, scientific notation coefficients.
+
+**Own-price detection:** exact match on `p` or `P` defaults to own-price. If ambiguous, a dropdown appears. Shift variables get inline value fields that update the collapsed form live.
+
+**Shift Analysis:** after calculating, enter Scenario 2 values (blank = inherit Scenario 1). Chart overlays D₂/S₂ as dashed curves only when they differ from baseline. Axis arrows show direction of P* and Q* movement. Interpretation panel explains ΔP*, ΔQ*, Δεd, Δεs in plain economic language.
 
 ---
 
 ## Utilities Quick Reference
 
-```javascript
-// chart-utils.js — canvas, validation, charts
-import {
-  formatCurrency,
-  safeParseFloat,
-  safeParseInt,
-  createChartContext,
-  drawBarChart,
-  drawLineChart,
-  drawTooltip,
-  rafThrottle,
-  validateInputs,
-  showFieldError,
-  clearAllErrors,
-  showChartLoading,
-  hideChartLoading,
-  bindFormEnter,
-  CONFIG,
-} from "./chart-utils.js";
+    // chart-utils.js -- canvas, validation, charts
+    import {
+      formatCurrency, safeParseFloat, safeParseInt,
+      createChartContext, drawBarChart, drawLineChart, drawTooltip,
+      rafThrottle, validateInputs, showFieldError, clearAllErrors,
+      showChartLoading, hideChartLoading, bindFormEnter, CONFIG,
+    } from './chart-utils.js';
 
-// formatting.js — shared formatting utilities
-import {
-  formatLargeNumber,
-  formatLargeNumberRaw,
-  formatRatio,
-  formatRatioPlain,
-  formatPct,
-  formatPercent,
-  formatValuationCurrency,
-  formatCurrencyShort,
-  formatNumber,
-  trendArrow,
-  calculateSimpleGrowthRates,
-} from "./formatting.js";
+    // formatting.js -- shared formatting utilities
+    import {
+      formatLargeNumber, formatLargeNumberRaw, formatRatio, formatRatioPlain,
+      formatPct, formatPercent, formatValuationCurrency, formatCurrencyShort,
+      formatNumber, trendArrow, calculateSimpleGrowthRates,
+    } from './formatting.js';
 
-// financial-terms.js
-import { getTermDefinition } from "./financial-terms.js";
+    // financial-terms.js
+    import { getTermDefinition } from './financial-terms.js';
 
-// sec-api.js
-import { fetchSECData } from "./sec-api.js";
+    // sec-api.js
+    import { fetchSECData } from './sec-api.js';
 
-// api-manager.js
-import {
-  fetchStockData,
-  getApiKeys,
-  saveApiKey,
-  removeApiKey,
-  getUsageSummary,
-  getRemainingCalls,
-} from "./api-manager.js";
-```
+    // api-manager.js
+    import {
+      fetchStockData, getApiKeys, saveApiKey, removeApiKey,
+      getUsageSummary, getRemainingCalls,
+    } from './api-manager.js';
 
 ---
 
 ## Useful Dev Commands
 
-```bash
-# Kill and restart local server
-pkill -f "python.*http" && python3 -m http.server 8000
+    # Kill and restart local server
+    pkill -f 'python.*http' && python3 -m http.server 8000
 
-# Start SEC EDGAR proxy (required for 10-K Analyzer)
-node proxy.js
+    # Start SEC EDGAR proxy (required for 10-K Analyzer)
+    node proxy.js
 
-# Check JS file sizes (to plan audit splits — max 500KB per upload)
-ls -R /Users/$(whoami)/Github\ Projects/financial-calculator/js/ | grep '\.js$' | sed "s|^|/Users/$(whoami)/Github Projects/financial-calculator/js/|" | xargs -I {} wc -c "{}"
+    # Check JS file sizes (to plan audit splits -- max 500KB per upload)
+    ls -R ~/Github\ Projects/financial-calculator/js/ | grep '\.js$' \
+      | sed 's|^|/Users/careycarroll/Github Projects/financial-calculator/js/|' \
+      | xargs -I {} wc -c '{}'
 
-# Dump all source files to a single audit file
-for f in **/*.(js|css|html); do
-  [[ "$f" == *.min.js || "$f" == *.min.css ]] && continue
-  echo "========== $f =========="
-  cat "$f"
-done > audit.txt
-```
+    # Dump all source files to a single audit file
+    for f in **/*.(js|css|html); do
+      [[ "$f" == *.min.js || "$f" == *.min.css ]] && continue
+      echo "========== $f =========="
+      cat "$f"
+    done > audit.txt
 
 ---
 
 ## Future / Planned
 
 - **Cloudflare Worker proxy** — replace `proxy.js` with a hosted edge function so the 10-K Analyzer works on the live GitHub Pages site without any local setup required
+- **Cost Structure & Allocation** — complete remaining tabs: cost structure comparison, overhead allocation with death spiral demo, fixed/variable cost classifier, unit cost trap
 
 ---
-# Code Review Agent — Financial Tools Codebase
-
-You are a code review agent for a JavaScript-based financial tools application. Tools include: FIRE calculator, Options lab, Projections, Loan calculators, Present Value, NPV/IRR, Stock Evaluator, 10-K Analyzer, News Feed, Contribution Margin Analysis, and Supply & Demand.
-
----
-
-## Context
-
-The codebase is a multi-page application (MPA) — one HTML file per tool, each loading its own JS entry point as an ES module. All tools share common utilities via chart-utils.js and formatting.js.
-
-The underlying financial math (Black-Scholes, FIRE, projections, Greeks) is solid. A full 5-phase remediation was completed covering bug fixes, input safety, performance, architecture refactoring, and UX polish. The codebase is now on ES modules with no outstanding architectural debt.
-
----
-
-## Environment
-
-- **Editor:** VS Code
-- **Terminal:** zsh (macOS) — `find` is not available; use `ls` or glob patterns instead.
-- **All code changes are applied via terminal commands.** Do not present code changes as "copy and paste this block." Instead, provide the exact `sed`, `awk`, `cat`, `tee`, or Python EOF commands to make the change.
-- **Prefer Python EOF blocks** for multi-line string replacements — they are more reliable than sed/heredoc for complex JS/CSS content.
-
----
-
-## Architecture
-
-- **ES Modules** — all JS files use native `import`/`export`. Each HTML page loads one entry point module via `<script type="module">`. No bundler required.
-- **Shared modules** — `chart-utils.js` (canvas, validation, charts), `formatting.js` (formatting utilities), `financial-terms.js` (tooltip definitions)
-- **AbortController pattern** — all canvas mousemove/mouseleave listeners use AbortController for cleanup. Always abort before each redraw. Pattern: `if (canvas._controller) canvas._controller.abort(); canvas._controller = new AbortController();`
-- **Offscreen canvas caching** — static chart layers (grid, axes, data series) drawn once to an offscreen canvas; only tooltip/crosshair redrawn on mousemove.
-- **rafThrottle** — all mousemove handlers wrapped in `rafThrottle()` from chart-utils.js. Never bind raw mousemove without throttling.
-- **safeParseFloat / safeParseInt** — all input parsing goes through these utilities from chart-utils.js. Never use `parseFloat`/`parseInt` directly on DOM input values.
-- **validateInputs** — all form validation uses the schema-based `validateInputs()` from chart-utils.js with inline error display via `showFieldError()`.
-- **Resize handlers** — every chart page has a debounced resize handler (250ms) that redraws charts at new dimensions using stored state.
-- **prefetch.js** — loaded as a plain script (not a module) on every page. Do not convert to a module.
-
----
-
-## Known Issues & Gotchas
-
-### Template Literal Space Collapse
-When writing CSS descendant selectors inside JavaScript template literals, the space between a closing `}` and a `.` class selector may be silently dropped by AI code generation tools, producing a broken selector:
-
-```js
-// WRONG — space may be dropped, producing "#id.class" which never matches
-document.querySelectorAll(`#${containerId}.cost-row`);
-
-// CORRECT — use getElementById + querySelectorAll
-const container = document.getElementById(containerId);
-container.querySelectorAll('.cost-row');
-
-// ALSO CORRECT — explicit string concatenation
-document.querySelectorAll('#' + containerId + '.cost-row');
-```
-
-Always use `getElementById` + `querySelectorAll` when the container ID is dynamic.
-
----
-
-## Discovery First
-
-At the start of a new session (or when working in unfamiliar territory), **begin with discovery.** Suggest commands to map the file structure and understand code layout before proposing any changes.
-
-**Example discovery commands:**
-
-    # Directory structure
-    ls -R /Users/$(whoami)/Github\ Projects/financial-calculator/
-
-    # File sizes (to plan audit.txt splits)
-    ls -R /Users/$(whoami)/Github\ Projects/financial-calculator/js/ | grep '\.js$' | sed "s|^|/Users/$(whoami)/Github Projects/financial-calculator/js/|" | xargs -I {} wc -c "{}"
-
-    # Top-level function/variable declarations in a specific file
-    grep -n '^function\|^const\|^let\|^var\|^class\|^export' /Users/$(whoami)/Github\ Projects/financial-calculator/js/fire.js
-
-    # Count of a specific pattern across all files
-    grep -rc 'formatCurrency\|safeParseFloat\|AbortController' /Users/$(whoami)/Github\ Projects/financial-calculator/js/
-
-    # Find all call sites for a specific function across all js files
-    grep -rn 'functionName' /Users/$(whoami)/Github\ Projects/financial-calculator/js/
-
-    # Check each html file and the scripts the page is loading
-    grep -rn '<script' /Users/$(whoami)/Github\ Projects/financial-calculator/pages/ > audit.txt && grep -n '<script' /Users/$(whoami)/Github\ Projects/financial-calculator/index.html >> audit.txt
-
-Do not skip discovery to jump into fixes. Understanding the current state prevents bad assumptions.
-
----
-
-## How Code Will Be Provided
-
-Code for review will be supplied via uploaded `audit.txt` files generated from the source using CLI tools (`grep`, `sed`, `awk`, `cat`, etc.).
-
-**Constraints:**
-- Each uploaded file has a **maximum size of 500 KB**.
-- If the output of a command exceeds 500 KB, it will be split across multiple numbered files (`audit_1.txt`, `audit_2.txt`, etc.). Wait for all parts before beginning review.
-- When reviewing a **specific function**, the extraction will target the function signature through its closing brace. If the boundaries look wrong (truncated or extra code), flag it immediately and suggest a corrected extraction command — do not guess.
-
-### Code Extraction Reference
-
-When I need to extract code for review, suggest commands based on these patterns:
-
-    # Entire file with line numbers (for reference in review findings)
-    cat -n /Users/$(whoami)/Github\ Projects/financial-calculator/js/fire.js > audit.txt
-
-    # First locate the function — works regardless of declaration style
-    grep -n 'functionName' /Users/$(whoami)/Github\ Projects/financial-calculator/js/fire.js
-
-    # Then extract by line range
-    sed -n '42,98p' /Users/$(whoami)/Github\ Projects/financial-calculator/js/fire.js > audit.txt
-
-    # Scoped search with context
-    grep -n -A 50 'function functionName' /Users/$(whoami)/Github\ Projects/financial-calculator/js/fire.js > audit.txt
-
-    # Size check before upload
-    wc -c audit.txt  # must be < 500000
-
-    # Split if oversized
-    split -b 500k audit.txt audit_part_
-
-**Note:** For arrow functions or class methods, use `grep -n` to locate the line first, then extract by line range with `sed -n`.
-
----
-
-## Working Process
-
-### Planning Protocol
-1. I describe the problem or next task.
-2. You restate your understanding and identify root cause vs. symptoms.
-3. You propose 2-3 approaches with tradeoffs (complexity, risk, scope of change).
-4. We discuss. Either of us can raise concerns or alternatives.
-5. **I will explicitly say "approved" or "lets go with option N"** to exit planning. If I say **"revise"** or **"rethink,"** return to step 2 with a revised approach without re-asking for the problem description.
-6. Only then do you produce implementation commands.
-
-**Do not produce implementation commands during planning.** Pseudocode and short illustrative snippets are fine.
-
-### Implementation Principles
-- **Page performance is a first-class goal.** Every change must keep pages optimized for fast loading. Prefer solutions that are lightweight, lazy where possible, and avoid blocking the main thread.
-- **Flexibility and dynamism matter.** Solutions should support dynamic content and interaction patterns without requiring full page reloads or heavy re-renders.
-- **No unnecessary abstraction.** Refactors should reduce duplication and improve clarity, not add indirection for its own sake.
-
-### Change Scope Rules
-- For **targeted bug fixes**, produce minimal surgical patches that address the specific issue.
-- For **refactors or feature-level changes**, a broader rewrite of the affected function or section is acceptable.
-- In either case, **deliver changes as executable terminal commands** (`sed`, `awk`, Python EOF, etc.) — not as "replace this with that" prose.
-- When a fix touches a function signature or return value, **identify all call sites** in the audited code and flag any that need updating.
-- Do not combine fixes across different checklist items in a single command sequence unless I explicitly ask for it.
-
-### Completion Criteria
-A checklist item is complete when:
-1. The fix has been implemented and the code has been re-extracted for verification.
-2. The review shows no critical or high findings related to that item.
-3. I explicitly mark it complete.
-
-A new finding discovered during verification only blocks completion if it is critical or high severity and directly related to the changed code. Lower-severity findings should be logged separately, not used to block the current item.
-
-Do not assume an item is complete just because we discussed or implemented a fix.
-
----
-
-## Prompt Maintenance
-
-When a full phase of work is complete, collapse it to a single line:
-"Phase N: [Title] — Completed [date]. Key decisions: [1-2 sentence summary]."
-This keeps the prompt compact for later sessions.
-
----
-
-## Review Output Format
-
-Begin every review with a summary line:
-
-**Review: N red | N yellow | N orange | N blue**
-
-Then list findings grouped by severity:
-
-1. **Bugs / Correctness** — Anything that produces wrong results or crashes.
-2. **Plan Alignment** — Does this code conflict with or regress any established pattern?
-3. **Performance** — Anything that harms load time, interaction smoothness, or memory.
-4. **Style / Maintainability** — Readability, naming, duplication (lowest priority).
-
-For each finding, include:
-- **Line/function reference** from the audit file
-- **What is wrong** (1-2 sentences)
-- **Suggested fix** (as an executable terminal command when applicable)
-
-For audits with more than 10 findings, consolidate low-severity items into a grouped summary list rather than individual entries.

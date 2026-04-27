@@ -8,22 +8,22 @@ A collection of interactive financial calculators built with vanilla JavaScript 
 
 ## Calculators
 
-| Tool                          | Description                                                                                                  |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| 🔥 FIRE Dashboard             | FIRE number, Coast FIRE, retirement lifecycle projection                                                     |
-| 📈 Portfolio Projections      | Multi-scenario growth with inflation adjustment                                                              |
-| 🏦 Loan Calculator            | Amortization, payoff schedule, interest breakdown                                                            |
-| 🏦 Advanced Loan              | Extra payments, recurring ranges, one-time payments                                                          |
-| 💰 Present Value              | Lump sum, annuity, lump sum vs annuity comparison                                                            |
-| 📊 NPV / IRR                  | Net present value, internal rate of return, investment comparison                                            |
-| ⚙️ Options Lab                | Payoff diagrams, Black-Scholes pricing, Greeks sensitivity, P&L                                              |
-| 🔍 Stock Evaluator            | Multi-method fundamental analysis: DCF, Graham Number, enterprise value, multiples                           |
-| 📑 10-K Analyzer              | SEC EDGAR filing parser with ratio analysis, health scoring, and red flag detection                          |
-| 📰 News Feed                  | RSS reader with OPML import, category filtering, bookmarks, and search                                       |
-| 📊 CM Analysis                | Contribution margin, gross profit, breakeven, multi-product mix, capacity constraints, operating leverage    |
-| 📉 Supply & Demand            | Linear supply/demand equilibrium, multi-variable equations, curve shifters, interactive graphs               |
-| 📐 Consumer Theory            | Price elasticity (4 modes), arbitrary equation parser, shift analysis, cross-price elasticity, expected utility, risk premium |
-| 🏗️ Cost Structure & Allocation | Cost structure comparison, overhead allocation, fixed/variable cost classifier, unit cost trap               |
+| Tool                           | Description                                                                                                                   |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| 🔥 FIRE Dashboard              | FIRE number, Coast FIRE, retirement lifecycle projection                                                                      |
+| 📈 Portfolio Projections       | Multi-scenario growth with inflation adjustment                                                                               |
+| 🏦 Loan Calculator             | Amortization, payoff schedule, interest breakdown                                                                             |
+| 🏦 Advanced Loan               | Extra payments, recurring ranges, one-time payments                                                                           |
+| 💰 Present Value               | Lump sum, annuity, lump sum vs annuity comparison                                                                             |
+| 📊 NPV / IRR                   | Net present value, internal rate of return, investment comparison                                                             |
+| ⚙️ Options Lab                 | Payoff diagrams, Black-Scholes pricing, Greeks sensitivity, P&L                                                               |
+| 🔍 Stock Evaluator             | Multi-method fundamental analysis: DCF, Graham Number, enterprise value, multiples                                            |
+| 📑 10-K Analyzer               | SEC EDGAR filing parser with ratio analysis, health scoring, and red flag detection                                           |
+| 📰 News Feed                   | RSS reader with OPML import, category filtering, bookmarks, and search                                                        |
+| 📊 CM Analysis                 | Contribution margin, gross profit, breakeven, multi-product mix, capacity constraints, operating leverage                     |
+| 📉 Supply & Demand             | Linear supply/demand equilibrium, multi-variable equations, curve shifters, interactive graphs                                |
+| 📐 Consumer Theory             | Price elasticity (4 modes), arbitrary equation parser, shift analysis, cross-price elasticity, expected utility, risk premium |
+| 🏗️ Cost Structure & Allocation | Cost structure comparison, overhead allocation, fixed/variable cost classifier, unit cost trap                                |
 
 ---
 
